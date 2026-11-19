@@ -1,0 +1,11 @@
+.DS_Store
+Thumbs.db
+__pycache__/
+*.py[cod]
+.harness/
+.worktrees/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
