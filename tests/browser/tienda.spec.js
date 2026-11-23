@@ -40,6 +40,13 @@ test("el único carro llega a la arena con el premio y las compras duran hasta e
     name: "Carro de completos de Bodoque",
   });
   await expect(jugar).toBeVisible();
+  // La portada define las dos familias que deben acompañar al jugador hasta el carro.
+  const titulo = await page
+    .locator("#title")
+    .evaluate((el) => window.getComputedStyle(el).fontFamily);
+  const lectura = await page
+    .locator("#intro")
+    .evaluate((el) => window.getComputedStyle(el).fontFamily);
   await page.keyboard.press("p");
   await expect(carta).toBeHidden();
   await jugar.click();
@@ -98,7 +105,24 @@ test("el único carro llega a la arena con el premio y las compras duran hasta e
   );
   await expect(mural).toContainText("31 minutos");
   await expect(mural).toContainText("quiero un puro completo");
+  await expect(aviso).toHaveCSS("font-family", titulo);
+  await expect(mural.locator("dt").first()).toHaveCSS("font-family", titulo);
+  await expect(mural.locator("dd").first()).toHaveCSS("font-family", lectura);
+  await expect(page.locator(".hud .lapida .despedida")).toHaveCSS(
+    "font-family",
+    lectura,
+  );
   await page.screenshot({ path: info.outputPath("aviso.png") });
+  const ventana = page.viewportSize();
+  await page.setViewportSize({ width: 390, height: 640 });
+  // A este ancho el diálogo y la indicación de salida comparten la esquina inferior.
+  const cartel = await mural.boundingBox();
+  const objetivo = await page.locator("#objective").boundingBox();
+  const lapida = await page.locator(".hud .lapida.con-carro").boundingBox();
+  expect(lapida.y + lapida.height).toBeLessThanOrEqual(cartel.y);
+  expect(cartel.x + cartel.width).toBeLessThanOrEqual(objetivo.x);
+  await page.screenshot({ path: info.outputPath("aviso-angosto.png") });
+  await page.setViewportSize(ventana);
   await page.keyboard.press("p");
   await expect(carta).toBeVisible();
   expect(await carta.boundingBox()).toEqual({
@@ -107,6 +131,14 @@ test("el único carro llega a la arena con el premio y las compras duran hasta e
     ...page.viewportSize(),
   });
   await expect(carta.getByRole("listitem")).toHaveCount(3);
+  await expect(carta.locator(".carta-detalle button").first()).toHaveCSS(
+    "font-family",
+    titulo,
+  );
+  await expect(carta.locator(".carta-detalle p").first()).toHaveCSS(
+    "font-family",
+    lectura,
+  );
   await expect
     .poll(() =>
       carta
@@ -126,7 +158,6 @@ test("el único carro llega a la arena con el premio y las compras duran hasta e
   ).toBeEnabled();
   await page.screenshot({ path: info.outputPath("carta.png") });
   // En una ventana angosta la carta desplaza hacia abajo, sin cortar las fichas a los lados.
-  const ventana = page.viewportSize();
   await page.setViewportSize({ width: 390, height: 640 });
   await expect
     .poll(() => carta.evaluate((el) => el.scrollWidth - el.clientWidth))

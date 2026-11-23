@@ -30,7 +30,8 @@ export const ESTILOS_JEFE = `
 .hud .pres .frase{font-size:clamp(20px,2.1vw,30px);font-style:italic;font-weight:500;max-width:56vw;text-shadow:0 1px 6px var(--fondo),0 0 14px var(--fondo);margin-top:.5em;}
 .hud .aviso{font-size:clamp(16px,1.5vw,21px);font-weight:600;letter-spacing:.04em;color:var(--texto-suave);text-shadow:0 1px 4px var(--fondo);min-height:1.4em;}
 .hud .sub{position:absolute;left:50%;bottom:9vh;transform:translateX(-50%);font-size:clamp(22px,2.2vw,30px);font-style:italic;font-weight:500;
-  text-shadow:0 1px 6px var(--fondo),0 0 14px var(--fondo);white-space:nowrap;}
+  width:max-content;max-width:90%;text-align:center;text-wrap:balance;line-height:1.25;
+  text-shadow:0 1px 6px var(--fondo),0 0 14px var(--fondo);}
 .hud .drop{position:absolute;transform:translate(-50%,-100%);font-size:15px;font-weight:600;color:var(--texto);-webkit-text-stroke:.2em var(--fondo);paint-order:stroke fill;white-space:nowrap;}
 `;
 

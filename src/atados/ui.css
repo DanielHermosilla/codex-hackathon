@@ -10,6 +10,13 @@
   font-weight: 300 700;
   font-display: swap;
 }
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("/atados/fonts/CormorantGaramond-Italic.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: italic;
+  font-display: swap;
+}
 :root {
   --titulo: Cinzel, Georgia, serif;
   --lectura: "Cormorant Garamond", Georgia, serif;
@@ -750,11 +757,14 @@ a {
 
 /* En victoria queda espacio para la indicación de caminar encima del atajo. */
 #objective:has(+ #atajo-puesto:not([hidden])) {
-  bottom: 60px;
+  bottom: 4.5rem;
+  font: 600 clamp(0.95rem, 1.6vw, 1.1rem)/1.25 var(--lectura);
 }
 
 #atajo-puesto,
 #enfrentar-farolero {
+  font: 600 0.94rem/1.2 var(--titulo);
+  max-width: 40%;
   position: absolute;
   right: 15px;
   bottom: 15px;
