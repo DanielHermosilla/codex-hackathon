@@ -19,6 +19,9 @@ export default {
     "The Lamplighter sets three trials on the floor. Each success costs him health. The first round is practice, so mistakes won’t hurt you.",
   "farol.jugar": "Face the Lamplighter",
   "epilogo.entrar": "Enter the Lamplighter’s hall",
+  "epilogo.enBreve": "The Lamplighter’s hall will open in a few seconds.",
+  "epilogo.cargaFallida":
+    "The Lamplighter’s hall could not load. Select Continue to retry.",
   "epilogo.fin": "To be continued...",
   "epilogo.volver": "Back to the start",
   "farol.victoria": "The Lamplighter has fallen",
@@ -207,7 +210,7 @@ export default {
   "tienda.moneda": "{cantidad} peso",
   "tienda.monedas": "{cantidad} pesos",
   "salida.arco":
-    "{victoria}. {premio}. Visit the cart in the center or cross the northern arch ↑",
+    "{victoria}. {premio}. Buy something from Bodoque to continue.",
   "salida.final":
     "{victoria}. {premio}. Visit the cart in the center or finish the game.",
   "salida.camino": "Follow the pier to reach Ondar ↑",

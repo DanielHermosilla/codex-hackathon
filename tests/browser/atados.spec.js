@@ -217,7 +217,7 @@ test("menú con el lobby → caída → pasillo → arco → Mirra con cinemáti
   expect(await leer(page, () => window.__game.escena)).toBe("jefe");
   await foto("09-reintento");
 
-  // Tras vencer se puede permanecer en la pradera sin que un temporizador abra el menú.
+  // La despedida se lee en la pradera y la compra a Bodoque habilita el epílogo.
   await page.evaluate(() => {
     const g = window.__game;
     g.saltarPresentacion();
@@ -233,7 +233,7 @@ test("menú con el lobby → caída → pasillo → arco → Mirra con cinemáti
   await expect(page.locator("#objective")).toContainText(
     "Mirra ha sido derrotada",
   );
-  await expect(page.locator("#objective")).toContainText("arco norte");
+  await expect(page.locator("#objective")).toContainText("Bodoque");
   expect(await leer(page, () => window.__game.pantalla)).toBe("playing");
   await foto("10-victoria");
   // Quien quiera repetir la pelea puede hacerlo desde la pausa.

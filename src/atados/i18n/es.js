@@ -19,6 +19,9 @@ export default {
     "El Farolero dibuja tres pruebas en el suelo. Cada acierto le quita vida. La primera vuelta es de práctica y pueden equivocarse sin recibir daño.",
   "farol.jugar": "Enfrentar al Farolero",
   "epilogo.entrar": "Entrar en la sala del Farolero",
+  "epilogo.enBreve": "La sala del Farolero se abrirá en unos segundos.",
+  "epilogo.cargaFallida":
+    "No se pudo cargar la sala del Farolero. Pulsa Continuar para reintentar.",
   "epilogo.fin": "Continuará...",
   "epilogo.volver": "Volver al inicio",
   "farol.victoria": "El Farolero ha caído",
@@ -210,8 +213,7 @@ export default {
     "Cada producto alcanza para Sael y Odo. Gana pesos al derrotar jefes.",
   "tienda.moneda": "{cantidad} peso",
   "tienda.monedas": "{cantidad} pesos",
-  "salida.arco":
-    "{victoria}. {premio}. Visita el carro en el centro o cruza el arco norte ↑",
+  "salida.arco": "{victoria}. {premio}. Compra algo a Bodoque para continuar.",
   "salida.final":
     "{victoria}. {premio}. Visita el carro en el centro o termina la partida.",
   "salida.camino": "Sigue hasta el final del muelle para llegar a Ondar ↑",
