@@ -167,9 +167,6 @@ const FAMILIAS = [
   [
     "Peligros de arena",
     [
-      "avisoOrbe",
-      "orbeCae",
-      "orbeExplota",
       "avisoLuz",
       "luzImpacto",
       "avisoPisoton",
@@ -343,15 +340,6 @@ const ESCENAS = [
       ],
       [tele("enjambre"), ev({ tipo: "ataque_activo", ataque: "enjambre" })],
       [tele("enjambre") + 3, ev({ tipo: "ataque_fin", ataque: "enjambre" })],
-    ],
-  ],
-  [
-    "Orbe del vacío",
-    "aparece; cae a los 4,85 s; el pilar estalla 1,5 s después",
-    () => [
-      [0, ev({ tipo: "ritual_inicio", rito: "orbe" })],
-      [4.85, ev({ tipo: "arena_golpe", golpe: "orbe" })],
-      [6.35, ev({ tipo: "arena_golpe", golpe: "explosion" })],
     ],
   ],
   [

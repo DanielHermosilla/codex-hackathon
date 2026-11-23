@@ -176,23 +176,12 @@ export const CONFIG = {
           explosion: 520,
           luz: 320,
           acido: 180,
-          vacio: 180,
           pisoton: 300,
           braseros: 260,
         }, // puntos en la escala ×10 de D-202
         inicio: 4,
         intervalo: 8,
-        // Ácido y orbe alternan en el primer hueco de cada ciclo de cuatro ritos.
-        secuencia: [
-          "acido",
-          "luz",
-          "pisoton",
-          "braseros",
-          "orbe",
-          "luz",
-          "pisoton",
-          "braseros",
-        ],
+        secuencia: ["acido", "luz", "pisoton", "braseros"],
       },
       acido: {
         punteria: 4.5, // segundos durante los que la mira sigue al jugador marcado
@@ -774,14 +763,12 @@ export const CONFIG = {
     proyectiles: { grano: { sonido: "proyectilGrano" } },
     arena: {
       avisos: {
-        orbe: "avisoOrbe",
         luz: "avisoLuz",
         pisoton: "avisoPisoton",
         braseros: "avisoBraseros",
       },
       golpes: {
-        orbe: "orbeCae",
-        explosion: "orbeExplota",
+        explosion: "braseroDescarga",
         luz: "luzImpacto",
         pisoton: "pisotonGolpe",
         braseros: "braseroDescarga",

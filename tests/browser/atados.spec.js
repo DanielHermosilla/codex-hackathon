@@ -336,7 +336,7 @@ test("Mirra: ataque con telegrafía y segunda fase", async ({ page }, info) => {
   expect(errores).toEqual([]);
 });
 
-test("Mirra intercala los cuatro turnos de arena y alterna ácido y orbe", async ({
+test("Mirra repite los cuatro turnos de arena y vuelve a mostrar el aviso de ácido", async ({
   page,
 }, info) => {
   test.setTimeout(120000);
@@ -350,20 +350,21 @@ test("Mirra intercala los cuatro turnos de arena y alterna ácido y orbe", async
     g.saltarPresentacion();
     g.step(270); // a los cuatro segundos aparece el primer aviso
   });
-  for (const [id, aviso] of [
+  const turnos = [
     ["acido", "Ácido"],
     ["luz", "Luz divina"],
     ["pisoton", "Pisotón"],
     ["braseros", "brasero rojo"],
-    ["orbe", "Orbe de vacío"],
-  ]) {
+    ["acido", "Ácido"],
+  ];
+  for (const [turno, [id, aviso]] of turnos.entries()) {
     await expect(page.locator("#objective")).toContainText(aviso);
-    await page.screenshot({ path: info.outputPath(id + ".png") });
+    await page.screenshot({ path: info.outputPath(`${turno + 1}-${id}.png`) });
     if (id === "braseros") {
       const rito = await leer(page, () => window.__game.combate.rito);
       expect(rito.braseros.map((f) => f.color)).toEqual([0, 1, 2]);
     }
-    if (id !== "orbe") {
+    if (turno < turnos.length - 1) {
       // Mantiene abierta la pelea para fotografiar el siguiente rito aun si un personaje cayó.
       await page.keyboard.press("KeyV");
       await pasos(page, 480); // ocho segundos entre señales en la rotación de Mirra

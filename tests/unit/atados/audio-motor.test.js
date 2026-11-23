@@ -386,26 +386,6 @@ describe("audio conectado al combate real", () => {
     t.audio.dispose();
   });
 
-  it("orbe: aviso al aparecer y caída a los 4,85 s; sin orbe posible, no suena nada", async () => {
-    const t = await enPelea();
-    lanzarRito(t, "orbe");
-    const t0 = t.ctx().currentTime;
-    const aviso = pasarHasta(t, "avisoOrbe", 2);
-    expect(aviso).toMatchObject({ sono: true, bus: "blanco" });
-    const cae = pasarHasta(t, "orbeCae");
-    expect(Math.abs(cae.t - t0 - 4.85)).toBeLessThan(2 * DT);
-    t.audio.dispose();
-
-    const u = await enPelea();
-    u.c().arenaMirra.pilar = { id: "ocupado", x: 0, z: 0, r: 0 }; // ya hay un pilar: el orbe no aparece
-    lanzarRito(u, "orbe");
-    u.paso(60);
-    const ids = sfx(u.audio).map((r) => r.id);
-    expect(ids).not.toContain("avisoOrbe");
-    expect(ids).not.toContain("orbeCae");
-    u.audio.dispose();
-  });
-
   it("luz y pisotón: aviso al aparecer y golpe en su instante", async () => {
     for (const [rito, aviso, golpe, s] of [
       ["luz", "avisoLuz", "luzImpacto", 2.5],

@@ -12,7 +12,7 @@ import {
 import { killPlayer } from "../../../src/atados/gameplay/jugadores.js";
 import { emptyInput } from "../../../src/atados/gameplay/mundo.js";
 
-it("Mirra alterna ácido y orbe entre ciclos de cuatro señales, mantiene sus ataques y limpia la arena al reintentar", () => {
+it("Mirra repite cuatro señales de arena, mantiene sus ataques y limpia la arena al reintentar", () => {
   const cfg = structuredClone(CONFIG);
   cfg.player.maxHp = 100000;
   const c = crearCombate(cfg);
@@ -24,8 +24,6 @@ it("Mirra alterna ácido y orbe entre ciclos de cuatro señales, mantiene sus at
     pasoCombate(c, entrada, 1 / 60);
     const arena = c.arenaMirra;
     if (
-      arena.orbe ||
-      arena.pilar ||
       arena.acido ||
       arena.barril ||
       arena.resultadoAcido ||
@@ -41,7 +39,8 @@ it("Mirra alterna ácido y orbe entre ciclos de cuatro señales, mantiene sus at
     const aviso = avisoRitoActual(c);
     if (aviso && avisos.at(-1) !== aviso) avisos.push(aviso);
   }
-  assert.deepEqual(avisos, ["acido", "luz", "pisoton", "braseros", "orbe"]);
+  // El quinto turno reinicia el ciclo con ácido.
+  assert.deepEqual(avisos, ["acido", "luz", "pisoton", "braseros", "acido"]);
   assert.ok(ataque);
   const nuevo = reintentar(c);
   assert.equal(nuevo.turnoArena, 0);
@@ -69,16 +68,16 @@ it("victoria y derrota cierran el especial de la arena antes de mostrar el resul
   }
 });
 
-it("el HUD omite el aviso si el orbe no encuentra suelo para el pilar", () => {
+it("el HUD omite el aviso si el ácido no encuentra suelo para el barril", () => {
   const c = crearCombate(CONFIG);
   saltarPresentacion(c);
-  c.w.arenaRadius = 2.1; // metros: el pilar necesita aparecer a 4,8 m del objetivo
-  c.turnoArena = CONFIG.jefes.mirra.ritual.secuencia.indexOf("orbe");
+  c.w.arenaRadius = 2.1; // metros: el barril no cabe con espacio para rodearlo
+  c.turnoArena = CONFIG.jefes.mirra.ritual.secuencia.indexOf("acido");
   const turnoInicial = c.turnoArena;
-  c.proximoRito = 0; // el siguiente paso intenta crear el orbe
+  c.proximoRito = 0; // el siguiente paso intenta crear el barril
   pasoCombate(c, [emptyInput(), emptyInput()], CONFIG.sim.fixedDt);
   assert.equal(c.turnoArena, turnoInicial + 1); // sí se intentó iniciar el reto
-  assert.equal(c.arenaMirra.orbe, null);
+  assert.equal(c.arenaMirra.barril, null);
   assert.equal(avisoRitoActual(c), "");
 });
 
