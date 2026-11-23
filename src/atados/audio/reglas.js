@@ -374,24 +374,6 @@ export function accionesDeEvento(cfg, e, jefeId, tele = teleNormal) {
         { tipo: "musica", estado: "pelea" },
         { tipo: "sfx", id: "peleaInicio" },
       ];
-    case "mirra_escupe":
-      return [{ tipo: "sfx", id: "mirraSiega", tono: 0.78 }];
-    case "mirra_barril":
-      return [
-        {
-          tipo: "sfx",
-          id: e.resultado === "apagado" ? "anclaSuelta" : "mirraHambre",
-        },
-      ];
-    case "farol_aviso":
-      return [{ tipo: "sfx", id: avisoDe(A, e.gesto), aviso: true }];
-    case "farol_campana":
-      // Las tres campanas forman una tríada ascendente en el orden de la ruta.
-      return [
-        { tipo: "sfx", id: "avisoCampanas", tono: [1, 1.25, 1.5][e.paso - 1] },
-      ];
-    case "farol_acierto":
-      return [{ tipo: "sfx", id: "destello" }];
     case "telegrafia_inicio": {
       const out = [
         {

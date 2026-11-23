@@ -1,77 +1,11 @@
 // English texts (D-102). Boss lines translate a draft: TODO review with Diego.
 export default {
-  "jefe.farolero.nombre": "The Lamplighter",
-  "jefe.farolero.antiguo": "the Guardian of Hestera",
-  "jefe.farolero.presentacion": "“The last light is not yours.”",
-  "jefe.farolero.muerte": "“Bring back… the light.”",
-  "jefe.farolero.burla": "“One less shadow.”",
-  "jefe.farolero.derrota": "“Another light goes out.”",
-  "combate.cargaFallida": "The encounter could not load. You can try again.",
-  "farol.intro":
-    "The Lamplighter sets three trials on the floor. Each success costs him health. The first round is practice, so mistakes won’t hurt you.",
-  "farol.jugar": "Face the Lamplighter",
-  "farol.enfrentar": "Face the Lamplighter",
-  "farol.victoria": "The Lamplighter has fallen",
-  "farol.recompensa": "Sael and Odo restored the light of Hestera.",
-  "farol.repetir": "Fight again",
-  "farol.controles": "The Lamplighter’s three trials",
-  "farol.guia.prisma":
-    "Prism. Put the crystal between Sael and Odo so the chain crosses it. If one falls, the survivor can touch the crystal.",
-  "farol.guia.ecos":
-    "Echoes. The circles mark where you stood. Get each character clear of every circle before they burst.",
-  "farol.guia.campanas":
-    "Bells. Step on bells 1, 2 and 3 in order. Either character can ring each bell.",
-  "farol.nombre.prisma": "Prism",
-  "farol.nombre.ecos": "Echoes",
-  "farol.nombre.campanas": "Bells",
-  "farol.practica": "Practice · mistakes won’t hurt you",
-  "farol.vuelta": "Round {vuelta} · {aciertos}/{meta} trials cleared",
-  "farol.reto": "Now · {gesto}",
-  "farol.acierto": "{gesto} · success",
-  "farol.fallo": "{gesto} · time’s up",
-  "farol.accion.prisma":
-    "Stand on opposite sides of the crystal so the chain crosses it.",
-  "farol.prismaSuperviviente":
-    "Touch the crystal with the surviving character.",
-  "farol.accion.ecos": "Leave all the circles and stay clear until they burst.",
-  "farol.accion.campanas": "Step on bell {campana} with either character.",
-  "farol.logro.prisma": "Light from the crystal struck the Lamplighter.",
-  "farol.logro.ecos": "The echoes missed you and struck the Lamplighter.",
-  "farol.logro.campanas": "The final bell struck the Lamplighter.",
-  "farol.pista.prisma":
-    "Spread out until a chain link crosses the center of the crystal.",
-  "farol.pista.ecos":
-    "Check both characters’ feet. Each must be clear of every footprint.",
-  "farol.pista.campanas":
-    "Follow the lit number. One character can ring all three bells.",
-  "farol.error.prisma": "The crystal broke free and discharged.",
-  "farol.error.ecos": "The echoes struck whoever was still inside.",
-  "farol.error.campanas": "The Lamplighter discharged the remaining bells.",
-  "farol.plazo": "Time remaining",
-  "farol.segundos": "{tiempo} s",
-  "farol.brillo": "Arena brightness",
-  "farol.brillo.bajo": "Soft",
-  "farol.brillo.medio": "Normal",
-  "farol.brillo.alto": "Bright",
-  "farol.aviso": "Get ready · {gesto}",
-  "farol.sonido": "Audio cues for the Lamplighter’s trials",
-
-  "mirra.intro":
-    "Sweep the taut chain through Mirra. When she marks a character with acid, use her spit to douse the powder keg’s fuse.",
-  "mirra.jugar": "Face Mirra",
-  "acido.apuntar":
-    "Acid on {nombre}. Approach the powder keg until its fuse is inside your ring.",
-  "acido.mantener":
-    "{nombre}, the keg is in your ring. Hold there until Mirra spits.",
-  "acido.vuelo":
-    "Mirra spat! The impact is locked in. Get clear of the circle.",
-  "acido.mecha": "The fuse is still burning. The keg is about to burst!",
-  "acido.apagado": "Fuse out. Keep clear of the acid pool.",
-  "acido.explosion": "The keg exploded. Avoid the acid pool.",
   "brasero.color.0": "red",
   "brasero.color.1": "blue",
   "brasero.color.2": "gold",
   "brasero.escudo": "Shared shield ({color}) · {tiempo} s",
+  "indicacion.orbe":
+    "Void · carry the orb to the marked pillar, then leave the circle.",
   "indicacion.luz": "Divine light · take cover in the shadow of an obstacle.",
   "indicacion.pisotonSolo": "Stomp · stand inside the marked circle.",
   "indicacion.pisoton": "Stomp · stand together inside the marked circle.",

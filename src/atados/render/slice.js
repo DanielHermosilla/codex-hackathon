@@ -23,7 +23,6 @@ import { crearCadenaArte } from "./cadena-arte.js";
 import { crearTelegrafias } from "./telegrafias.js";
 import { crearMirra } from "./mirra-arte.js";
 import { crearMuneco } from "./muneco-arte.js";
-import { crearArteFarolero } from "./farolero.js";
 import { crearBrillos } from "./brillos.js";
 import { crearVfx } from "./vfx.js";
 import { configurarRenderer, reducidoSistema } from "./renderer-config.js";
@@ -33,7 +32,6 @@ export const MODELOS_SLICE = ["sael", "odo", "espantapajaros", "mirra"];
 /** @type {Record<string, string[]>} */
 const MODELOS_DE = {
   mirra: MODELOS_SLICE,
-  farolero: ["sael", "odo"],
   muneco: ["sael", "odo", "espantapajaros"],
 };
 
@@ -47,7 +45,6 @@ const MODELOS_DE = {
  *   getWorld: () => import('./tipos.js').Mundo,
  *   getCombate: () => import('./tipos.js').Combate,
  *   params?: URLSearchParams,
- *   brilloFarolero?: () => number,
  *   extras?: ((ctx: any) => any)[],
  * }} args
  */
@@ -57,7 +54,6 @@ export async function crearRenderSlice({
   getWorld,
   getCombate,
   params,
-  brilloFarolero = () => 0.16,
   extras = [],
 }) {
   const modelos = await cargarModelos(
@@ -95,8 +91,7 @@ export async function crearRenderSlice({
   const world0 = getWorld();
   const c0 = getCombate();
   const def = c0.jefe.def;
-  const farolero = c0.id === "farolero";
-  const ZONA = farolero ? "tavor" : "trigal";
+  const ZONA = "trigal";
   /** @type {import('./tipos.js').Paleta} */
   let pal = resolverPaleta(ZONA, { fase: 1 });
 
@@ -132,16 +127,14 @@ export async function crearRenderSlice({
 
   const camara = crearCamara({ cfg, reducir });
   const camera = camara.camera;
-  const trigal = farolero
-    ? null
-    : crearTrigal({
-        scene,
-        cfg,
-        keep,
-        modelos,
-        world0,
-        jefe0: c0.jefe,
-      });
+  const trigal = crearTrigal({
+    scene,
+    cfg,
+    keep,
+    modelos,
+    world0,
+    jefe0: c0.jefe,
+  });
   const brillos = crearBrillos(keep);
   const personajes = crearPersonajes({
     brillos,
@@ -154,22 +147,13 @@ export async function crearRenderSlice({
   });
   const cadena = crearCadenaArte({ scene, cfg, renderer, keep, world0 });
   const tele = crearTelegrafias({ scene, cfg, keep, decalMat, def });
-  // Cada sala carga solo su jefe y las señales de sus propias pruebas.
-  const arteJefe = farolero
-    ? crearArteFarolero({ scene, keep, world0, decalMat, reducir })
-    : def.arte === "muneco"
+  // El arte del jefe sale de `def.arte`: Mirra (esqueleto y clips) o el muñeco de práctica.
+  const mirra =
+    def.arte === "muneco"
       ? crearMuneco({ scene, cfg, keep, modelos, def })
       : crearMirra({ scene, cfg, keep, modelos, def });
-  const arenaVisual =
-    c0.id === "mirra"
-      ? crearArenaMirraVisual({
-          scene,
-          keep,
-          brillos,
-          alturaArco: cfg.jefes.mirra.acido.arco,
-        })
-      : null;
-  const vistaRitos = farolero ? null : crearVistaRitos(scene, keep, brillos);
+  const arenaVisual = crearArenaMirraVisual({ scene, keep, brillos });
+  const vistaRitos = crearVistaRitos(scene, keep, brillos);
   const vfx = crearVfx({ scene, cfg, keep });
   const exts = extras
     .map((f) =>
@@ -208,8 +192,8 @@ export async function crearRenderSlice({
     fog.color.setHex(p.niebla);
     fog.near = p.nieblaCerca;
     fog.far = p.nieblaLejos;
-    hemi.color.setHex(farolero ? 0xc4d0ed : p.hemiCielo);
-    hemi.groundColor.setHex(farolero ? 0x78665a : p.hemiSuelo);
+    hemi.color.setHex(p.hemiCielo);
+    hemi.groundColor.setHex(p.hemiSuelo);
     hemi.intensity = p.hemiIntensidad;
     sun.color.setHex(p.sol);
     sun.intensity = p.solIntensidad;
@@ -220,8 +204,8 @@ export async function crearRenderSlice({
       Math.sin(el) * 40,
       Math.cos(az) * Math.cos(el) * 40,
     );
-    trigal?.aplicarPaleta(p);
-    arteJefe.aplicarPaleta(p);
+    trigal.aplicarPaleta(p);
+    mirra.aplicarPaleta(p);
     colores.polvo = mezclarHex(p.suelo, p.niebla, 0.35);
     colores.corteza = p.jefe;
     colores.paja = mezclarHex(p.vegetacion, 0xffffff, 0.12);
@@ -377,17 +361,14 @@ export async function crearRenderSlice({
     vivoPrev = c.jefe.vivo;
 
     const flashes = flashesOn();
-    arenaVisual?.sync(w, c, flashes);
-    vistaRitos?.(
+    arenaVisual.sync(w, c, flashes);
+    vistaRitos(
       c.estado === "pelea" && c.id === "mirra" ? c.ritos : null,
       dtAnim,
       flashes,
       c.jefe,
     );
-    trigal?.sync(w, c, dtAnim, tiempo, fxJefe);
-    // El brillo regula la luz ambiente de la sala completa durante toda la pelea.
-    if (farolero)
-      hemi.intensity = pal.hemiIntensidad * (0.75 + 2 * brilloFarolero());
+    trigal.sync(w, c, dtAnim, tiempo, fxJefe);
     const escudo = escudoVisible(c);
     personajes.sync(
       w,
@@ -398,7 +379,7 @@ export async function crearRenderSlice({
     );
     cadena.sync(w, dtAnim);
     tele.sync(c, vfx, colores);
-    arteJefe.sync(c, w, dtAnim, tiempo, {
+    mirra.sync(c, w, dtAnim, tiempo, {
       flash: flashT * cfg.render.jefe.flash,
       fx: fxJefe,
     });
@@ -409,11 +390,6 @@ export async function crearRenderSlice({
     puntos.length = 0;
     if (c.jefe.vivo) puntos.push(c.jefe.x, c.jefe.z, c.jefe.r);
     else if (c.lapida) puntos.push(c.lapida.x, c.lapida.z, 1.5);
-    if (c.estado === "pelea" && c.farolero)
-      for (const marca of c.farolero.marcas)
-        puntos.push(marca.x, marca.z, marca.r);
-    const barril = c.arenaMirra?.barril;
-    if (c.estado === "pelea" && barril) puntos.push(barril.x, barril.z, 1.5);
     // Mantén las opciones de color dentro del encuadre cuando aparecen lejos de la pareja.
     if (c.estado === "pelea" && c.ritos.tipo === "braseros") {
       for (const fuego of c.ritos.braseros)
@@ -495,11 +471,11 @@ export async function crearRenderSlice({
     },
     dispose() {
       for (const e of exts) e.dispose?.();
-      trigal?.dispose();
+      trigal.dispose();
       personajes.dispose();
       cadena.dispose();
       tele.dispose();
-      arteJefe.dispose();
+      mirra.dispose();
       vfx.dispose();
       for (const o of keepList) o.dispose?.();
       for (const g of Object.values(modelos)) liberarGltf(g);

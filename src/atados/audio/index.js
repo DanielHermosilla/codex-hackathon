@@ -35,7 +35,6 @@ const MAX_REGISTRO = 40;
  *   cfg: Cfg,
  *   getCombate: () => Combate | null | undefined,
  *   onEvento?: (oyente: (e: EventoCombate) => void) => (() => void) | void,
- *   avisosFarolero?: () => boolean,
  *   target?: EventTarget | null,
  *   motorOpts?: { crearContexto?: () => AudioContext, cargarSintesis?: (ctx: AudioContext) => Promise<import('./motor.js').ConstruirSamples> },
  * }} opciones
@@ -44,7 +43,6 @@ export function conectarAudio({
   cfg,
   getCombate,
   onEvento,
-  avisosFarolero = () => true,
   target = typeof window !== "undefined" ? window : null,
   motorOpts = {},
 }) {
@@ -149,7 +147,6 @@ export function conectarAudio({
       case "sfx": {
         const h = sonar(a.id, {
           duracion: a.duracion ?? null,
-          tono: a.tono ?? 1,
           retraso: a.retraso ?? 0,
           bucle: !!a.bucle,
         });
@@ -227,14 +224,6 @@ export function conectarAudio({
       tele,
     );
     for (const a of acciones) {
-      // El ajuste solo quita la señal sonora que precede el golpe del Farolero.
-      if (
-        c?.id === "farolero" &&
-        a.tipo === "sfx" &&
-        a.aviso &&
-        !avisosFarolero()
-      )
-        continue;
       // Bloqueado: solo se sigue el estado lógico (para sincronizar al desbloquear), sin sonido.
       if (
         motor.estado !== "activo" &&

@@ -7,7 +7,7 @@
 
 import {
   crearArenaMirra,
-  iniciarAcido,
+  iniciarOrbe,
   iniciarLuz,
   avanzarArenaMirra,
 } from "./arena-mirra.js";
@@ -17,11 +17,6 @@ import {
   iniciarBraseros,
   avanzarRitos,
 } from "./ritos.js";
-import {
-  crearFarolero,
-  anunciarPrueba,
-  actualizarFarolero,
-} from "./farolero.js";
 import { createWorld, stepWorld } from "./mundo.js";
 import { createChain } from "./cadena.js";
 import {
@@ -113,7 +108,6 @@ export function crearCombate(cfg, opts = {}) {
       resultado: null,
       t: 0,
       tPelea: 0,
-      farolero: o.jefe === "farolero" ? crearFarolero(w) : null,
       arenaMirra: crearArenaMirra(),
       ritos: crearRitos(),
       turnoArena: 0,
@@ -231,9 +225,8 @@ function golpear(c, b, i, dano, empuje, fx, fz, tick) {
 export function saltarPresentacion(c) {
   if (c.estado !== "presentacion") return;
   c.estado = "pelea";
-  c.w.dummy.invulnerable = Boolean(c.farolero);
+  c.w.dummy.invulnerable = false;
   emitir(c, "pelea_inicio", {});
-  if (c.farolero) anunciarPrueba(c, c.farolero);
 }
 
 // Mueve el cuerpo del jefe según la velocidad que pidió su cerebro y lo pasa al mundo como «muñeco»
@@ -290,33 +283,26 @@ function cederAnclados(c) {
   }
 }
 
-// Deja leer el resultado de la mecha antes del siguiente aviso. El charco se evapora entre ataques.
+// Solo la apertura del vacío ocupa un turno. El hueco sigue cerrándose entre ataques.
 /** @param {Combate} c */
 function especialEnCurso(c) {
   const a = c.arenaMirra;
-  return !!(
-    c.ritos.tipo ||
-    a.acido ||
-    a.barril ||
-    a.explosion ||
-    a.resultadoAcido ||
-    a.luz
-  );
+  return !!(c.ritos.tipo || a.orbe || a.pilar || a.explosion || a.luz);
 }
 
 /** @param {Combate} c @param {number} dt */
 function pasoArena(c, dt) {
-  if (c.tPelea >= c.proximoRito && !especialEnCurso(c)) {
+  if (c.tPelea >= c.proximoRito) {
     const { secuencia, intervalo } = c.cfg.jefes.mirra.ritual;
     const { id, aviso } = secuencia[c.turnoArena % secuencia.length];
-    if (id === "acido") iniciarAcido(c.arenaMirra, c.ctx);
+    if (id === "orbe") iniciarOrbe(c.arenaMirra, c.ctx);
     if (id === "luz") iniciarLuz(c.arenaMirra, c.ctx);
-    if (id === "pisoton") iniciarPisoton(c.ritos, c.w, c.arenaMirra.charcos);
-    if (id === "braseros") iniciarBraseros(c.ritos, c.w, c.arenaMirra.charcos);
+    if (id === "pisoton") iniciarPisoton(c.ritos, c.w, c.arenaMirra.huecos);
+    if (id === "braseros") iniciarBraseros(c.ritos, c.w, c.arenaMirra.huecos);
     c.avisoRito = id;
     c.finAviso = c.tPelea + aviso;
     c.turnoArena++;
-    c.proximoRito = c.tPelea + intervalo;
+    c.proximoRito += intervalo;
   }
   const ocupado = especialEnCurso(c);
   avanzarArenaMirra(c.arenaMirra, c.ctx, dt);
@@ -372,10 +358,7 @@ export function pasoCombate(c, inputs, dt) {
   }
   moverJefe(c, dt);
   w.dummy.invulnerable =
-    c.estado !== "pelea" ||
-    Boolean(c.farolero) ||
-    jefe.invulnerable ||
-    !jefe.vivo;
+    c.estado !== "pelea" || jefe.invulnerable || !jefe.vivo;
   stepWorld(w, inputs, dt);
   cederAnclados(c);
 
@@ -406,9 +389,7 @@ export function pasoCombate(c, inputs, dt) {
       c.id === "mirra" && jefe.vivo && !jefe.sinAtaques && pasoArena(c, dt);
     if (especial && jefe.accion?.tipo === "ataque")
       cancelarAccion(ctx, "especial");
-    if (c.farolero && jefe.vivo && !jefe.sinAtaques)
-      actualizarFarolero(c, c.farolero, dt);
-    actualizarJefe(ctx, dt, especial || Boolean(c.farolero));
+    actualizarJefe(ctx, dt, especial);
   }
 
   // Caídas.
@@ -453,12 +434,12 @@ function limpiarEmpujes(c) {
   }
 }
 
-/** Retira los avisos, el escudo y el barril temporal al terminar la pelea. El terreno destruido no reaparece.
+/** Retira los avisos, el escudo y el pilar temporal al terminar la pelea. El terreno destruido no reaparece.
  * @param {Combate} c */
 function cerrarArena(c) {
-  const temporal = c.arenaMirra.barril;
+  const temporal = c.arenaMirra.pilar;
   if (temporal) c.w.pillars = c.w.pillars.filter((p) => p !== temporal);
-  c.arenaMirra = crearArenaMirra(); // no quedan charcos, luz ni explosiones junto a la lápida
+  c.arenaMirra = crearArenaMirra(); // no quedan huecos, luz ni explosiones junto a la lápida
   c.ritos = crearRitos();
   c.avisoRito = "";
 }
@@ -678,33 +659,6 @@ export function snapshotCombate(c) {
       proyectiles: c.proyectiles.usados,
       fallos: c.zonas.fallos + c.proyectiles.fallos,
     },
-    farolero: c.farolero
-      ? {
-          ...c.farolero,
-          marcas: c.farolero.marcas.map((marca) => ({ ...marca })),
-        }
-      : null,
-    arenaMirra:
-      c.id === "mirra"
-        ? {
-            acido: c.arenaMirra.acido
-              ? {
-                  ...c.arenaMirra.acido,
-                  origen: { ...c.arenaMirra.acido.origen },
-                  tiro: { ...c.arenaMirra.acido.tiro },
-                }
-              : null,
-            barril: c.arenaMirra.barril && { ...c.arenaMirra.barril },
-            charcos: c.arenaMirra.charcos.map((p) => ({ ...p })),
-            mecha: c.arenaMirra.mecha,
-            mechaTotal: c.arenaMirra.mechaTotal,
-            resultadoAcido: c.arenaMirra.resultadoAcido && {
-              ...c.arenaMirra.resultadoAcido,
-            },
-            explosion: c.arenaMirra.explosion && { ...c.arenaMirra.explosion },
-            luz: c.arenaMirra.luz && { ...c.arenaMirra.luz },
-          }
-        : null,
     pilares: c.w.pillars.map((P) => P.id),
     stats: {
       ...c.stats,

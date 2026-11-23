@@ -23,7 +23,7 @@ Playwright solo se usa para la prueba en navegador. Prettier comprueba el format
 
 La portada carga `src/atados/main.js`. La dirección antigua `pista.html` redirige a la portada. La pista solo se usa en las pruebas.
 
-`main.js` une la página (menú, modos Solo y Dos jugadores, pausa y resultados) con la partida. El lobby y el pasillo comparten un mundo. Al cruzar el arco se prepara la pradera de Mirra y se transfieren los puntos de vida de cada jugador. Tras la victoria, el botón «Continuar al carro de completos» abre el primer tramo del siguiente pasillo. Desde el carro se puede entrar al combate del Farolero con los puntos de vida y las compras de la pareja. El HUD sigue al mundo activo. El audio y la entrada duran toda la sesión.
+`main.js` une la página (menú, modos Solo y Dos jugadores, pausa y resultados) con la partida. El lobby y el pasillo comparten un mundo. Al cruzar el arco se prepara la pradera de Mirra y se transfieren los puntos de vida de cada jugador. Tras la victoria, el botón «Continuar al carro de completos» abre el primer tramo del siguiente pasillo. El HUD sigue al mundo activo. El audio y la entrada duran toda la sesión.
 
 | Carpeta | Qué hay |
 |---|---|
@@ -36,7 +36,7 @@ La portada carga `src/atados/main.js`. La dirección antigua `pista.html` rediri
 
 La tienda pertenece a la partida. El evento de victoria concede la recompensa de Mirra. Cerca de la ventanilla, P abre la carta de Dani y pausa la simulación. Las compras se comparten entre los dos jugadores, duran al reintentar y se reinician al volver al menú. Los precios se definen en `CONFIG.tienda.precios`, los efectos en `gameplay/tienda.js` y la presentación en `ui/tienda.js`.
 
-Mirra intercala los seis ataques de sus dos fases con el escupitajo de ácido, la luz divina, el pisotón y los braseros. La rotación y los avisos se coordinan en `gameplay/combate.js`. Las reglas del ácido y de la luz están en `gameplay/arena-mirra.js`. El escudo y los braseros se resuelven en `gameplay/ritos.js`. El Farolero dirige sus tres pruebas desde `gameplay/farolero.js`.
+Mirra intercala los seis ataques de sus dos fases con el orbe del vacío, la luz divina, el pisotón y los braseros. La rotación y los avisos se coordinan en `gameplay/combate.js`. Las reglas del vacío y de la luz están en `gameplay/arena-mirra.js`; el escudo y los braseros, en `gameplay/ritos.js`.
 
 Un jefe nuevo es un bloque de datos en `CONFIG.jefes`: vida, arena, fases y ataques hechos con los bloques de `gameplay/bloques.js` (barrido, zona, proyectiles en arco, carga, zona móvil, tirón). Todo ataque se puede cancelar y libera lo que creó. El muñeco opcional del lobby se gestiona en `gameplay/recorrido.js` y se rearma después de una práctica.
 

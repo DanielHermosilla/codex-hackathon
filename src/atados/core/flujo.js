@@ -75,10 +75,9 @@ export function crearPartida(cfg, opciones) {
     solo = false,
     dificil = false,
     seed = 1,
-    jefe: primerJefe = cfg.recorrido.pasillo.jefe,
+    jefe = cfg.recorrido.pasillo.jefe,
     caida = true,
   } = opciones;
-  let jefe = primerJefe; // El puesto conecta el primer combate con el jefe final.
   const F = cfg.recorrido.flujo;
   // El juego del recorrido trae su propio bucle, pero la partida no lo usa: simula con `paso` y su bucle.
   const juegoRecorrido = crearJuegoRecorrido(cfg, {
@@ -300,19 +299,11 @@ export function crearPartida(cfg, opciones) {
     reintentarJefe,
     /** Abre el pasillo de la tienda tras ganar. Un segundo clic no vuelve a crear la sala. */
     entrarPuesto() {
-      if (estado !== "victoria" || !juegoJefe || jefe === "farolero")
-        return false;
+      if (estado !== "victoria" || !juegoJefe) return false;
       abrirPasilloPuesto(juegoRecorrido.recorrido, juegoJefe.world);
       juegoJefe = null; // el HUD deja de leer el combate y se liberan sus recursos
       cambiar("puesto");
       emitir("zona_entra", { zona: "pasillo" }); // cambia la música de combate por el ambiente del pasillo
-      return true;
-    },
-    /** Conserva la salud y las compras al pasar del carro a la arena final. */
-    entrarFarolero() {
-      if (estado !== "puesto") return false;
-      jefe = "farolero";
-      entrarJefe();
       return true;
     },
     /** Juego del recorrido (sigue existiendo durante el jefe; deja de simular al entrar). */

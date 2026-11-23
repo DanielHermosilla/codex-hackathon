@@ -890,24 +890,24 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
   let siega = 0,
     siegaObj = 0; // 0 = intacto, 1 = franjas segadas
   /** @type {{x:number,z:number,r:number}[]} */
-  let charcos = [];
-  let habiaCharcos = false;
-  // Solo las matas que cruzan el borde del ácido necesitan cambiar su matriz.
-  const bajoAcido = new Uint8Array(ND);
-  function colocarDentro(soloCambiosDeAcido = false) {
+  let huecos = [];
+  let habiaHuecos = false;
+  // Solo las matas que cruzan el borde del vacío necesitan cambiar su matriz.
+  const bajoVacio = new Uint8Array(ND);
+  function colocarDentro(soloCambiosDeVacio = false) {
     let cambiado = false;
     for (let i = 0; i < ND; i++) {
       const x = dPos[i * 4],
         z = dPos[i * 4 + 1];
       let oculta = 0;
-      for (const p of charcos) {
+      for (const p of huecos) {
         if ((x - p.x) ** 2 + (z - p.z) ** 2 < p.r * p.r) {
           oculta = 1;
           break;
         }
       }
-      if (soloCambiosDeAcido && bajoAcido[i] === oculta) continue;
-      bajoAcido[i] = oculta;
+      if (soloCambiosDeVacio && bajoVacio[i] === oculta) continue;
+      bajoVacio[i] = oculta;
       cambiado = true;
       const banda =
         (((x * dirX + z * dirZ) % F.ancho) + F.ancho) % F.ancho < F.segado;
@@ -922,7 +922,7 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
         (hash(i, 7) - 0.5) * 0.4,
       );
       d.scale.set(h * 1.5 + 0.12, h, h * 1.5 + 0.12);
-      // El ácido consume el trigo y lo descubre al evaporarse.
+      // Cuando se abre un pozo, desaparece también el trigo que crecía encima.
       if (oculta) d.scale.setScalar(0);
       d.updateMatrix();
       dentro.setMatrixAt(i, d.matrix);
@@ -941,9 +941,9 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
    */
   function sync(w, c, dt, tiempo, vfx) {
     uViento.value = tiempo * T.viento.velocidad;
-    charcos = c.arenaMirra?.charcos ?? [];
-    if (charcos.length || habiaCharcos) colocarDentro(true);
-    habiaCharcos = charcos.length > 0;
+    huecos = c.arenaMirra?.huecos ?? [];
+    if (huecos.length || habiaHuecos) colocarDentro(true);
+    habiaHuecos = huecos.length > 0;
     molinoAspas.rotation.z = tiempo * 0.25;
     nubes.rotation.y = tiempo * 0.004; // rad/s: el mar de nubes se desliza casi quieto
     // Fase 2 (jefe.fase interna ≥ 1): siega en franjas durante la transición.

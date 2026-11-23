@@ -236,12 +236,7 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
     } else {
       muerteT = 0;
       raiz.visible = true;
-      if (c.arenaMirra?.acido) {
-        // El mismo clip que hincha el abdomen abre las mandíbulas justo al soltar la gota.
-        const acido = c.arenaMirra.acido;
-        const k = clamp01(acido.t / acido.duracion);
-        poner("grano", acido.etapa === "punteria" ? k : 1 + 0.65 * k);
-      } else if (!a) {
+      if (!a) {
         poner("idle", reloj % (acciones.idle?.dur ?? 2));
         poner("camina", fasePaso);
         objetivo.camina = clamp01((pasoVista - 0.04) / 0.5);

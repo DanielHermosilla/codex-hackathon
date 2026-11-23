@@ -178,8 +178,6 @@ export {};
 
 /** @typedef {{ tipo: string, t: number, [k: string]: any }} Evento */
 
-/** @typedef {ReturnType<typeof import("./farolero.js").crearFarolero>} DesafioFarolero */
-
 /**
  * Contexto que reciben jefe.js y los bloques (lo arma combate.js).
  * @typedef {object} Ctx
@@ -222,7 +220,6 @@ export {};
  * @property {string} avisoRito
  * @property {number} finAviso
  * @property {number} tPelea
- * @property {DesafioFarolero | null} farolero
  * @property {{ t: number, T: number, saltable: boolean }} presentacion
  * @property {Evento[]} eventos
  * @property {{ clave: string, t: number } | null} frase
