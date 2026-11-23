@@ -138,12 +138,11 @@ export async function crearRenderRecorrido({
   const camara = crearCamara({ cfg, reducir, perfil: RC.camara });
   const camera = camara.camera;
   const templo = puesto ? null : crearTemplo({ scene, cfg, keep, alturaSuelo });
-  const salida = puesto ? crearSalidaTrigal({ scene, cfg, keep }) : null;
   // La carta y su aviso usan la posición del furgón que se ve en esta sala.
   const carro = puesto ? cfg.tienda.carro : cfg.tienda.carroPractica;
   // El muelle ya trae su furgón. En la práctica la ventanilla mira al centro del claro.
-  const furgonPractica = puesto
-    ? null
+  const furgon = puesto
+    ? crearSalidaTrigal({ scene, cfg, keep })
     : crearPuesto({
         scene,
         cfg,
@@ -344,6 +343,7 @@ export async function crearRenderRecorrido({
     cadena.sync(w, dtAnim);
     enemigos?.sync(r.enemigos, alturaSuelo, dtAnim, tiempo, fx);
     muneco?.sync(r.muneco, alturaSuelo, dtAnim, tiempo);
+    furgon.sync(dtAnim, w.players, !reducir()); // La carta y el saludo comparten el alcance.
     for (const e of exts) e.sync?.(w, dt);
 
     // Cámara: encuadra a la pareja (y lo que pidan los extras) sobre el suelo bajo ella.
@@ -442,8 +442,7 @@ export async function crearRenderRecorrido({
     dispose() {
       for (const e of exts) e.dispose?.();
       templo?.dispose();
-      salida?.dispose();
-      furgonPractica?.dispose();
+      furgon.dispose();
       personajes.dispose();
       cadena.dispose();
       enemigos?.dispose();

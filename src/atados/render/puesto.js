@@ -1,5 +1,7 @@
 // Furgón de completos del trigal. Las piezas se montan una sola vez al crear la sala.
 import * as THREE from "three";
+import { juntoAlCarro } from "../gameplay/tienda.js";
+import { crearVendedor } from "./vendedor.js";
 
 /** @param {{scene: THREE.Scene, cfg: typeof import("../core/config.js").CONFIG, keep: <T>(o: T) => T, posicion: {x:number, z:number}, mirarA?: number[]}} opciones */
 export function crearPuesto({
@@ -45,13 +47,21 @@ export function crearPuesto({
   }
   // Carrocería bicolor, cabina corta a la izquierda y ventanilla de atención.
   pieza(caja, verde, 0, 0.72, 0, 3.1, 0.85, 1.2);
-  pieza(caja, crema, 0.35, 1.48, 0, 2.4, 0.98, 1.2);
+  // Abre la ventanilla: el fondo oscuro y los marcos reemplazan la pared maciza.
+  pieza(caja, crema, 0.35, 1.48, -0.51, 2.4, 0.98, 0.18);
+  for (const x of [-0.7375, 1.4375])
+    pieza(caja, crema, x, 1.48, 0.09, 0.225, 0.98, 1.02);
+  pieza(caja, crema, 0.35, 1.865, 0.06, 2.4, 0.21, 1.08);
   pieza(caja, vidrio, -1.17, 1.35, 0, 0.66, 0.54, 1.1);
   pieza(caja, crema, -1.17, 1.65, 0, 0.76, 0.1, 1.2);
-  pieza(caja, oscuro, 0.35, 1.47, 0.61, 1.95, 0.62, 0.04);
+  pieza(caja, oscuro, 0.35, 1.47, -0.39, 1.95, 0.62, 0.04);
   pieza(caja, crema, 0.35, 1.14, 0.75, 2.18, 0.09, 0.48);
-  // Un toldo inclinado proyecta sombra sobre el mesón.
-  pieza(caja, verde, 0.35, 1.92, 0.81, 2.5, 0.12, 0.64).rotation.x = 0.14;
+  // El toldo recogido despeja las orejas y la cara desde la cámara alta de AtaDos.
+  pieza(caja, verde, 0.35, 1.92, 0.52, 2.5, 0.12, 0.28).rotation.x = 0.14;
+  const vendedor = crearVendedor(keep);
+  vendedor.cuerpo.position.set(0.4, 1.15, 0.66); // Detrás del canto del mesón.
+  vendedor.cuerpo.rotation.y = 0.12; // Giro en radianes hacia donde se acercan los jugadores.
+  carro.add(vendedor.cuerpo);
   for (const x of [-1.02, 1.02]) {
     for (const z of [-0.59, 0.59]) {
       pieza(rueda, oscuro, x, 0.36, z, 0.68, 0.68, 0.2);
@@ -76,6 +86,14 @@ export function crearPuesto({
   scene.add(carro);
 
   return {
+    /** @param {number} dt @param {Parameters<typeof juntoAlCarro>[0]} jugadores @param {boolean} animar */
+    sync(dt, jugadores, animar) {
+      vendedor.sync(
+        dt,
+        juntoAlCarro(jugadores, posicion, cfg.tienda.alcance),
+        animar,
+      );
+    },
     /** @param {number[]} puntos */
     foco(puntos) {
       puntos.push(carro.position.x, carro.position.z, 2);
