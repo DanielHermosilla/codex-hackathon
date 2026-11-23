@@ -18,7 +18,7 @@ Ficha de las señales físicas de cada ataque y rito de Mirra. Complementa [la f
 |---|---|
 | `src/atados/render/ataques-mirra.js` | Siega, Siega doble, Grano, Hambre, Enjambre y Banquete. Ajustes en `AJUSTE_ATAQUES`. |
 | `src/atados/render/ritos-mirra.js` | Señales de luz divina y efectos al destruir coberturas. |
-| `src/atados/render/ritos.js` | Latido de la cuenta y grietas del pisotón; final de cada descarga de los braseros. |
+| `src/atados/render/ritos.js` | Gota y círculo de refugio, latido de la cuenta y grietas del pisotón, y final de cada descarga de los braseros. |
 | `src/atados/render/slice.js` | Crea los dos módulos (no con el muñeco) y los sincroniza después de `mirra.sync`. |
 
 ## Ataques (carga → lanzamiento → impacto / ventana)
@@ -37,6 +37,7 @@ Ficha de las señales físicas de cada ataque y rito de Mirra. Complementa [la f
 | Rito | Señal |
 |---|---|
 | **Barril de ácido** | Si el barril explota, las coberturas que destruye revientan en paja y polvo. También al devorar pilares en la transición. |
+| **Gota** | Una gota turquesa cae sobre un círculo fijo de 2,6 m de radio. El aro interior se cierra en los 3 s de aviso. Al tocar el suelo, una onda recorre el refugio y cada personaje que quedó fuera pierde 300 PV. |
 | **Luz divina** | La esquirla del pecho se enciende y suelta motas hacia el sol. Junto a la pareja, del lado del sol, tres cuñas doradas de 1,8 m apuntan hacia donde viaja la luz y avanzan despacio (quietas con movimiento reducido). Se leen aunque el sol quede fuera del encuadre. En el impacto, la esquirla destella (menos sin flashes). |
 | **Pisotón** | La cuenta se aviva en cada segundo entero (3, 2, 1). Al caer, seis grietas salen de Mirra con la onda. |
 | **Braseros** | Al terminar cada descarga: se expande si golpea, se encoge si el escudo del color correcto la absorbe y suelta un soplo corto si una cobertura la corta antes. |
@@ -50,7 +51,7 @@ npm run build
 npm run test:browser -- tests/browser/mirra-visual.spec.js
 ```
 
-La prueba coloca a la pareja en la misma posición, fija la semilla y guarda un PNG del aviso y otro del golpe para cada ataque en `test-results/`. Siega doble se captura en la segunda pasada. Para los cuatro ritos, ejecuta `npm run test:browser -- tests/browser/atados.spec.js -g "Mirra repite"`.
+La prueba coloca a la pareja en la misma posición, fija la semilla y guarda un PNG del aviso y otro del golpe para cada ataque en `test-results/`. Siega doble se captura en la segunda pasada. Para los ritos, ejecuta `npm run test:browser -- tests/browser/atados.spec.js -g "gota en la segunda vuelta"`.
 
 ## Guía de iteración para Codex y Claude
 

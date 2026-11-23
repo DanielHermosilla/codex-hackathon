@@ -534,14 +534,11 @@ describe("Hambre contra la cadena tensa (D-148)", () => {
 });
 
 describe("escala ×10 de vida y daño (D-202)", () => {
-  it("los números de balance quedan ×10 y la proporción cadena / vida de Mirra no cambia", () => {
+  it("Mirra parte con el 60 % de sus PV anteriores y conserva la escala del daño", () => {
     expect(CONFIG.player.maxHp).toBe(1000);
-    expect(CONFIG.jefes.mirra.vida).toBe(12000);
+    expect(nuevo().jefe.hp).toBe(7200);
+    expect(nuevo().jefe.hpMax).toBe(7200);
     expect(CONFIG.damage.chain.scale).toBe(70);
-    expect(CONFIG.damage.chain.scale / CONFIG.jefes.mirra.vida).toBeCloseTo(
-      7 / 1200,
-      12,
-    );
     // El daño de cada ataque es ≤ 30 % de la vida de un jugador, igual que antes (30 de 100).
     for (const a of Object.values(CONFIG.jefes.mirra.ataques))
       for (const b of a.bloques) {
@@ -550,7 +547,7 @@ describe("escala ×10 de vida y daño (D-202)", () => {
       }
   });
 
-  it("una pasada tensa quita la misma fracción de la vida de Mirra que con los números de antes (÷10)", () => {
+  it("una pasada tensa mantiene su daño y le quita una porción mayor de la vida a Mirra", () => {
     const fraccion = (cfg) => {
       const c = nuevo({}, cfg);
       saltarPresentacion(c);
@@ -566,10 +563,10 @@ describe("escala ×10 de vida y daño (D-202)", () => {
     const antes = cfgBase();
     antes.player.maxHp /= 10;
     antes.damage.chain.scale /= 10;
-    antes.jefes.mirra.vida /= 10;
+    antes.jefes.mirra.vida = 1200; // Vida original antes del ×10 y de la reducción al 60 %.
     const ahora = fraccion(cfgBase());
     expect(ahora).toBeGreaterThan(0.001);
-    expect(ahora).toBeCloseTo(fraccion(antes), 6);
+    expect(ahora * 0.6).toBeCloseTo(fraccion(antes), 6);
   });
 });
 

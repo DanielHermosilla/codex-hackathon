@@ -36,7 +36,7 @@ La portada carga `src/atados/main.js`. La dirección antigua `pista.html` rediri
 
 La tienda pertenece a la partida. El evento de victoria concede la recompensa de Mirra. Cerca de la ventanilla, P abre la carta de Dani y pausa la simulación. Las compras se comparten entre los dos jugadores, duran al reintentar y se reinician al volver al menú. Los precios se definen en `CONFIG.tienda.precios`, los efectos en `gameplay/tienda.js` y la presentación en `ui/tienda.js`.
 
-Mirra intercala los seis ataques de sus dos fases con el escupitajo de ácido, la luz divina, el pisotón y los braseros. La rotación y los avisos se coordinan en `gameplay/combate.js`. Las reglas del ácido y de la luz están en `gameplay/arena-mirra.js`. El escudo y los braseros se resuelven en `gameplay/ritos.js`. El Farolero dirige sus tres pruebas desde `gameplay/farolero.js`.
+Mirra intercala los seis ataques de sus dos fases con la luz divina, el pisotón y los braseros. El escupitajo de ácido y la gota alternan al comienzo de cada vuelta de ritos. La rotación y los avisos se coordinan en `gameplay/combate.js`. Las reglas del ácido y de la luz están en `gameplay/arena-mirra.js`. La gota, el pisotón y los braseros se resuelven en `gameplay/ritos.js`. El Farolero dirige sus tres pruebas desde `gameplay/farolero.js`.
 
 Un jefe nuevo es un bloque de datos en `CONFIG.jefes`: vida, arena, fases y ataques hechos con los bloques de `gameplay/bloques.js` (barrido, zona, proyectiles en arco, carga, zona móvil, tirón). Todo ataque se puede cancelar y libera lo que creó. El muñeco opcional del lobby se gestiona en `gameplay/recorrido.js` y se rearma después de una práctica.
 

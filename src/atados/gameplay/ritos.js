@@ -1,4 +1,4 @@
-// Dos contramedidas cooperativas. El reloj es el paso fijo del combate.
+// Refugios y contramedidas cooperativas. El reloj es el paso fijo del combate.
 /** @typedef {import('./tipos.js').Mundo} Mundo */
 /** @typedef {import('./tipos.js').Pilar} Circulo */
 /** @typedef {ReturnType<typeof crearRitos>} Ritos */
@@ -6,6 +6,7 @@
 /** @typedef {{ x: number, z: number, activo: boolean, resolucion: ResolucionTiro | null }} Tiro */
 
 export const PISOTON = { aviso: 3, radio: 2, separacion: 2.6 };
+export const GOTA = { aviso: 3, radio: 2.6 }; // s hasta caer y m de radio seguro.
 export const BRASEROS = {
   colores: [0xff513d, 0x4dafff, 0xffc641],
   viaje: 4,
@@ -35,15 +36,14 @@ export function crearRitos() {
 }
 
 // Busca suelo libre cerca de la pareja. El brasero exige entrar tras aparecer.
-/** @param {Mundo} w @param {Circulo[]} huecos @param {boolean} esBrasero */
-function marca(w, huecos, esBrasero) {
+/** @param {Mundo} w @param {Circulo[]} huecos @param {number} radio @param {boolean} [esBrasero] */
+function marca(w, huecos, radio, esBrasero = false) {
   const [a, b] = w.players;
   const superviviente = a.alive ? a : b;
   const centro =
     !esBrasero && (!a.alive || !b.alive)
       ? superviviente
       : { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
-  const radio = esBrasero ? BRASEROS.radio : PISOTON.radio;
   const solidos = [...w.pillars, w.dummy, ...huecos];
   for (let distancia = 0; distancia < 2 * w.arenaRadius; distancia += 1) {
     for (let paso = 0; paso < 16; paso++) {
@@ -70,16 +70,23 @@ function marca(w, huecos, esBrasero) {
 
 /** @param {Ritos} r @param {Mundo} w @param {Circulo[]} [huecos] */
 export function iniciarPisoton(r, w, huecos = []) {
-  const zona = marca(w, huecos, false);
+  const zona = marca(w, huecos, PISOTON.radio);
   if (!zona) return;
   Object.assign(r, zona, { tipo: "pisoton", tiempo: PISOTON.aviso });
+}
+
+/** @param {Ritos} r @param {Mundo} w @param {Circulo[]} [huecos] */
+export function iniciarGota(r, w, huecos = []) {
+  const zona = marca(w, huecos, GOTA.radio); // Comparte la búsqueda de suelo seguro del pisotón.
+  if (!zona) return;
+  Object.assign(r, zona, { tipo: "gota", tiempo: GOTA.aviso }); // La zona queda fija hasta el impacto.
 }
 
 /** @param {Ritos} r @param {Mundo} w @param {Circulo[]} [huecos] */
 export function iniciarBraseros(r, w, huecos = []) {
   const ocupados = [...huecos];
   for (const fuego of r.braseros) {
-    const sitio = marca(w, ocupados, true);
+    const sitio = marca(w, ocupados, BRASEROS.radio, true);
     if (!sitio) return;
     Object.assign(fuego, sitio);
     ocupados.push({ ...sitio, r: BRASEROS.radio + 0.75 });
@@ -150,6 +157,11 @@ function primerBrasero(w, fuegos) {
   return primero;
 }
 
+/** Comprueba los pies del personaje, incluido el borde visible. @param {Ritos} r @param {{x:number,z:number}} p @param {number} radio */
+function dentroDeMarca(r, p, radio) {
+  return Math.hypot(p.x - r.x, p.z - r.z) <= radio;
+}
+
 /** @param {Ritos} r @param {Mundo} w @param {number} dt @param {(indice:number,dano:number)=>void} golpear */
 export function avanzarRitos(r, w, dt, golpear) {
   r.escudo.restante = Math.max(0, r.escudo.restante - dt);
@@ -164,13 +176,20 @@ export function avanzarRitos(r, w, dt, golpear) {
       (!a.alive ||
         !b.alive ||
         Math.hypot(a.x - b.x, a.z - b.z) <= PISOTON.separacion) &&
-      w.players.every(
-        (p) => !p.alive || Math.hypot(p.x - r.x, p.z - r.z) <= PISOTON.radio,
-      );
+      w.players.every((p) => !p.alive || dentroDeMarca(r, p, PISOTON.radio));
     if (!juntos)
       w.players.forEach((p, i) => {
         if (p.alive) golpear(i, w.cfg.jefes.mirra.ritual.dano.pisoton);
       });
+    r.tipo = "";
+    return;
+  }
+  if (r.tipo === "gota") {
+    if (r.tiempo > 1e-8) return; // El golpe se decide una sola vez, al tocar el suelo.
+    const dano = w.cfg.jefes.mirra.ritual.dano.gota;
+    w.players.forEach((p, i) => {
+      if (p.alive && !dentroDeMarca(r, p, GOTA.radio)) golpear(i, dano);
+    });
     r.tipo = "";
     return;
   }

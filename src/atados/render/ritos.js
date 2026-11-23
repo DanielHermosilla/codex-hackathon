@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { BRASEROS, PISOTON } from "../gameplay/ritos.js";
+import { BRASEROS, GOTA, PISOTON } from "../gameplay/ritos.js";
 
 /** @typedef {import('../gameplay/ritos.js').Ritos} Ritos */
 /** @typedef {import('../gameplay/ritos.js').ResolucionTiro} ResolucionTiro */
@@ -71,6 +71,49 @@ export function crearVistaRitos(scene, keep, brillos) {
     const huella = anillo(0.35, marfil, marca);
     huella.position.x = lado * 0.46;
   }
+  // El borde azul coincide con el refugio; el aro interior se cierra al caer la gota.
+  const refugioGota = new THREE.Group();
+  raiz.add(refugioGota);
+  anillo(GOTA.radio, pintura(0x93fff2), refugioGota);
+  const sueloGota = keep(
+    new THREE.MeshBasicMaterial({
+      color: 0x137c96,
+      opacity: 0.28,
+      transparent: true,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+  );
+  const discoGota = malla(
+    new THREE.CircleGeometry(GOTA.radio, 48).rotateX(-Math.PI / 2),
+    sueloGota,
+    refugioGota,
+  );
+  discoGota.position.y = 0.085; // m, justo debajo del borde.
+  const cuentaGota = brillos.aro(refugioGota, 0x66efee);
+  cuentaGota.malla.position.y = 0.1;
+  const gota = malla(
+    new THREE.LatheGeometry(
+      // Perfil radio/altura en metros: base redonda y punta vertical.
+      [
+        [0, 0],
+        [0.47, 0.12],
+        [0.7, 0.43],
+        [0.65, 0.77],
+        [0.43, 1.05],
+        [0.18, 1.48],
+        [0, 1.83],
+      ].map(([radio, altura]) => new THREE.Vector2(radio, altura)),
+      16,
+    ),
+    keep(
+      new THREE.MeshStandardMaterial({ color: 0x3ce1df, emissive: 0x12696e }),
+    ),
+    refugioGota,
+  );
+  const ondaGota = brillos.aro(raiz, 0x8bfff3);
+  let golpeGota = 1; // Progreso del destello de llegada (0..1).
+  let gotaPrevia = false;
   const hierro = keep(
     new THREE.MeshStandardMaterial({
       color: 0x423434,
@@ -172,12 +215,23 @@ export function crearVistaRitos(scene, keep, brillos) {
     }
     pisotonPrevio = pisoton;
     golpe = r ? Math.min(1, golpe + dt / 0.68) : 1;
+    const caeGota = r?.tipo === "gota";
+    if (gotaPrevia && !caeGota && r && r.tiempo <= 1e-8) {
+      golpeGota = 0;
+      ondaGota.malla.position.set(r.x, 0.13, r.z); // La onda sale del círculo fijo.
+    }
+    gotaPrevia = caeGota;
+    golpeGota = r ? Math.min(1, golpeGota + dt / 0.45) : 1;
+    refugioGota.visible = caeGota;
+    ondaGota.malla.visible = golpeGota < 1;
+    ondaGota.malla.scale.setScalar(GOTA.radio * (0.15 + 0.85 * golpeGota));
+    ondaGota.u.opacidad.value = (flashes ? 0.9 : 0.55) * (1 - golpeGota);
     if (!r) {
       // Fuera de la pelea se ocultan los tiros del combate anterior.
       for (const { tiro } of tiros) tiro.visible = false;
     }
     const estallando = avanzarEstallidos(r, dt, flashes);
-    raiz.visible = Boolean(r?.tipo) || golpe < 1 || estallando;
+    raiz.visible = Boolean(r?.tipo) || golpe < 1 || golpeGota < 1 || estallando;
     luz.intensity = 0;
     onda.malla.visible = golpe < 1;
     onda.malla.scale.setScalar(0.5 + 7 * (1 - (1 - golpe) ** 2));
@@ -189,6 +243,13 @@ export function crearVistaRitos(scene, keep, brillos) {
     for (const grieta of grietas.children)
       grieta.scale.x = 0.6 + 3.4 * Math.min(1, golpe * 4);
     if (!r) return;
+    if (caeGota) {
+      refugioGota.position.set(r.x, 0, r.z);
+      const restante = r.tiempo / GOTA.aviso; // 1 al aparecer, 0 al llegar al suelo.
+      gota.position.y = 0.11 + 4.5 * restante; // m, visible con el encuadre de la pareja.
+      cuentaGota.malla.scale.setScalar(GOTA.radio * Math.max(0.06, restante));
+      cuentaGota.u.opacidad.value = 0.9;
+    }
     marca.visible = pisoton;
     if (pisoton) {
       marca.position.set(r.x, 0, r.z);
