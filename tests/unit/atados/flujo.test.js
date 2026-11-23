@@ -217,24 +217,28 @@ describe("revisión del flujo", () => {
     expect(p.estado).toBe("victoria");
   });
 
-  it("el arco y su atajo esperan la llegada del carro antes de salir sin comprar", () => {
+  it("la compra activa el epílogo al cabo de tres segundos de juego", () => {
     const { p, f, correr, vistos } = nueva({ caida: false });
     p.saltarAlJefe();
-    expect(p.entrarPuesto()).toBe(false);
+    p.programarEpilogo(); // antes de vencer, no abre el cierre
+    expect(p.epilogoProgramado).toBe(false);
     p.world.players[0].hp = 380;
-    p.colocarJugadores([-1, -18.5], [1, -18.5]); // incluso si ya caminaban hacia el arco al vencer
+    p.colocarJugadores([-1, -18.5], [1, -18.5]);
     for (const entrada of f.st.inputs) entrada.mz = -1;
     ponerVidaJefe(p.combate, 0);
-    correr(CONFIG.tienda.llegadaCarro - DT);
+    correr(CONFIG.tienda.llegadaCarro + 4);
+    expect(p.estado).toBe("victoria"); // el arco y la espera no sustituyen la compra
+    expect(p.entrarFarolero()).toBe(false);
+    p.programarEpilogo();
+    expect(p.epilogoProgramado).toBe(true);
+    correr(2);
+    p.programarEpilogo(); // no reinicia la cuenta
+    correr(CONFIG.ui.epilogo.esperaCompra - 2 - DT * 1.5);
     expect(p.estado).toBe("victoria");
-    expect(p.salidaVictoriaLista).toBe(false);
-    expect(p.entrarPuesto()).toBe(false);
-    for (const entrada of f.st.inputs) entrada.mz = 0; // pueden quedarse en la arena todo lo que quieran
-    correr(3 * DT);
-    expect(p.salidaVictoriaLista).toBe(true);
-    expect(p.entrarPuesto()).toBe(true);
-    expect(p.world.players[0].hp).toBe(380);
-    expect(p.entrarPuesto()).toBe(false);
+    correr(DT);
+    expect(p.estado).toBe("entrada-epilogo");
+    correr(1);
+    expect(p.estado).toBe("entrada-epilogo"); // espera a que el render cargue
     expect(p.entrarFarolero()).toBe(true);
     expect(p.estado).toBe("epilogo");
     expect(p.tiempoEpilogo).toBe(0);
@@ -357,16 +361,6 @@ describe("revisión del flujo", () => {
     p.update(DT);
     expect(p.estado).toBe("victoria");
     fuenteEntrada.st.inputs[1].anchor = false;
-    // En el arco, quedarse quieto mantiene la lápida; avanzar conduce al muelle.
-    const cruzar = () => {
-      p.colocarJugadores([-1, -17.5], [1, -17.5]);
-      for (const entrada of fuenteEntrada.st.inputs) entrada.mz = 0;
-      p.update(DT);
-      expect(p.estado).toBe("victoria");
-      for (const entrada of fuenteEntrada.st.inputs) entrada.mz = -1;
-      for (let i = 0; i < 60 && p.estado === "victoria"; i++) p.update(DT);
-      expect(p.estado).toBe("puesto");
-    };
     // El carro atiende en la arena antes de que la pareja decida salir por el arco.
     for (const entrada of fuenteEntrada.st.inputs) entrada.mz = 0;
     for (let i = 0; i < Math.ceil(CONFIG.tienda.llegadaCarro / DT); i++)
@@ -381,7 +375,7 @@ describe("revisión del flujo", () => {
     ).toBe(true);
     expect(tienda.comprar("italiano", p.world.players)).toBe(true);
     expect(p.world.players[1].hp).toBe(630);
-    cruzar();
+    expect(p.entrarPuesto()).toBe(true); // el flujo del muelle sigue disponible por separado
     expect(cobrarVictorias()).toBe(0); // cruzar después de pagar no repite el premio
     expect(p.recorrido.estado.fase).toBe("puesto");
     expect(p.combate).toBe(null);
@@ -412,7 +406,7 @@ describe("revisión del flujo", () => {
     for (let i = 0; i < Math.ceil(CONFIG.tienda.llegadaCarro / DT); i++)
       p.update(DT);
     expect(tienda.comprar("mote", p.world.players)).toBe(true);
-    cruzar();
+    expect(p.entrarPuesto()).toBe(true);
     expect(tienda.saldo).toBe(0);
   });
 

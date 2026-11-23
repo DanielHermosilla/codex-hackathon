@@ -1,8 +1,8 @@
 // Flujo de la partida completa: máquina de estados pura, sin three.js ni DOM, sobre el paso fijo.
 //
 //   caida ──(aterrizan, D-205)──▶ recorrido ──(cruzan el arco, D-211)──▶ arco
-//     arco ──(fundido + silencio y la pradera ya cargó)──▶ jefe ──(Mirra cae)──▶ victoria ──(arco norte)──▶ puesto
-//     puesto (muelle) ──(fin del muelle)──▶ destino; puesto ──(sala del Farolero montada)──▶ epilogo ──(fundido)──▶ fin-demo
+//     arco ──(fundido, silencio y carga)──▶ jefe ──(Mirra cae)──▶ victoria ──(compra + 3 s)──▶ entrada-epilogo
+//     entrada-epilogo ──(sala montada)──▶ epilogo ──(fundido)──▶ fin-demo
 //   recorrido: caer los dos reinicia el pasillo dentro del recorrido (D-168), sin salir de este estado.
 //   jefe: si ambos caen, la pantalla de derrota permite volver al inicio.
 //
@@ -48,7 +48,7 @@ import { estacionarCarro } from "../gameplay/tienda.js";
 /** @typedef {import('./juego.js').Muestreo} Muestreo */
 /** @typedef {import('./input.js').Entrada} Entrada */
 /** @typedef {import('../gameplay/tipos.js').Evento} Evento */
-/** @typedef {"caida" | "recorrido" | "arco" | "jefe" | "victoria" | "puesto" | "destino" | "epilogo" | "fin-demo"} EstadoPartida */
+/** @typedef {"caida" | "recorrido" | "arco" | "jefe" | "victoria" | "puesto" | "destino" | "entrada-epilogo" | "epilogo" | "fin-demo"} EstadoPartida */
 /** @typedef {ReturnType<typeof crearJuegoRecorrido>} JuegoRecorrido */
 /** @typedef {ReturnType<typeof crearJuegoJefe>} JuegoJefe */
 
@@ -92,10 +92,13 @@ export function crearPartida(cfg, opciones) {
   });
   /** @type {JuegoJefe | null} */
   let juegoJefe = null;
+  /** @type {JuegoJefe["world"] | null} */
+  let mundoFinal = null; // conserva la salud de la pareja durante la toma
   /** @type {EstadoPartida} */
   let estado = caida ? "caida" : "recorrido";
   let t = 0; // s simulados de la partida
   let tEstado = 0; // s simulados en el estado actual
+  let inicioEpilogo = Infinity; // s desde la victoria en que empieza la carga, una vez hecha la compra
   let jefeCargado = false; // la integración avisó que la pradera ya está montada (sigue montada tras cancelar)
   let silencioAbierto = false; // se emitió `silencio` del umbral y aún no su `silencio:fin`
   /** @type {Evento[]} */
@@ -139,6 +142,7 @@ export function crearPartida(cfg, opciones) {
   function cambiar(nuevo) {
     estado = nuevo;
     tEstado = 0;
+    inicioEpilogo = Infinity;
     emitir("flujo:estado", { estado: nuevo });
   }
 
@@ -201,7 +205,7 @@ export function crearPartida(cfg, opciones) {
    * @param {Entrada[]} ins */
   function cruzarSalida(ins) {
     const salida = cfg.recorrido.salida;
-    if (!juegoJefe || jefe === "farolero") return; // la victoria final conserva su propia lápida
+    if (!juegoJefe || jefe === "mirra" || jefe === "farolero") return;
     const jugadores = juegoJefe.world.players;
     // El compañero puede llegar a un lado del arco. Si se queda atrás, el primero lo espera.
     if (
@@ -222,7 +226,7 @@ export function crearPartida(cfg, opciones) {
       )
     )
       return;
-    entrarPuesto(); // caminar y pulsar el atajo completan la misma transición una sola vez
+    entrarPuesto();
   }
 
   // El arco y el botón dejan ver la caída de monedas y la llegada del carro incluso si se vence junto a la salida.
@@ -261,7 +265,7 @@ export function crearPartida(cfg, opciones) {
    */
   function paso(ins, dt) {
     // El epílogo consume tiempo fijo sin mover el mundo del puesto ni arrancar las pruebas del Farolero.
-    if (estado === "fin-demo") return true;
+    if (estado === "entrada-epilogo" || estado === "fin-demo") return true;
     if (estado === "epilogo") {
       t += dt;
       tEstado += dt;
@@ -288,6 +292,9 @@ export function crearPartida(cfg, opciones) {
       )
         estacionarCarro(juegoJefe.world);
       cruzarSalida(ins);
+      // La carta detiene los pasos de la partida; estos segundos corren con la carta cerrada.
+      if (estado === "victoria" && tEstado >= inicioEpilogo - EPS)
+        cambiar("entrada-epilogo");
     } else if (estado === "puesto") {
       const meta = cfg.recorrido.salida.zFin + 1; // m: último tablón antes del borde físico
       const jugadores = juegoRecorrido.world.players;
@@ -305,6 +312,12 @@ export function crearPartida(cfg, opciones) {
 
   /** Vuelve a la presentación corta de Mirra desde el resultado o el reinicio de depuración. */
   function reintentarJefe() {
+    if (
+      estado === "entrada-epilogo" ||
+      estado === "epilogo" ||
+      estado === "fin-demo"
+    )
+      return;
     if (estado === "puesto" || estado === "destino") {
       // Un desafío repetido desde el puesto usa las mejoras compradas y omite la cinemática.
       juegoJefe = crearJuegoJefe(cfg, {
@@ -327,7 +340,12 @@ export function crearPartida(cfg, opciones) {
    * @param {string[]} acciones
    */
   function aplicarDebug(acciones) {
-    if (estado === "epilogo" || estado === "fin-demo") return; // el plano es una secuencia guiada
+    if (
+      estado === "entrada-epilogo" ||
+      estado === "epilogo" ||
+      estado === "fin-demo"
+    )
+      return;
     for (const a of acciones) {
       if (estado === "puesto" || estado === "destino") {
         if (a === "reset") {
@@ -384,6 +402,18 @@ export function crearPartida(cfg, opciones) {
     eventos,
     reintentarJefe,
     entrarPuesto,
+    /** La página avisa solo cuando la compra es válida. La carta aún puede seguir abierta. */
+    programarEpilogo() {
+      if (
+        jefe === "mirra" &&
+        salidaVictoriaLista() &&
+        inicioEpilogo === Infinity
+      )
+        inicioEpilogo = tEstado + cfg.ui.epilogo.esperaCompra;
+    },
+    get epilogoProgramado() {
+      return inicioEpilogo !== Infinity;
+    },
     /** Al estacionar Bodoque, la pareja puede comprar o marcharse por la salida de la arena. */
     get salidaVictoriaLista() {
       return salidaVictoriaLista();
@@ -395,9 +425,11 @@ export function crearPartida(cfg, opciones) {
       colocarEnRecorrido(juegoRecorrido.recorrido, sael, odo);
       cambiar("puesto");
     },
-    /** La sala debe estar montada antes de iniciar el epílogo desde el muelle. */
+    /** Inicia el reloj de la toma cuando la sala ya está montada. */
     entrarFarolero() {
-      if (estado !== "puesto") return false;
+      if (estado !== "entrada-epilogo" && estado !== "puesto") return false;
+      mundoFinal = juegoJefe?.world ?? juegoRecorrido.world;
+      juegoJefe = null;
       cambiar("epilogo");
       emitir("zona_entra", { zona: "farolero", estado: "presentacion" }); // arranca su música sin combate
       return true;
@@ -423,7 +455,7 @@ export function crearPartida(cfg, opciones) {
     },
     /** Mundo que se simula ahora (leerlo cada cuadro: cambia al reiniciar el pasillo y al entrar al jefe). */
     get world() {
-      return juegoJefe ? juegoJefe.world : juegoRecorrido.world;
+      return juegoJefe?.world ?? mundoFinal ?? juegoRecorrido.world;
     },
     /** Combate en curso, o null antes del jefe. */
     get combate() {

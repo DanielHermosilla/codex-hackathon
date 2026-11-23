@@ -2,7 +2,7 @@
 // Flujo (core/flujo.js, D-204 a D-214):
 //   menú con el lobby detrás → «Jugar» → caída al valle → lobby y pasillo de subida → arco de la cima
 //   → fundido a negro → la pradera se abre en silencio → presentación de Mirra (cinemática solo la 1.ª vez)
-//   → Mirra → Bodoque y su carro → arco norte → muelle → Ondar a pie o epílogo en la sala del Farolero.
+//   → Mirra → Bodoque y su carro → epílogo en la sala del Farolero.
 // El recorrido y el puesto usan render/recorrido.js; la pradera del jefe usa render/slice.js. La del
 // jefe se monta al cruzar el arco (evento `jefe:preparar`) mientras la pantalla funde a negro; al estar lista se
 // avisa a la partida (`jefeListo`). El recorrido se libera al entrar al combate. Audio, entrada y HUD duran toda la
@@ -43,7 +43,7 @@ import {
 import { prepararAjustes } from "./ui/ajustes.js";
 import "./ui.css";
 
-/** @typedef {"menu" | "cargando" | "playing" | "paused" | "result" | "derrota" | "cinematica" | "fin-demo"} Pantalla */
+/** @typedef {"menu" | "error-menu" | "cargando" | "playing" | "paused" | "result" | "derrota" | "cinematica" | "fin-demo"} Pantalla */
 /** @typedef {ReturnType<typeof crearPartida>} Partida */
 /** @typedef {Awaited<ReturnType<typeof crearRenderRecorrido>>} VistaRecorrido */
 /** @typedef {Awaited<ReturnType<typeof crearRenderSlice>>} VistaJefe */
@@ -119,7 +119,7 @@ async function arrancar() {
   let atajoReinicio = true; // un control personalizado tiene prioridad sobre el atajo de combate
   irAlFarolero.setAttribute("aria-label", t("epilogo.entrar"));
   const irAlPuesto = elemento("continuar-puesto");
-  const atajoPuesto = elemento("atajo-puesto"); // permite continuar sin caminar hasta el arco
+  const atajoPuesto = elemento("atajo-puesto"); // salida del ensayo del Farolero
   const letrero = elemento("mural");
   const mural = createMural(letrero); // diálogo del carro de completos junto a la ventanilla
   const announce = elemento("announce");
@@ -209,8 +209,12 @@ async function arrancar() {
   const carta = crearCarta(
     elemento("tienda"),
     () => tienda,
-    (id) =>
-      tiendaAlAlcance() !== null && tienda.comprar(id, partida.world.players),
+    (id) => {
+      const comprada =
+        tiendaAlAlcance() !== null && tienda.comprar(id, partida.world.players);
+      if (comprada) partida.programarEpilogo(); // el reloj sigue quieto hasta cerrar la carta
+      return comprada;
+    },
     () => {
       input.clear();
       aplicarVolumen();
@@ -376,10 +380,10 @@ async function arrancar() {
   /**
    * Monta la pradera del jefe mientras la pantalla funde (evento `jefe:preparar`). Se dibuja con un combate de
    * muestra idéntico al inicial (misma semilla) hasta que empieza el real. Al estar lista, avisa a la partida.
-   * @param {string} jefe @param {boolean} [epilogo] la entrada del carro usa la misma arena sin anillos
+   * @param {string} jefe @param {boolean} [epilogo] la toma monta la arena del Farolero sin anillos
    */
   function prepararJefe(jefe, epilogo = false) {
-    if (vistaJefe) {
+    if (vistaJefe && !epilogo) {
       partida.jefeListo();
       return Promise.resolve();
     }
@@ -395,7 +399,9 @@ async function arrancar() {
   async function montarPradera(jefe, id, epilogo) {
     const solicitante = partida; // la vista lee la partida que la pidió, aunque el montaje termine tarde
     const previo = crearCombate(tienda.cfg, { jefe, solo, dificil, seed });
-    const combateVista = () => solicitante.combate ?? previo;
+    // Mientras carga el epílogo, la partida todavía conserva el combate de Mirra.
+    const combateVista = () =>
+      epilogo ? previo : (solicitante.combate ?? previo);
     const v = await crearRenderSlice({
       renderer,
       cfg: tienda.cfg,
@@ -503,9 +509,15 @@ async function arrancar() {
     }
   }
 
+  function epilogoEnCurso() {
+    return (
+      partida.estado === "entrada-epilogo" || partida.tiempoEpilogo !== null
+    );
+  }
+
   /** Nombre del lugar para los textos del menú y la pausa. */
   const lugar = () =>
-    partida.tiempoEpilogo !== null
+    epilogoEnCurso()
       ? t("jefe.farolero.nombre")
       : partida.estado === "puesto"
         ? t("salida.muelle")
@@ -524,15 +536,19 @@ async function arrancar() {
     input.clear();
     const jugando = siguiente === "playing";
     const enPlano = siguiente === "cinematica";
-    const esEpilogo = partida.tiempoEpilogo !== null;
+    const esEpilogo = epilogoEnCurso();
     fundido.classList.toggle("fundido-epilogo", esEpilogo); // el plano y su cartel funden al mismo negro
     const menu = siguiente === "menu";
+    const errorMenu = siguiente === "error-menu"; // permite volver a solicitar el templo antes de abrir la portada
     carta.ocultarAviso();
     mural.hide();
     if (!jugando) carta.cerrar();
     const esFinal = partida.combate?.id === "farolero";
     irAlPuesto.hidden = siguiente !== "result" || esFinal;
-    atajoPuesto.hidden = !jugando || !partida.salidaVictoriaLista;
+    atajoPuesto.hidden =
+      !jugando ||
+      !partida.salidaVictoriaLista ||
+      partida.combate?.id === "mirra";
     irAlFarolero.hidden = !jugando || !puestoListo();
     farolAjustes.hidden = !esFinal && !(menu && jefeDirecto === "farolero");
     if (siguiente === "result" && !esFinal)
@@ -552,15 +568,26 @@ async function arrancar() {
       partida.estado === "puesto" ? "Reintentar a Mirra" : "Reintentar",
     );
     primary.classList.toggle("gold", siguiente !== "result");
-    volver.classList.toggle("gold", siguiente === "derrota");
+    volver.classList.toggle("gold", siguiente === "derrota" || errorMenu);
     volver.hidden = menu || jugando || enPlano || siguiente === "cargando";
     texto(
       volver,
-      siguiente === "fin-demo" ? t("epilogo.volver") : "Volver al inicio",
+      errorMenu
+        ? t("menu.reintentar")
+        : siguiente === "fin-demo"
+          ? t("epilogo.volver")
+          : "Volver al inicio",
     );
     aplicarVolumen();
     if (jugando || enPlano) {
       canvas.focus({ preventScroll: true });
+      return;
+    }
+    if (errorMenu) {
+      texto(caption, t("mundo.templo"));
+      texto(title, t("menu.cargaFallida"));
+      texto(intro, "");
+      volver.focus({ preventScroll: true }); // Enter confirma el reintento
       return;
     }
     if (siguiente === "fin-demo") {
@@ -655,35 +682,42 @@ async function arrancar() {
     );
   }
 
-  /** Monta el ensayo o el epílogo, según desde dónde se abre la sala.
-   * @param {string} jefe @param {boolean} desdePuesto */
-  async function abrirSala(jefe, desdePuesto) {
+  /** Monta el ensayo o la toma de cierre.
+   * @param {string} jefe @param {boolean} epilogo */
+  async function abrirSala(jefe, epilogo) {
     if (
-      desdePuesto &&
-      (pantalla !== "playing" || !puestoListo() || carta.abierta)
+      epilogo &&
+      (pantalla !== "playing" ||
+        carta.abierta ||
+        (partida.estado !== "entrada-epilogo" && !puestoListo()))
     )
       return;
     const actual = partida;
+    const anterior = vistaJefe;
     mostrar("cargando");
     try {
-      await prepararJefe(jefe, desdePuesto);
+      await prepararJefe(jefe, epilogo);
     } catch {
       if (actual !== partida) return;
-      mostrar(desdePuesto ? "paused" : "menu");
-      texto(intro, t("combate.cargaFallida"));
+      mostrar(epilogo ? "paused" : "menu");
+      texto(
+        intro,
+        t(epilogo ? "epilogo.cargaFallida" : "combate.cargaFallida"),
+      );
       return;
     }
     if (actual !== partida) return;
-    if (desdePuesto) {
+    if (epilogo) {
       partida.entrarFarolero();
       if (vistaJefe) activar(vistaJefe);
+      if (anterior !== vistaJefe) anterior?.dispose();
       texto(announce, t("epilogo.entrar"));
     } else partida.saltarAlJefe();
     repartir();
-    if (!desdePuesto) revisarEscena();
+    if (!epilogo) revisarEscena();
     vistaPuesto?.dispose();
     vistaPuesto = null;
-    mostrar(pausaTrasCarga ? "paused" : desdePuesto ? "cinematica" : "playing");
+    mostrar(pausaTrasCarga ? "paused" : epilogo ? "cinematica" : "playing");
     pausaTrasCarga = false;
   }
 
@@ -754,7 +788,14 @@ async function arrancar() {
     reemplazarPartida();
     audio.evento({ tipo: "zona_entra", zona: "pasillo", estado: "nada" }); // termina la música y los ataques anteriores
     if (!vistaRecorrido) mostrar("cargando");
-    const v = await montarRecorrido();
+    const actual = partida;
+    let v;
+    try {
+      v = await montarRecorrido();
+    } catch {
+      if (partida === actual) mostrar("error-menu"); // la partida nueva espera congelada hasta que cargue su vista
+      return;
+    }
     if (!v) return;
     activar(v);
     montarHud();
@@ -767,10 +808,11 @@ async function arrancar() {
   function continuar() {
     if (partida.estado === "fin-demo") return;
     mostrar(partida.estado === "epilogo" ? "cinematica" : "playing");
+    if (partida.estado === "entrada-epilogo") revisarEscena();
   }
   // «Reiniciar» en la pausa: con el jefe, reintento en la pradera; en el recorrido, la partida desde la caída.
   function reiniciar() {
-    if (partida.tiempoEpilogo !== null) return;
+    if (epilogoEnCurso()) return;
     if (
       partida.estado === "puesto" ||
       partida.estado === "destino" ||
@@ -792,10 +834,11 @@ async function arrancar() {
   function salirDeVictoria() {
     if (pantalla !== "playing" || !partida.salidaVictoriaLista || carta.abierta)
       return;
+    if (partida.combate?.id === "mirra") return; // en la demo, el cierre lo activa la compra
     if (partida.combate?.id === "farolero") {
       mostrar("result"); // la pareja decide cuándo terminar su visita a Bodoque
     } else if (partida.entrarPuesto()) {
-      repartir(); // mismo cambio de zona que al atravesar el arco norte a pie
+      repartir(); // mismo cambio que al atravesar el arco a pie
       revisarEscena();
     }
   }
@@ -942,24 +985,37 @@ async function arrancar() {
     } else if (pantalla === "result") {
       if (partida.combate?.id === "farolero") accionPrincipal();
       else volverAlMuelle();
-    } else if (pantalla === "derrota" || pantalla === "fin-demo") void alMenu();
+    } else if (
+      pantalla === "derrota" ||
+      pantalla === "fin-demo" ||
+      pantalla === "error-menu"
+    )
+      void alMenu();
   }
 
   /** Texto de la esquina: qué hacer ahora contra el jefe. En el recorrido hablan las tarjetas (D-206). */
   function pintarIndicacion() {
-    atajoPuesto.hidden = !partida.salidaVictoriaLista;
+    atajoPuesto.hidden =
+      !partida.salidaVictoriaLista || partida.combate?.id === "mirra";
     if (partida.estado === "victoria") {
       const final = partida.combate?.id === "farolero";
       texto(atajoPuesto, t(final ? "salida.terminar" : "salida.atajo"));
       objetivo.hidden = false;
       texto(
         objetivo,
-        t(final ? "salida.final" : "salida.arco", {
-          victoria: t(final ? "farol.victoria" : "mirra.victoria"),
-          premio: t("tienda.recompensa", {
-            cantidad: textoMonedas(recompensa),
-          }),
-        }),
+        t(
+          final
+            ? "salida.final"
+            : partida.epilogoProgramado
+              ? "epilogo.enBreve"
+              : "salida.arco",
+          {
+            victoria: t(final ? "farol.victoria" : "mirra.victoria"),
+            premio: t("tienda.recompensa", {
+              cantidad: textoMonedas(recompensa),
+            }),
+          },
+        ),
       );
       return;
     }
@@ -1082,6 +1138,10 @@ async function arrancar() {
    */
   function revisarEscena() {
     const est = partida.estado;
+    if (est === "entrada-epilogo") {
+      void abrirSala("farolero", true);
+      return;
+    }
     if (est === "puesto") {
       if (!vistaPuesto) void continuarAlPuesto(); // al cruzar el arco el flujo ya conservó los PV
       return;
@@ -1110,6 +1170,8 @@ async function arrancar() {
 
   /** Opacidad del fundido (0..1): baja a negro al cruzar el arco y se abre ya en la pradera. */
   function calcularFundido() {
+    if (partida.estado === "entrada-epilogo" && pantalla === "cargando")
+      return 1;
     const tiempoEpilogo = partida.tiempoEpilogo;
     if (tiempoEpilogo !== null) {
       const E = CONFIG.ui.epilogo;
@@ -1243,7 +1305,7 @@ async function arrancar() {
       get pantalla() {
         return pantalla;
       },
-      /** caida | recorrido | arco | jefe | victoria | puesto | destino | epilogo | fin-demo */
+      /** Estado actual del recorrido, combate o epílogo. */
       get etapa() {
         return partida.estado;
       },

@@ -217,7 +217,7 @@ test("menú con el lobby → caída → pasillo → arco → Mirra con cinemáti
   expect(await leer(page, () => window.__game.escena)).toBe("jefe");
   await foto("09-reintento");
 
-  // Tras vencer se puede permanecer en la pradera sin que un temporizador abra el menú.
+  // La despedida se lee en la pradera y la compra a Bodoque habilita el epílogo.
   await page.evaluate(() => {
     const g = window.__game;
     g.saltarPresentacion();
@@ -233,7 +233,7 @@ test("menú con el lobby → caída → pasillo → arco → Mirra con cinemáti
   await expect(page.locator("#objective")).toContainText(
     "Mirra ha sido derrotada",
   );
-  await expect(page.locator("#objective")).toContainText("arco norte");
+  await expect(page.locator("#objective")).toContainText("Bodoque");
   expect(await leer(page, () => window.__game.pantalla)).toBe("playing");
   await foto("10-victoria");
   // Quien quiera repetir la pelea puede hacerlo desde la pausa.
@@ -281,6 +281,66 @@ test("en difícil, al caer ambos la única salida vuelve a la portada", async ({
   await expect(page.locator("#play")).toBeFocused();
   expect(await leer(page, () => window.__game.escena)).toBe("recorrido");
 });
+
+for (const conMando of [false, true]) {
+  test(`si falla la portada tras una derrota, se puede reintentar con ${conMando ? "mando" : "teclado"}`, async ({
+    page,
+  }) => {
+    const excepciones = [];
+    page.on("pageerror", (error) => excepciones.push(error.message));
+    if (conMando) {
+      await page.addInitScript(() => {
+        const botones = Array.from({ length: 17 }, () => ({
+          pressed: false,
+          value: 0,
+        }));
+        window.testPads = [{ index: 0, axes: [0, 0, 0, 0], buttons: botones }];
+        Object.defineProperty(navigator, "getGamepads", {
+          value: () => window.testPads,
+        });
+      });
+    }
+    await abrir(page);
+    await page.locator("#play").click();
+    await page.evaluate(async () => {
+      const g = window.__game;
+      await g.saltarAlJefe();
+      g.saltarPresentacion();
+      g.matarJugadores();
+      g.step(2);
+    });
+
+    // Falla una sola descarga al reconstruir el templo. El reintento la pedirá de nuevo.
+    await page.route("**/sael.glb", (ruta) => ruta.abort(), { times: 1 });
+    await page.getByRole("button", { name: "Volver al inicio" }).click();
+    const reintentar = page.getByRole("button", {
+      name: "Reintentar",
+      exact: true,
+    });
+    await expect(reintentar).toBeFocused();
+    await expect(
+      page.getByRole("heading", { name: "No se pudo cargar el templo" }),
+    ).toBeVisible();
+    await expect(page.locator("#play")).toBeHidden();
+    await pasos(page, 120); // mientras falta el templo, no avanza la partida nueva
+    expect(await leer(page, () => window.__game.tEtapa)).toBe(0);
+
+    if (conMando) {
+      await page.evaluate(() => {
+        window.testPads[0].buttons[9].pressed = true;
+        window.__game.step(1);
+        window.testPads[0].buttons[9].pressed = false;
+      });
+    } else {
+      await page.keyboard.press("Enter");
+    }
+    await expect(page.locator("#play")).toBeFocused();
+    expect(await leer(page, () => window.__game.escena)).toBe("recorrido");
+    expect(excepciones).toEqual([]);
+    await page.locator("#play").click();
+    expect(await leer(page, () => window.__game.etapa)).toBe("caida");
+  });
+}
 
 test("cancelar el arco con la pradera visible devuelve al templo y permite cruzar de nuevo", async ({
   page,
