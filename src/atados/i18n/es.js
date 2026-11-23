@@ -64,7 +64,7 @@ export default {
   "mural.urna":
     "«Siete chispas cayeron sobre siete dioses. Ninguna sobre los ladrones.»",
   "mural.mirra":
-    "«Primero vinieron las langostas, luego el polvo. La que Alimentaba ya no da: devora.»",
+    "«Primero vinieron las langostas, luego el polvo. Queda una pura hambre: la que Alimentaba ahora devora.»",
 
   // Tarjetas del tutorial (D-206, D-207): título corto y una línea. En tercera persona para que sirvan en solo
   // y en coop; las teclas las pone la tarjeta según el dispositivo en uso.
