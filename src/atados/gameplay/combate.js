@@ -437,7 +437,10 @@ function victoria(c) {
       placeholder: true,
       extra: true,
     }); // D-099
-  emitir(c, "victoria", { stats: { ...c.stats } });
+  emitir(c, "victoria", {
+    stats: { ...c.stats },
+    monedas: jefe.def.monedas ?? 0,
+  });
 }
 
 // Reintento (D-028, D-167): mismo jefe, los dos a vida llena, misma semilla (estado reproducible).

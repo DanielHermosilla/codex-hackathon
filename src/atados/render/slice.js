@@ -34,6 +34,7 @@ const MODELOS_DE = {
 /**
  * @param {{
  *   renderer: THREE.WebGLRenderer,
+ *   posicionPuesto: {x:number,z:number},
  *   cfg: import('./tipos.js').Cfg,
  *   getWorld: () => import('./tipos.js').Mundo,
  *   getCombate: () => import('./tipos.js').Combate,
@@ -43,6 +44,7 @@ const MODELOS_DE = {
  */
 export async function crearRenderSlice({
   renderer,
+  posicionPuesto,
   cfg,
   getWorld,
   getCombate,
@@ -149,7 +151,7 @@ export async function crearRenderSlice({
       ? crearMuneco({ scene, cfg, keep, modelos, def })
       : crearMirra({ scene, cfg, keep, modelos, def });
   const vfx = crearVfx({ scene, cfg, keep });
-  const puesto = crearPuesto({ scene, cfg, keep, world0 }); // carrito del Puesto 23 con el emblema de Codex
+  const puesto = crearPuesto({ scene, cfg, keep, posicion: posicionPuesto });
   const exts = extras
     .map((f) =>
       f({
@@ -255,7 +257,7 @@ export async function crearRenderSlice({
 
   let tiempo = 0;
   let kVista = -1;
-  let verPuesto = false; // true en el menú: la cámara incluye el Puesto 23
+  let verPuesto = false; // true en el menú: la cámara incluye el carro
   let intensidad = 0;
   let hitPrev = 0;
   let flashT = 0,

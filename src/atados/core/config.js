@@ -6,6 +6,13 @@ export const CONFIG = {
 
   // ─── Hito 1: greybox de la cadena (ADR-001). «provisional» = valor sin decidir, se ajusta en playtest ───
 
+  tienda: {
+    precios: { italiano: 1, mote: 1, sopaipilla: 1 }, // monedas por producto, compartidas por la pareja
+    anguloDeg: 22, // 0° mira hacia la derecha de la arena.
+    margen: 1.6, // El centro del furgón queda a estos metros por fuera del cerco.
+    alcance: 3.8, // Metros desde el centro hasta donde se puede pedir por la ventanilla.
+  },
+
   // Stats idénticos para Sael y Odo (D-149).
   player: {
     radius: 0.45, // técnico
@@ -123,6 +130,7 @@ export const CONFIG = {
     // Práctica: un muñeco de paja quieto, sin ataques, para aprender a tensar la cadena y enredarla en un pilar.
     // Arena chica con dos pilares a los lados del muñeco.
     muneco: {
+      monedas: 0, // la práctica no entrega recompensa
       textos: "muneco",
       arte: "muneco", // render/muneco-arte.js
       vida: 60, // ≈ 4 pasadas tensas (una pasada al muñeco quita ~16; es más delgado que Mirra)
@@ -146,6 +154,7 @@ export const CONFIG = {
       ataques: {},
     },
     mirra: {
+      monedas: 1, // recompensa por vencer a este jefe
       textos: "mirra",
       arte: "mirra", // render/mirra-arte.js       // claves de i18n: jefe.mirra.*
       vida: 1200, // ficha (de partida) ≈ 24 pasadas a tensión máxima
@@ -1412,21 +1421,17 @@ export const CONFIG = {
       flash: 0.6, // emisión blanca al recibir un corte fuerte (≤ 3/s)
       golpe: 0.33, // s del golpe en los clips (telegrafía = 0..1 s del clip)
     },
-    // Puesto 23 (render/puesto.js): carrito de completos al borde de la arena. Colores sin rojo (D-188).
+    // Furgón (render/puesto.js): tienda de completos al borde de la arena. Colores sin rojo (D-188).
     puesto: {
-      anguloDeg: 22,
-      margen: 1.6, // posición: ángulo (0° = +x, −90° = fondo) y m por fuera del borde
       mirarA: [0, 12], // punto (x, z en m) al que mira el frente del carrito
       escala: 1.5,
-      letreroAltura: 1.9,
-      letreroDelante: 1.4, // m: el letrero flota delante del carro, sobre el trigo alto
-      carro: 0xeadfc6,
-      borde: 0x7d5a3a,
+      carro: 0x326950,
+      borde: 0xf9eaca,
       rueda: 0x2e2a28,
-      toldoA: 0xf3ecdc,
-      toldoB: 0x3d82c4,
-      letrero: 0x1b211d,
-      letreroTexto: 0xf2cd75,
+      vidrio: 0x48656b,
+      pan: 0xe8a45b,
+      palta: 0x91af45,
+      vienesa: 0x9b5b38,
     },
     // Muñeco de práctica (render/muneco-arte.js): escala del modelo de pilar, vaivén y caída.
     muneco: {
