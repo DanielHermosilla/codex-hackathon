@@ -118,6 +118,8 @@ test("el único carro llega a la arena con el premio y las compras duran hasta e
   // A este ancho el diálogo y la indicación de salida comparten la esquina inferior.
   const cartel = await mural.boundingBox();
   const objetivo = await page.locator("#objective").boundingBox();
+  const lapida = await page.locator(".hud .lapida.con-carro").boundingBox();
+  expect(lapida.y + lapida.height).toBeLessThanOrEqual(cartel.y);
   expect(cartel.x + cartel.width).toBeLessThanOrEqual(objetivo.x);
   await page.screenshot({ path: info.outputPath("aviso-angosto.png") });
   await page.setViewportSize(ventana);

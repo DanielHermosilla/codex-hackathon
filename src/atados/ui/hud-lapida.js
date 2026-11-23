@@ -7,6 +7,10 @@ export const ESTILOS_LAPIDA = `
 .hud .lapida{position:absolute;transform:translate(-50%,-100%);min-width:250px;text-align:center;padding:14px 20px 12px;border-radius:4px;
   background:color-mix(in srgb,var(--fondo) 84%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--texto-suave) 40%,transparent);}
 .hud .lapida.con-carro{transform:none;min-width:0;width:min(36vw,340px);padding:8px 12px;}
+/* En vertical, la tabla se ensancha bajo el borde superior y deja libre el diálogo del carro. */
+@media (max-width:520px) and (orientation:portrait){
+  .hud .lapida.con-carro{width:56%;}
+}
 .hud .lapida .despedida{margin:4px 0;font:italic 600 1.125rem/1.25 var(--lectura);}
 .hud .lapida .despedida:empty{display:none;}
 .hud .lapida.con-carro .cuadro{font-size:15px;}
