@@ -2,7 +2,7 @@
 // Flujo (core/flujo.js, D-204 a D-214):
 //   menú con el lobby detrás → «Jugar» → caída al valle → lobby y pasillo de subida → arco de la cima
 //   → fundido a negro → la pradera se abre en silencio → presentación de Mirra (cinemática solo la 1.ª vez)
-//   → Mirra → carro de completos → arco norte → muelle → Ondar a pie o combate opcional con el Farolero.
+//   → Mirra → carro de completos → arco norte → muelle → Ondar a pie o epílogo en la sala del Farolero.
 // El recorrido y el puesto usan render/recorrido.js; la pradera del jefe usa render/slice.js. La del
 // jefe se monta al cruzar el arco (evento `jefe:preparar`) mientras la pantalla funde a negro; al estar lista se
 // avisa a la partida (`jefeListo`). El recorrido se libera al entrar al combate. Audio, entrada y HUD duran toda la
@@ -43,7 +43,7 @@ import {
 import { prepararAjustes } from "./ui/ajustes.js";
 import "./ui.css";
 
-/** @typedef {"menu" | "cargando" | "playing" | "paused" | "result" | "derrota"} Pantalla */
+/** @typedef {"menu" | "cargando" | "playing" | "paused" | "result" | "derrota" | "cinematica" | "fin-demo"} Pantalla */
 /** @typedef {ReturnType<typeof crearPartida>} Partida */
 /** @typedef {Awaited<ReturnType<typeof crearRenderRecorrido>>} VistaRecorrido */
 /** @typedef {Awaited<ReturnType<typeof crearRenderSlice>>} VistaJefe */
@@ -117,7 +117,7 @@ async function arrancar() {
   const irAlFarolero = elemento("enfrentar-farolero");
   let atajoFarolero = true;
   let atajoReinicio = true; // un control personalizado tiene prioridad sobre el atajo de combate
-  irAlFarolero.setAttribute("aria-label", t("farol.enfrentar"));
+  irAlFarolero.setAttribute("aria-label", t("epilogo.entrar"));
   const irAlPuesto = elemento("continuar-puesto");
   const atajoPuesto = elemento("atajo-puesto"); // permite continuar sin caminar hasta el arco
   const letrero = elemento("mural");
@@ -148,7 +148,7 @@ async function arrancar() {
   const fundido = document.createElement("div");
   fundido.id = "fundido";
   fundido.setAttribute("aria-hidden", "true");
-  fundido.style.cssText = `position:absolute;inset:0;pointer-events:none;opacity:0;background:${hexCss(coloresHud(CONFIG.paleta).fondo)};`; // mismo fondo que el HUD
+  fundido.style.cssText = `position:absolute;inset:0;pointer-events:none;opacity:0;background:var(--fondo-fundido,${hexCss(coloresHud(CONFIG.paleta).fondo)});`;
   canvas.after(fundido); // justo encima del canvas y por debajo del HUD y del menú
   let opacidadFundido = 0; // 0..1 que se ve ahora (lo leen las pruebas)
 
@@ -376,35 +376,38 @@ async function arrancar() {
   /**
    * Monta la pradera del jefe mientras la pantalla funde (evento `jefe:preparar`). Se dibuja con un combate de
    * muestra idéntico al inicial (misma semilla) hasta que empieza el real. Al estar lista, avisa a la partida.
-   * @param {string} jefe
+   * @param {string} jefe @param {boolean} [epilogo] la entrada del carro usa la misma arena sin anillos
    */
-  function prepararJefe(jefe) {
+  function prepararJefe(jefe, epilogo = false) {
     if (vistaJefe) {
       partida.jefeListo();
       return Promise.resolve();
     }
     if (cargaJefe) return cargaJefe;
     const id = montaje; // identifica la partida que pidió esta carga
-    cargaJefe = montarPradera(jefe, id).finally(() => {
+    cargaJefe = montarPradera(jefe, id, epilogo).finally(() => {
       if (id === montaje) cargaJefe = null;
     });
     return cargaJefe;
   }
 
-  /** @param {string} jefe @param {number} id */
-  async function montarPradera(jefe, id) {
+  /** @param {string} jefe @param {number} id @param {boolean} epilogo */
+  async function montarPradera(jefe, id, epilogo) {
+    const solicitante = partida; // la vista lee la partida que la pidió, aunque el montaje termine tarde
     const previo = crearCombate(tienda.cfg, { jefe, solo, dificil, seed });
+    const combateVista = () => solicitante.combate ?? previo;
     const v = await crearRenderSlice({
       renderer,
       cfg: tienda.cfg,
-      getWorld: () => (partida.combate ?? previo).w,
-      getCombate: () => partida.combate ?? previo,
+      getWorld: () => combateVista().w,
+      getCombate: combateVista,
+      getEpilogo: epilogo ? () => solicitante.tiempoEpilogo : undefined,
       // El reloj fijo también se detiene al pausar o abrir la carta.
       tiempoVictoria: () =>
-        partida.estado === "victoria" ? partida.tEstado : 0,
+        solicitante.estado === "victoria" ? solicitante.tEstado : 0,
       brilloFarolero: () => Number(farolBrillo.value),
       params,
-      extras: [crearAnillosHud()],
+      extras: epilogo ? [] : [crearAnillosHud()],
     });
     if (id !== montaje) {
       v.dispose(); // se volvió al menú mientras cargaba
@@ -474,7 +477,7 @@ async function arrancar() {
     else irAlFarolero.removeAttribute("aria-keyshortcuts");
     texto(
       irAlFarolero,
-      t("farol.enfrentar") + (atajoFarolero ? " · F / Y / △" : " · Y / △"),
+      t("epilogo.entrar") + (atajoFarolero ? " · F / Y / △" : " · Y / △"),
     );
     for (const jugador of jugadores) {
       const m = teclado[jugador];
@@ -502,11 +505,13 @@ async function arrancar() {
 
   /** Nombre del lugar para los textos del menú y la pausa. */
   const lugar = () =>
-    partida.estado === "puesto"
-      ? t("salida.muelle")
-      : partida.combate
-        ? t("jefe." + partida.combate.id + ".nombre")
-        : t("mundo.templo");
+    partida.tiempoEpilogo !== null
+      ? t("jefe.farolero.nombre")
+      : partida.estado === "puesto"
+        ? t("salida.muelle")
+        : partida.combate
+          ? t("jefe." + partida.combate.id + ".nombre")
+          : t("mundo.templo");
 
   let pausaTrasCarga = false; // recuerda si la ventana perdió foco mientras se montaba una sala
   /** Cambia de pantalla y ordena qué se ve. @param {Pantalla} siguiente @param {string} [fraseDerrota] */
@@ -518,6 +523,9 @@ async function arrancar() {
     document.body.dataset.screen = siguiente; // el CSS muestra u oculta las barras según esta pantalla
     input.clear();
     const jugando = siguiente === "playing";
+    const enPlano = siguiente === "cinematica";
+    const esEpilogo = partida.tiempoEpilogo !== null;
+    fundido.classList.toggle("fundido-epilogo", esEpilogo); // el plano y su cartel funden al mismo negro
     const menu = siguiente === "menu";
     carta.ocultarAviso();
     mural.hide();
@@ -530,14 +538,14 @@ async function arrancar() {
     if (siguiente === "result" && !esFinal)
       texto(irAlPuesto, t("salida.volver"));
     hudPagina.hidden = !jugando;
-    velo.hidden = jugando;
-    if (hud) hud.visible = jugando || siguiente === "paused";
+    velo.hidden = jugando || enPlano;
+    if (hud) hud.visible = jugando || (siguiente === "paused" && !esEpilogo);
     play.hidden = !menu;
     elemento("modes").hidden = !menu;
     primary.hidden = siguiente !== "paused" && siguiente !== "result";
     // Un mapa antiguo puede usar R para jugar. En ese caso el reintento sigue a mano en la derrota.
     elemento("restart").hidden =
-      siguiente !== "paused" &&
+      (siguiente !== "paused" || esEpilogo) &&
       !(siguiente === "derrota" && !dificil && !atajoReinicio);
     texto(
       elemento("restart"),
@@ -545,10 +553,19 @@ async function arrancar() {
     );
     primary.classList.toggle("gold", siguiente !== "result");
     volver.classList.toggle("gold", siguiente === "derrota");
-    volver.hidden = menu || jugando || siguiente === "cargando";
+    volver.hidden = menu || jugando || enPlano || siguiente === "cargando";
+    texto(
+      volver,
+      siguiente === "fin-demo" ? t("epilogo.volver") : "Volver al inicio",
+    );
     aplicarVolumen();
-    if (jugando) {
+    if (jugando || enPlano) {
       canvas.focus({ preventScroll: true });
+      return;
+    }
+    if (siguiente === "fin-demo") {
+      texto(title, t("epilogo.fin"));
+      title.focus({ preventScroll: true });
       return;
     }
     if (menu) {
@@ -618,7 +635,7 @@ async function arrancar() {
     reemplazarPartida();
     if (jefeDirecto) {
       montarHud();
-      void abrirCombate(jefeDirecto, false);
+      void abrirSala(jefeDirecto, false);
       return;
     }
     activar(vistaRecorrido);
@@ -638,9 +655,9 @@ async function arrancar() {
     );
   }
 
-  /** Entra desde el acceso directo o desde el puesto, una vez preparada la escena correcta.
+  /** Monta el ensayo o el epílogo, según desde dónde se abre la sala.
    * @param {string} jefe @param {boolean} desdePuesto */
-  async function abrirCombate(jefe, desdePuesto) {
+  async function abrirSala(jefe, desdePuesto) {
     if (
       desdePuesto &&
       (pantalla !== "playing" || !puestoListo() || carta.abierta)
@@ -649,7 +666,7 @@ async function arrancar() {
     const actual = partida;
     mostrar("cargando");
     try {
-      await prepararJefe(jefe);
+      await prepararJefe(jefe, desdePuesto);
     } catch {
       if (actual !== partida) return;
       mostrar(desdePuesto ? "paused" : "menu");
@@ -657,13 +674,16 @@ async function arrancar() {
       return;
     }
     if (actual !== partida) return;
-    if (desdePuesto) partida.entrarFarolero();
-    else partida.saltarAlJefe();
+    if (desdePuesto) {
+      partida.entrarFarolero();
+      if (vistaJefe) activar(vistaJefe);
+      texto(announce, t("epilogo.entrar"));
+    } else partida.saltarAlJefe();
     repartir();
-    revisarEscena();
+    if (!desdePuesto) revisarEscena();
     vistaPuesto?.dispose();
     vistaPuesto = null;
-    mostrar(pausaTrasCarga ? "paused" : "playing");
+    mostrar(pausaTrasCarga ? "paused" : desdePuesto ? "cinematica" : "playing");
     pausaTrasCarga = false;
   }
 
@@ -726,7 +746,7 @@ async function arrancar() {
   }
 
   function pausar() {
-    if (pantalla === "playing") mostrar("paused");
+    if (pantalla === "playing" || pantalla === "cinematica") mostrar("paused");
     else if (pantalla === "cargando") pausaTrasCarga = true;
   }
   async function alMenu() {
@@ -741,11 +761,16 @@ async function arrancar() {
     mostrar("menu");
   }
   function accionPrincipal() {
-    if (pantalla === "paused") mostrar("playing");
+    if (pantalla === "paused") continuar();
     else if (pantalla === "result") repetirJefe();
+  }
+  function continuar() {
+    if (partida.estado === "fin-demo") return;
+    mostrar(partida.estado === "epilogo" ? "cinematica" : "playing");
   }
   // «Reiniciar» en la pausa: con el jefe, reintento en la pradera; en el recorrido, la partida desde la caída.
   function reiniciar() {
+    if (partida.tiempoEpilogo !== null) return;
     if (
       partida.estado === "puesto" ||
       partida.estado === "destino" ||
@@ -757,7 +782,7 @@ async function arrancar() {
 
   play.onclick = () => empezar();
   primary.onclick = accionPrincipal;
-  irAlFarolero.onclick = () => void abrirCombate("farolero", true);
+  irAlFarolero.onclick = () => void abrirSala("farolero", true);
   function volverAlMuelle() {
     partida.volverAlPuesto(); // vuelve de la llegada a Ondar con las compras de esta partida
     mostrar("playing");
@@ -817,7 +842,9 @@ async function arrancar() {
     const dialogo = document.querySelector("dialog[open]");
     if (dialogo instanceof window.HTMLElement) return dialogo;
     if (pantalla === "derrota") return velo; // el primer movimiento elige la salida del panel
-    return pantalla === "playing" ? null : document.body;
+    return pantalla === "playing" || pantalla === "cinematica"
+      ? null
+      : document.body;
   }
   window.addEventListener(
     "keydown",
@@ -857,14 +884,14 @@ async function arrancar() {
         return;
       }
       if (event.code === "Escape" && !event.repeat) {
-        if (pantalla === "playing") pausar();
-        else if (pantalla === "paused") mostrar("playing");
+        if (pantalla === "playing" || pantalla === "cinematica") pausar();
+        else if (pantalla === "paused") continuar();
         return;
       }
       if (pantalla !== "playing") return;
       if (event.code === "KeyF" && atajoFarolero && puestoListo()) {
         event.preventDefault();
-        if (!event.repeat) void abrirCombate("farolero", true);
+        if (!event.repeat) void abrirSala("farolero", true);
         return;
       }
       if (event.target !== canvas) return;
@@ -899,15 +926,15 @@ async function arrancar() {
     ) {
       // Y o triángulo permite continuar la ruta también desde la arena final.
       if (partida.estado === "victoria") salirDeVictoria();
-      else void abrirCombate("farolero", true);
+      else void abrirSala("farolero", true);
       return;
     }
     const start = pads.some((p) => !!p?.buttons[9]?.pressed);
     const flanco = start && !startAntes;
     startAntes = start;
     if (!flanco || controls.open || carta.abierta) return;
-    if (pantalla === "playing") pausar();
-    else if (pantalla === "paused") mostrar("playing");
+    if (pantalla === "playing" || pantalla === "cinematica") pausar();
+    else if (pantalla === "paused") continuar();
     else if (pantalla === "menu") {
       // Start en el segundo mando significa que hay dos personas: el juego arranca en cooperativo.
       if (pads[1]?.buttons[9]?.pressed) modo(false);
@@ -915,7 +942,7 @@ async function arrancar() {
     } else if (pantalla === "result") {
       if (partida.combate?.id === "farolero") accionPrincipal();
       else volverAlMuelle();
-    } else if (pantalla === "derrota") void alMenu();
+    } else if (pantalla === "derrota" || pantalla === "fin-demo") void alMenu();
   }
 
   /** Texto de la esquina: qué hacer ahora contra el jefe. En el recorrido hablan las tarjetas (D-206). */
@@ -1083,6 +1110,19 @@ async function arrancar() {
 
   /** Opacidad del fundido (0..1): baja a negro al cruzar el arco y se abre ya en la pradera. */
   function calcularFundido() {
+    const tiempoEpilogo = partida.tiempoEpilogo;
+    if (tiempoEpilogo !== null) {
+      const E = CONFIG.ui.epilogo;
+      // La apertura y el cierre comparten el reloj del plano, incluso al pausar.
+      return Math.min(
+        1,
+        Math.max(
+          0,
+          1 - tiempoEpilogo / E.apertura,
+          (tiempoEpilogo - E.cierre) / (E.duracion - E.cierre),
+        ),
+      );
+    }
     if (vista === vistaRecorrido) return partida.fundidoArco;
     if (aperturaDesde < 0) return 0;
     const A = CONFIG.ui.aperturaJefe;
@@ -1113,12 +1153,20 @@ async function arrancar() {
       partida.update(dt);
       repartir();
       revisarEscena();
+    } else if (pantalla === "cinematica") {
+      partida.update(dt);
+      repartir();
+      if (partida.estado === "fin-demo") mostrar("fin-demo");
     }
     audio.update(dt);
-    pendiente += dt;
+    if (pantalla !== "fin-demo") pendiente += dt;
   }
   const puntoAviso = { x: 0, y: 0, visible: false }; // píxeles sobre la ventanilla
   function dibujar() {
+    if (pantalla === "fin-demo") {
+      pendiente = 0; // el cartel opaco no necesita presentar más cuadros 3D
+      return;
+    }
     if (!vista || carta.abierta) return;
     // En pausa la escena se congela; en el menú el lobby sigue vivo de fondo.
     const dt = pantalla === "paused" ? 0 : pendiente;
@@ -1129,7 +1177,7 @@ async function arrancar() {
     if (vistaJefe)
       vistaJefe.cinematica = partida.combate ? partida.cinematica : true;
     vista.sync(dt);
-    hud?.update(dt);
+    if (partida.tiempoEpilogo === null) hud?.update(dt);
     if (pantalla === "playing") {
       pintarIndicacion();
       pintarFarol();
@@ -1195,7 +1243,7 @@ async function arrancar() {
       get pantalla() {
         return pantalla;
       },
-      /** caida | recorrido | arco | jefe | victoria | puesto | destino */
+      /** caida | recorrido | arco | jefe | victoria | puesto | destino | epilogo | fin-demo */
       get etapa() {
         return partida.estado;
       },
@@ -1277,7 +1325,7 @@ async function arrancar() {
       empezar,
       menu: () => alMenu(),
       pausar,
-      continuar: () => mostrar("playing"),
+      continuar,
       reiniciar,
       setInput: (/** @type {number} */ i, /** @type {any} */ v) =>
         input.setOverride(i, v),

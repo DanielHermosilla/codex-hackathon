@@ -236,15 +236,22 @@ describe("revisión del flujo", () => {
     expect(p.world.players[0].hp).toBe(380);
     expect(p.entrarPuesto()).toBe(false);
     expect(p.entrarFarolero()).toBe(true);
+    expect(p.estado).toBe("epilogo");
+    expect(p.tiempoEpilogo).toBe(0);
+    expect(p.combate).toBe(null); // solo el ensayo directo inicia las pruebas del Farolero
+    expect(p.entrarFarolero()).toBe(false);
+    const tiempoPuesto = p.world.time;
+    const duracion = CONFIG.ui.epilogo.duracion;
+    correr(duracion - DT);
+    expect(p.estado).toBe("epilogo");
+    correr(DT);
+    expect(p.estado).toBe("fin-demo");
+    expect(p.tiempoEpilogo).toBe(duracion);
+    expect(p.world.time).toBe(tiempoPuesto);
     expect(p.world.players[0].hp).toBe(380);
-    ponerVidaJefe(p.combate, 0);
-    correr(CONFIG.tienda.llegadaCarro + 6);
-    expect(p.entrarPuesto()).toBe(false); // el Farolero termina su propia ruta
-    expect(p.estado).toBe("victoria");
-    expect(p.salidaVictoriaLista).toBe(true);
-    expect(
-      vistos.filter((e) => e.tipo === "victoria").map((e) => e.monedas),
-    ).toEqual([25, 25]);
+    p.reintentarJefe();
+    expect(p.estado).toBe("fin-demo");
+    expect(vistos.filter((e) => e.estado === "fin-demo")).toHaveLength(1);
   });
 
   it("el carro estacionado deja acercarse al mesón y rodearlo", () => {
