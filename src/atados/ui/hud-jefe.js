@@ -1,6 +1,5 @@
 // HUD del jefe: presentación con nombre corrupto grande y el antiguo tachado debajo (D-064, D-180), barra de
-// vida durante el combate (D-064), frases del jefe (D-093), derrota con frase y reintento (D-111, D-173) y las
-// etiquetas de los drops placeholder. La lápida está en hud-lapida.js. Todo texto pasa por t() (D-102).
+// vida durante el combate (D-064), frases del jefe (D-093) y etiquetas de los drops placeholder. La lápida está en hud-lapida.js. Todo texto pasa por t() (D-102).
 // Solo lee el estado: no decide gameplay. Sin transiciones CSS: los fundidos salen del tiempo de juego,
 // así las capturas a paso fijo son fieles.
 import { t, getIdioma } from "../i18n/index.js";
@@ -25,11 +24,8 @@ export const ESTILOS_JEFE = `
 .hud .pres .filete{width:clamp(120px,18vw,260px);height:1px;background:linear-gradient(90deg,transparent,var(--texto-suave),transparent);margin:.2em 0;}
 .hud .pres .antiguo{font-size:clamp(24px,2.8vw,40px);font-style:italic;font-weight:500;color:var(--texto-suave);
   text-decoration:line-through;text-decoration-thickness:.07em;text-decoration-color:var(--barra);text-shadow:0 1px 8px var(--fondo);}
-.hud .pres .frase,.hud .der .frase{font-size:clamp(20px,2.1vw,30px);font-style:italic;font-weight:500;max-width:56vw;text-shadow:0 1px 6px var(--fondo),0 0 14px var(--fondo);margin-top:.5em;}
+.hud .pres .frase{font-size:clamp(20px,2.1vw,30px);font-style:italic;font-weight:500;max-width:56vw;text-shadow:0 1px 6px var(--fondo),0 0 14px var(--fondo);margin-top:.5em;}
 .hud .aviso{font-size:clamp(16px,1.5vw,21px);font-weight:600;letter-spacing:.04em;color:var(--texto-suave);text-shadow:0 1px 4px var(--fondo);min-height:1.4em;}
-.hud .der{background:color-mix(in srgb,var(--fondo) 80%,transparent);}
-.hud .der .titulo{font-size:clamp(30px,4.2vw,60px);letter-spacing:.08em;}
-.hud .der .frase{margin:.3em 0 .9em;}
 .hud .sub{position:absolute;left:50%;bottom:9vh;transform:translateX(-50%);font-size:clamp(22px,2.2vw,30px);font-style:italic;font-weight:500;
   text-shadow:0 1px 6px var(--fondo),0 0 14px var(--fondo);white-space:nowrap;}
 .hud .drop{position:absolute;transform:translate(-50%,-100%);font-size:15px;font-weight:600;color:var(--texto);-webkit-text-stroke:.2em var(--fondo);paint-order:stroke fill;white-space:nowrap;}
@@ -83,11 +79,6 @@ export function crearHudJefe({
   const presAntiguo = el("div", "antiguo", pres);
   const presFrase = el("div", "frase", pres);
   const presSaltar = el("div", "aviso", pres);
-
-  const der = el("div", "velo der", parent);
-  const derTitulo = el("div", "titulo", der);
-  const derFrase = el("div", "frase", der);
-  const derAviso = el("div", "aviso", der);
 
   const sub = el("div", "sub", parent);
   const dropsEl = [0, 1, 2].map(() => el("div", "drop", parent));
@@ -175,24 +166,8 @@ export function crearHudJefe({
         op(presFrase, escalon(P.t, F.retrasoFrase, F.fundidoTexto));
       }
 
-      // Derrota (D-111, D-173): entra casi de golpe; «reintentar» aparece en cuanto se acepta.
-      const enDer = c.estado === "derrota";
-      show(der, enDer, escalon(c.derrotaT, 0, H.derrota.fundido));
-      if (enDer) {
-        set(derTitulo, t("combate.derrota"));
-        set(derFrase, t(`jefe.${tx}.derrota`));
-        // Esta demo reintenta en la pradera en ambas dificultades (D-213).
-        renderTexto(
-          derAviso,
-          c.derrotaT >= cfg.jefes.comun.derrota.esperaReintento
-            ? t("combate.reintentar")
-            : "",
-          disp,
-        );
-      }
-
       // Frases sueltas (burla, muerte) como subtítulo.
-      const fr = c.frase && !enDer ? c.frase : null;
+      const fr = c.frase;
       show(sub, !!fr, fr ? Math.min(1, fr.t / 0.4) : 0);
       if (fr) set(sub, t(fr.clave));
 
@@ -215,12 +190,10 @@ export function crearHudJefe({
     set visible(v) {
       if (v) return; // update() decide qué se ve en cada cuadro
       proteccion.hidden = true; // al salir de la arena también desaparece la protección del rito
-      for (const e of [barra, pres, der, sub, ...dropsEl])
-        e.style.display = "none";
+      for (const e of [barra, pres, sub, ...dropsEl]) e.style.display = "none";
     },
     dispose() {
-      for (const e of [barra, proteccion, pres, der, sub, ...dropsEl])
-        e.remove();
+      for (const e of [barra, proteccion, pres, sub, ...dropsEl]) e.remove();
     },
   };
 }

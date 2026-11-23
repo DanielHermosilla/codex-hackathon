@@ -220,6 +220,11 @@ describe("iconos de tecla / botón", () => {
       ),
     ).toEqual(["WASD", "↑←↓→"]);
   });
+  it("separa las teclas de movimiento con nombres largos en las tarjetas", () => {
+    const config = structuredClone(cfg);
+    config.controls.keyboard.sael.up = "Numpad8";
+    expect(iconosAccion("mover", {}, config)[0].etiqueta).toBe("Num 8 A S D");
+  });
   it("teclado en solo: el dash es uno solo (D-016, D-120); el ancla sigue por jugador", () => {
     const dash = iconosAccion(
       "dash",
@@ -453,7 +458,6 @@ describe("i18n del HUD completo es/en (D-102)", () => {
       "tutorial.dash",
       "tecla.stickIzq",
       "combate.saltar",
-      "combate.reintentar",
       "combate.derrota",
       "lapida.titulo",
       "lapida.tiempo",

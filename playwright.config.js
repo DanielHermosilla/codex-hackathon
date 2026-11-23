@@ -5,10 +5,17 @@ const origin = "http://127.0.0.1:4173";
 
 export default defineConfig({
   testDir: "./tests/browser",
-  webServer: {
-    command: "npm run preview -- --host 127.0.0.1 --port 4173 --strictPort",
-    url: origin,
-  },
+  webServer: [
+    {
+      command: "npm run preview -- --host 127.0.0.1 --port 4173 --strictPort",
+      url: origin,
+    },
+    {
+      // La pista de desarrollo se sirve aparte de la compilación que reciben los jugadores.
+      command: "npm run dev -- --host 127.0.0.1 --port 4174 --strictPort",
+      url: "http://127.0.0.1:4174/tests/browser/fixtures/pista.html",
+    },
+  ],
   use: {
     baseURL: origin,
     browserName: "chromium",

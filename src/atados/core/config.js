@@ -129,7 +129,6 @@ export const CONFIG = {
       tambaleo: { duracion: 1.0, ventana: 3, umbral: 0.15 }, // D-155 + ficha: 15 % de la vida en 3 s
       masDanoVentana: 8, // s de memoria del daño atribuido para «el que más daño hace». PROVISIONAL (P-31: usa D-165)
       empujeFrenado: 7, // 1/s, frenado del empuje al recibir un golpe (técnico)
-      derrota: { esperaReintento: 0.8 }, // s antes de aceptar «reintentar» (D-173 reintento muy rápido). PROVISIONAL
       fraseDuracion: 3.2, // s en pantalla de las frases del jefe (técnico)
       pools: { zonas: 32, proyectiles: 16 }, // regla 6: pre-asignados (técnico)
     },
@@ -1361,7 +1360,6 @@ export const CONFIG = {
       retrasoFrase: 1.7,
       fundidoTexto: 0.6,
     },
-    derrota: { fundido: 0.2 }, // s: D-173 reintento muy rápido, nada de fundidos largos
     lapida: { altura: 2.8, retraso: 0.5, fundido: 0.7 }, // m sobre la marca; s desde que aparece
     // Números de daño de los enemigos del pasillo (ui/hud-numeros-enemigos.js): salen al cerrar cada corte
     // (`enemigo:herido`). Tamaño = el del número del jefe (`numeroDano`) × `escala`. PROVISIONAL: sin cifra en el diseño.

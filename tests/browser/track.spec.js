@@ -7,7 +7,7 @@ test("la pista dibuja, responde al teclado y vuelve al centro", async ({
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
 
-  await page.goto("/pista.html");
+  await page.goto("http://127.0.0.1:4174/tests/browser/fixtures/pista.html");
   const track = page.locator("#pista");
   await expect(track).toBeVisible();
   // El anillo de foco cambia al hacer clic. Comparamos solo los píxeles de la pista.
@@ -50,7 +50,7 @@ test("muestra un mensaje si WebGL 2 no está disponible", async ({ page }) => {
     };
   });
 
-  await page.goto("/pista.html");
+  await page.goto("http://127.0.0.1:4174/tests/browser/fixtures/pista.html");
   await expect(page.getByRole("alert")).toContainText("WebGL 2");
   await expect(page.locator("#pista")).toBeHidden();
   await expect(

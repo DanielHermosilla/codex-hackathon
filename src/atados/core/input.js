@@ -37,12 +37,25 @@ export function createInput(
   const down = new Set();
   const pressed = new Set();
   const tracked = new Set();
-  for (const p of [K.sael, K.odo]) {
-    for (const k of [p.up, p.down, p.left, p.right]) tracked.add(k);
-    for (const k of [...p.dash, ...p.anchor]) tracked.add(k);
+  /** @type {[string, string][]} */
+  let debugDisponible = [];
+  function actualizarTeclado() {
+    // Solo cambian las teclas escuchadas. Los mandos conservan su jugador asignado.
+    down.clear();
+    pressed.clear();
+    tracked.clear();
+    for (const p of [K.sael, K.odo]) {
+      for (const k of [p.up, p.down, p.left, p.right]) tracked.add(k);
+      for (const k of [...p.dash, ...p.anchor]) tracked.add(k);
+    }
+    for (const k of K.soloDash) tracked.add(k);
+    // En ?dev una tecla personalizada tiene prioridad sobre el atajo de diagnóstico.
+    debugDisponible = Object.entries(teclasDebug).filter(
+      ([, tecla]) => !tracked.has(tecla),
+    );
+    for (const [, tecla] of debugDisponible) tracked.add(tecla);
   }
-  for (const k of K.soloDash) tracked.add(k);
-  for (const k of Object.values(teclasDebug)) tracked.add(k);
+  actualizarTeclado();
 
   /** @param {KeyboardEvent} e */
   const onDown = (e) => {
@@ -102,6 +115,7 @@ export function createInput(
   }
 
   return {
+    actualizarTeclado,
     // Override de pruebas: window.__game.setInput(i, {...}) reemplaza la entrada real de ese jugador.
     /**
      * @param {number} i
@@ -151,7 +165,7 @@ export function createInput(
           out[i].dashDown = out[i].dash;
         }
       debug.length = 0;
-      for (const [accion, code] of Object.entries(teclasDebug))
+      for (const [accion, code] of debugDisponible)
         if (pressed.has(code)) debug.push(accion);
       pressed.clear();
       return out;

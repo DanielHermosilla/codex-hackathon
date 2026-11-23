@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Banco de pruebas 3D</title>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Banco de pruebas 3D</h1>
+        <p id="controles">
+          Haz clic en la pista o selecciónala con <kbd>Tab</kbd>. Usa las
+          flechas o <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> para mover
+          el cubo.
+        </p>
+      </header>
+      <!-- La pista recibe el teclado cuando tiene foco. -->
+      <canvas
+        id="pista"
+        tabindex="0"
+        aria-label="Pista 3D"
+        aria-describedby="controles"
+        hidden
+      ></canvas>
+      <p id="error" role="alert" hidden></p>
+      <button id="reiniciar" type="button" hidden>Volver al centro</button>
+      <noscript>Activa JavaScript para abrir la pista 3D.</noscript>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

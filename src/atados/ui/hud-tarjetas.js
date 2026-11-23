@@ -340,6 +340,8 @@ export function crearHudTarjetas({
   // Lo que hay pintado en las teclas: clave de la tarjeta y dispositivo y familia de cada jugador. Se compara
   // valor a valor (sin armar cadenas ni objetos) para no asignar memoria cada cuadro mientras la tarjeta se ve.
   let mandoCompartido = false;
+  // Al reasignar o restablecer teclas, preferencias reemplaza los mapas de ambos jugadores.
+  let mapaPintado = cfg.controls.keyboard.sael;
   let teclasClave = ""; // "" = hay que repintar
   let dSael = "",
     dOdo = "",
@@ -368,6 +370,7 @@ export function crearHudTarjetas({
       f1 = d.familia[1];
     if (
       clave === teclasClave &&
+      mapaPintado === cfg.controls.keyboard.sael &&
       mandoCompartido === !!d.mandoCompartido &&
       d0 === dSael &&
       d1 === dOdo &&
@@ -376,6 +379,7 @@ export function crearHudTarjetas({
     )
       return; // nada cambió: las teclas pintadas siguen valiendo
     teclasClave = clave;
+    mapaPintado = cfg.controls.keyboard.sael;
     mandoCompartido = !!d.mandoCompartido; // conectar otro mando cambia lo que hace cada stick
     dSael = d0;
     dOdo = d1;

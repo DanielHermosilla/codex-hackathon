@@ -3,7 +3,7 @@
 //   caida ──(aterrizan, D-205)──▶ recorrido ──(cruzan el arco, D-211)──▶ arco
 //     arco ──(fundido + silencio y la pradera ya cargó)──▶ jefe ──(Mirra cae)──▶ victoria
 //   recorrido: caer los dos reinicia el pasillo dentro del recorrido (D-168), sin salir de este estado.
-//   jefe: caer los dos = reintento directo en la pradera con presentación corta y sin cinemática (D-213).
+//   jefe: si ambos caen, la pantalla de derrota permite volver al inicio.
 //
 // Un solo bucle de paso fijo (core/juego.js → crearBucle) para toda la partida: cada paso simula el juego
 // activo (recorrido o jefe) y al final de ESE paso se revisan las transiciones. Así el resultado no depende
@@ -213,9 +213,6 @@ export function crearPartida(cfg, opciones) {
    * @returns {boolean} false si no simuló (hit-stop), como stepWorld
    */
   function paso(ins, dt) {
-    // Nota PROVISIONAL (D-029/D-172 frente a D-213): en difícil, caer los dos contra Mirra también es
-    // un reintento directo en la pradera con la presentación corta; con un solo jefe no hay rush que
-    // reiniciar. Si Diego decide que difícil vuelve al lobby, se resuelve aquí con `derrota.reiniciaRush`.
     const r = juegoJefe
       ? juegoJefe.paso(ins, dt)
       : juegoRecorrido.paso(ins, dt);

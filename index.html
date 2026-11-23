@@ -22,14 +22,28 @@
         <i class="brand-mark" aria-hidden="true"></i> Geek Labs
       </div>
       <nav aria-label="Opciones del juego">
-        <button id="sound" type="button" aria-pressed="true">
-          <span class="audio-bars" aria-hidden="true"
-            ><i></i><i></i><i></i
-          ></span>
-          Sonido
-        </button>
-        <button id="guide" type="button">
-          Controles <span aria-hidden="true">⌨</span>
+        <button
+          id="settings"
+          type="button"
+          aria-label="Ajustes"
+          title="Ajustes"
+          aria-haspopup="dialog"
+          aria-controls="controls"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="m9.5 3 .6-1h3.8l.6 2 1.6.9 2-.4 1.9 3.3-1.4 1.5.1 2 1.4 1.5-1.9 3.3-2-.4-1.7 1-.5 2h-3.8l-.6-2-1.7-1-2 .4L4 13.8l1.4-1.5v-2L4 8.8l1.9-3.3 2 .4 1.7-1z"
+              transform="translate(0 1)"
+            />
+            <circle cx="12" cy="12" r="3.25" />
+          </svg>
         </button>
       </nav>
     </header>
@@ -38,7 +52,7 @@
         <canvas
           id="arena"
           tabindex="0"
-          aria-label="Arena de juego. Sael se mueve con WASD y Odo con las flechas."
+          aria-label="Arena de juego de Sael y Odo"
           aria-describedby="moves"
         ></canvas>
         <div id="hud" hidden>
@@ -56,7 +70,7 @@
         <div class="veil" id="overlay">
           <div class="panel">
             <div class="eyebrow" id="caption">El Templo Ancla</div>
-            <h1 id="title">Ata<span>Dos</span></h1>
+            <h1 id="title" tabindex="-1">Ata<span>Dos</span></h1>
             <p id="intro">
               Sael y Odo robaron la Brasa. Ahora, su única arma contra los
               dioses es la cadena que los une.
@@ -71,7 +85,20 @@
             </div>
             <div class="actions">
               <button class="gold" id="play" type="button">
-                Jugar <b aria-hidden="true">→</b></button
+                Jugar
+                <svg
+                  viewBox="0 0 20 16"
+                  width="20"
+                  height="16"
+                  aria-hidden="true"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M2 8h15m-6-5 5 5-5 5" />
+                </svg></button
               ><button class="gold" id="continuar-puesto" type="button" hidden>
                 Continuar al carro de completos
               </button>
@@ -86,54 +113,67 @@
       <div class="lower">
         <div id="moves">
           <p class="name sael"><i></i>Sael</p>
-          <span><kbd>W A S D</kbd> Mover</span
-          ><span><kbd>⇧ izq.</kbd> Anclar</span>
+          <span><kbd id="sael-mover">W A S D</kbd> Mover</span
+          ><span><kbd id="sael-ancla">⇧ izq.</kbd> Anclar</span>
         </div>
         <div>
           <p class="name odo"><i></i>Odo</p>
-          <span><kbd>↑ ← ↓ →</kbd> Mover</span
-          ><span><kbd>Enter</kbd> Anclar</span>
+          <span><kbd id="odo-mover">↑ ← ↓ →</kbd> Mover</span
+          ><span><kbd id="odo-ancla">Enter</kbd> Anclar</span>
         </div>
         <div>
           <p class="name">Esquivar</p>
           <span id="dash-help"><kbd>Espacio</kbd> Ambos</span>
         </div>
       </div>
-      <dialog id="controls">
-        <form method="dialog">
-          <button aria-label="Cerrar controles">×</button>
-        </form>
-        <h2>Cómo jugar</h2>
-        <p>
-          Pasen a lados opuestos del objetivo. Al separarse, las runas de la
-          cadena se iluminan. Muévanla a través del objetivo para cortarlo.
-        </p>
-        <p>
-          Mantén el ancla para que un jugador sirva de pivote. El otro puede
-          rodear al enemigo o esquivar su ataque.
-        </p>
-        <dl>
-          <dt>Solo</dt>
-          <dd>
-            WASD mueve a Sael y las flechas a Odo. Espacio hace que ambos
-            esquiven. Con mando, usa los dos sticks, los gatillos para anclar y
-            A para esquivar.
-          </dd>
-          <dt>Dos jugadores</dt>
-          <dd>
-            Sael esquiva con Espacio y se ancla con Shift izquierdo. Odo esquiva
-            con Shift derecho y se ancla con Enter. En dos mandos, cada jugador
-            usa el stick izquierdo, A y el gatillo derecho.
-          </dd>
-          <dt>Carro de completos</dt>
-          <dd>
-            Después de vencer a Mirra, continúa al siguiente pasillo. Acércate
-            al furgón y pulsa P para ver la carta. Esc te devuelve al juego.
-          </dd>
-          <dt>Pausa</dt>
-          <dd>Esc en el teclado o Start en el mando.</dd>
-        </dl>
-        <a href="./pista.html">Abrir la pista de prueba 3D ↗</a>
+      <dialog id="controls" aria-labelledby="settings-title">
+        <header class="settings-head">
+          <h2 id="settings-title" data-texto="ajustes.titulo">Ajustes</h2>
+          <form method="dialog">
+            <button id="close-settings" autofocus aria-label="Cerrar ajustes">
+              ×
+            </button>
+          </form>
+        </header>
+        <div class="volume-heading">
+          <label for="volume" data-texto="ajustes.volumen"
+            >Volumen general</label
+          ><output for="volume" id="volume-value"></output>
+        </div>
+        <input id="volume" type="range" min="0" max="100" step="1" />
+        <div class="keys-heading">
+          <h3 data-texto="ajustes.teclado">Teclado</h3>
+          <button type="button" id="reset-keys" data-texto="ajustes.reset">
+            Restablecer teclas
+          </button>
+        </div>
+        <table id="bindings">
+          <thead>
+            <tr>
+              <td></td>
+              <th scope="col" class="sael">Sael</th>
+              <th scope="col" class="odo">Odo</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <p id="key-status" role="status"></p>
+        <details id="how-to">
+          <summary data-texto="ajustes.ayuda">Cómo jugar</summary>
+          <p data-texto="ajustes.cadena">
+            Pasen a lados opuestos del objetivo y crucen la cadena tensa a
+            través de él. Anclar a uno permite que el otro gire a su alrededor.
+          </p>
+          <p data-texto="ajustes.mandos">
+            En solitario, la esquiva de Sael mueve a ambos. Con un mando, usa
+            los dos sticks, los gatillos para anclar y A para esquivar. Con dos
+            mandos, cada jugador usa el stick izquierdo, A y el gatillo derecho.
+          </p>
+          <p data-texto="ajustes.pausa">
+            Tras vencer a Mirra, acércate al carro de completos y pulsa P para
+            abrir la carta. Esc o Start pausa la partida.
+          </p>
+        </details>
       </dialog>
       <p class="sr" aria-live="polite" id="announce"></p>
       <noscript>Activa JavaScript para jugar AtaDos.</noscript>

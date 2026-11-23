@@ -124,7 +124,7 @@ export function crearJuego(cfg, { solo = false, sample }) {
 }
 
 // Combate: el reintento reemplaza el combate entero (estado reproducible por semilla, D-028/D-173).
-// Cada reemplazo (reintento en el paso, `reintentar()`, `reiniciar()` o la tecla de reinicio) pasa los
+// Cada reemplazo por reintento o reinicio explícito pasa los
 // eventos que el combate viejo aún no entregó al principio de la lista del nuevo: quien lee
 // `combate.eventos` no pierde ninguno aunque haya varios reemplazos entre dos lecturas.
 /**
@@ -157,14 +157,12 @@ export function crearJuegoJefe(
     combate = nuevo;
   }
   /**
-   * Un paso fijo del combate; si los dos pidieron reintentar, lo reemplaza en el mismo paso.
+   * Un paso fijo del combate; la derrota permanece hasta abandonar la partida.
    * @param {Entrada[]} ins
    * @param {number} dt  s
    */
   function paso(ins, dt) {
-    const r = pasoCombate(combate, ins, dt);
-    if (combate.pedirReintento) reemplazar(reintentarCombate(combate));
-    return r;
+    return pasoCombate(combate, ins, dt);
   }
   /** @param {string[]} acciones  acciones de debug del cuadro */
   function aplicarDebug(acciones) {

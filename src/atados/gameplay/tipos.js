@@ -221,8 +221,6 @@ export {};
  * @property {number} finAviso
  * @property {number} tPelea
  * @property {{ t: number, T: number, saltable: boolean }} presentacion
- * @property {number} derrotaT
- * @property {boolean} pedirReintento
  * @property {Evento[]} eventos
  * @property {{ clave: string, t: number } | null} frase
  * @property {StatsCombate} stats
