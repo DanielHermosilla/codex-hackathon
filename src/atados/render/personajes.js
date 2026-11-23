@@ -21,7 +21,7 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const angDif = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 
 /**
- * @param {{ scene: THREE.Scene, cfg: import('./tipos.js').Cfg, modelos: import('./tipos.js').Modelos, keep: import('./tipos.js').Keep, decalMat: import('./tipos.js').DecalMat, anillo?: boolean }} args
+ * @param {{ scene: THREE.Scene, cfg: import('./tipos.js').Cfg, modelos: import('./tipos.js').Modelos, keep: import('./tipos.js').Keep, decalMat: import('./tipos.js').DecalMat, brillos: ReturnType<typeof import('./brillos.js').crearBrillos>, anillo?: boolean }} args
  */
 export function crearPersonajes({
   scene,
@@ -29,6 +29,7 @@ export function crearPersonajes({
   modelos,
   keep,
   decalMat,
+  brillos,
   anillo = true,
 }) {
   const P = cfg.paleta.jugadores;
@@ -123,6 +124,12 @@ export function crearPersonajes({
     estaca.castShadow = true;
     lineaFondo.visible = linea.visible = relleno.visible = anillo;
     root.add(lineaFondo, linea, relleno, estaca);
+    const escudo = brillos.aro(root, 0xffffff);
+    escudo.malla.scale.setScalar(A.radio * 1.12);
+    escudo.malla.position.y = 0.065;
+    const destellos = Array.from({ length: 4 }, () =>
+      brillos.halo(root, 0xffffff),
+    );
     scene.add(root);
     return {
       i,
@@ -137,6 +144,9 @@ export function crearPersonajes({
       lineaFondo,
       relleno,
       estaca,
+      escudo,
+      destellos,
+      intensidadEscudo: 0,
       ringIdx: /** @type {THREE.BufferAttribute} */ (ringGeo.index).count,
       paso: i * 0.5,
       vel: 0,
@@ -178,8 +188,9 @@ export function crearPersonajes({
    * @param {number} dt
    * @param {{ flashes: boolean, dash: (i: number, p: any) => void, golpe: (i: number, p: any) => void, muere: (i: number, p: any) => void, paso: (i: number, x: number, z: number, fuerza: number) => void }} eventos
    * @param {number} tiempo
+   * @param {number|null} [colorEscudo]
    */
-  function sync(w, dt, eventos, tiempo) {
+  function sync(w, dt, eventos, tiempo, colorEscudo = null) {
     const ch = w.chain;
     for (let i = 0; i < 2; i++) {
       const p = w.players[i],
@@ -357,6 +368,32 @@ export function crearPersonajes({
         j.mesh.visible = true;
       }
 
+      // El escudo tiñe los dos cuerpos sin ocultar su animación de golpe.
+      j.mat.emissive.setHex(colorEscudo ?? 0xffffff);
+      // El brillo entra con una rampa corta, y sale al mismo tiempo que el escudo.
+      const protegido = colorEscudo !== null && p.alive;
+      j.intensidadEscudo = protegido
+        ? 1 - (1 - j.intensidadEscudo) * Math.exp(-18 * dt)
+        : 0;
+      j.escudo.malla.visible = protegido;
+      if (protegido) {
+        j.mat.emissiveIntensity += 0.76 * j.intensidadEscudo;
+        j.escudo.u.color.value.setHex(colorEscudo);
+        j.escudo.u.opacidad.value = 0.78 * j.intensidadEscudo;
+      }
+      for (const [k, chispa] of j.destellos.entries()) {
+        chispa.visible = protegido;
+        if (!protegido) continue;
+        const giro = tiempo * 2.3 + (k * Math.PI) / 2;
+        chispa.position.set(
+          0.75 * Math.cos(giro),
+          0.88 + 0.55 * Math.sin(giro * 1.5),
+          0.75 * Math.sin(giro),
+        );
+        chispa.scale.setScalar(0.32);
+        chispa.material.color.setHex(colorEscudo);
+        chispa.material.opacity = 0.72 * j.intensidadEscudo;
+      }
       j.estaca.visible = p.alive && p.anchored;
       if (!anillo) continue;
       // Anillo: arco = vida (D-063). Anclado: más opaco y con estaca; muerto: casi apagado.

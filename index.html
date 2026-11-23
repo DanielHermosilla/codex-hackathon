@@ -7,6 +7,16 @@
     <title>AtaDos · Geek Labs</title>
   </head>
   <body>
+    <script>
+      if (location.protocol === "file:") {
+        document.addEventListener("DOMContentLoaded", () => {
+          const aviso = document.createElement("p");
+          aviso.textContent =
+            "Para jugar, abre Jugar AtaDos.cmd en esta misma carpeta. Se abrirá el juego en tu navegador.";
+          document.body.replaceChildren(aviso);
+        });
+      }
+    </script>
     <header class="mast">
       <div class="studio">
         <i class="brand-mark" aria-hidden="true"></i> Geek Labs

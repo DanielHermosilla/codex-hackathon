@@ -1,5 +1,16 @@
 // Textos en español (D-102). Las frases de jefe son BORRADOR de la ficha: las aprueba Diego.
 export default {
+  "brasero.color.0": "rojo",
+  "brasero.color.1": "azul",
+  "brasero.color.2": "dorado",
+  "brasero.escudo": "Escudo {color} · {tiempo} s",
+  "indicacion.orbe":
+    "Vacío · lleva el orbe al pilar marcado y sal del círculo.",
+  "indicacion.luz": "Luz divina · busca la sombra detrás de un obstáculo.",
+  "indicacion.pisotonSolo": "Pisotón · entra al círculo marcado.",
+  "indicacion.pisoton": "Pisotón · entren juntos al círculo marcado.",
+  "indicacion.braseros":
+    "Proyectiles en 4 s · pisen el brasero {color} para proteger a ambos durante 3 s.",
   "indicacion.muneco":
     "Sepárense: la cadena solo corta cuando está tensa. Crúcenla por el muñeco.",
   "indicacion.munecoPilar":

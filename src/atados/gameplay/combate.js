@@ -6,6 +6,18 @@
 // y reintento muy rápido; D-029/D-172 en difícil caer los dos reinicia el rush; D-098/D-100/D-165/D-174
 // lápida con stats; D-099 drop extra sin daño; D-106 eventos de sonido de aviso; D-183 silencios.
 
+import {
+  crearArenaMirra,
+  iniciarOrbe,
+  iniciarLuz,
+  avanzarArenaMirra,
+} from "./arena-mirra.js";
+import {
+  crearRitos,
+  iniciarPisoton,
+  iniciarBraseros,
+  avanzarRitos,
+} from "./ritos.js";
 import { createWorld, stepWorld } from "./mundo.js";
 import { createChain } from "./cadena.js";
 import {
@@ -31,7 +43,6 @@ import { crearRng } from "../core/rng.js";
 /** @typedef {import('./tipos.js').Cfg} Cfg */
 /** @typedef {import('./tipos.js').Combate} Combate */
 /** @typedef {import('./tipos.js').Entrada} Entrada */
-/** @typedef {import('./tipos.js').Bloque} Bloque */
 
 const MAX_EVENTOS = 200;
 
@@ -87,7 +98,7 @@ export function crearCombate(cfg, opts = {}) {
   const multSolo = o.solo ? C.telegrafiaSolo : 1;
 
   const c = /** @type {Combate} */ (
-    /** @type {Omit<Combate, 'ctx'>} */ ({
+    /** @type {Omit<Combate, 'ctx' | 'golpeRito'>} */ ({
       cfg,
       opts: o,
       id: o.jefe,
@@ -97,6 +108,12 @@ export function crearCombate(cfg, opts = {}) {
       resultado: null,
       t: 0,
       tPelea: 0,
+      arenaMirra: crearArenaMirra(),
+      ritos: crearRitos(),
+      turnoArena: 0,
+      proximoRito: cfg.jefes.mirra.ritual.inicio,
+      avisoRito: "",
+      finAviso: 0,
       presentacion: {
         t: 0,
         T: o.primeraVez ? C.presentacion.primera : C.presentacion.reintento,
@@ -155,6 +172,8 @@ export function crearCombate(cfg, opts = {}) {
     _cand: [],
   };
   c.ctx = ctx;
+  c.golpeRito = (i, dano) =>
+    golpear(c, { accion: { id: c.avisoRito } }, i, dano, 0, 0, 0);
   w.dummy.invulnerable = true;
   emitir(c, "presentacion_inicio", { jefe: o.jefe, completa: o.primeraVez });
   if (o.primeraVez) emitir(c, "silencio", { motivo: "nombre" }); // D-183: solo la primera vez
@@ -178,7 +197,7 @@ export function emitir(c, tipo, datos = {}) {
 
 /**
  * @param {Combate} c
- * @param {Bloque} b
+ * @param {{accion: {id: string}}} b
  * @param {number} i
  * @param {number} dano
  * @param {number} empuje
@@ -266,6 +285,33 @@ function cederAnclados(c) {
   }
 }
 
+// Solo la apertura del vacío ocupa un turno. El hueco sigue cerrándose entre ataques.
+/** @param {Combate} c */
+function especialEnCurso(c) {
+  const a = c.arenaMirra;
+  return !!(c.ritos.tipo || a.orbe || a.pilar || a.explosion || a.luz);
+}
+
+/** @param {Combate} c @param {number} dt */
+function pasoArena(c, dt) {
+  if (c.tPelea >= c.proximoRito) {
+    const { secuencia, intervalo } = c.cfg.jefes.mirra.ritual;
+    const { id, aviso } = secuencia[c.turnoArena % secuencia.length];
+    if (id === "orbe") iniciarOrbe(c.arenaMirra, c.ctx);
+    if (id === "luz") iniciarLuz(c.arenaMirra, c.ctx);
+    if (id === "pisoton") iniciarPisoton(c.ritos, c.w, c.arenaMirra.huecos);
+    if (id === "braseros") iniciarBraseros(c.ritos, c.w, c.arenaMirra.huecos);
+    c.avisoRito = id;
+    c.finAviso = c.tPelea + aviso;
+    c.turnoArena++;
+    c.proximoRito += intervalo;
+  }
+  const ocupado = especialEnCurso(c);
+  avanzarArenaMirra(c.arenaMirra, c.ctx, dt);
+  avanzarRitos(c.ritos, c.w, dt, c.golpeRito);
+  return ocupado;
+}
+
 // Un paso fijo. Devuelve false si no simuló (hit-stop), igual que stepWorld.
 /**
  * @param {Combate} c
@@ -345,7 +391,11 @@ export function pasoCombate(c, inputs, dt) {
   }
   if (c.estado === "pelea") {
     c.tPelea += dt;
-    actualizarJefe(ctx, dt);
+    const especial =
+      c.id === "mirra" && jefe.vivo && !jefe.sinAtaques && pasoArena(c, dt);
+    if (especial && jefe.accion?.tipo === "ataque")
+      cancelarAccion(ctx, "especial");
+    actualizarJefe(ctx, dt, especial);
   }
 
   // Caídas.
@@ -555,6 +605,15 @@ export function snapshotCombate(c) {
           }
         : null,
       cola: j.cola.map((x) => x.tipo),
+    },
+    rito: {
+      tipo: c.ritos.tipo,
+      colorObjetivo: c.ritos.colorObjetivo,
+      braseros:
+        c.ritos.tipo === "braseros"
+          ? c.ritos.braseros.map((f) => ({ ...f }))
+          : [],
+      escudo: { ...c.ritos.escudo },
     },
     zonas: c.zonas.items
       .filter((z) => z.activo)

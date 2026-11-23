@@ -163,18 +163,33 @@ export const CONFIG = {
       velocidad: 3.0, // m/s al acercarse. PROVISIONAL
       giro: 2.5, // rad/s. PROVISIONAL (sin giro instantáneo)
       distanciaIdealL: 0.5, // se acerca hasta esta distancia del borde de su cuerpo al objetivo. PROVISIONAL
+      // Los avisos de arena se intercalan con el repertorio habitual de Mirra.
+      ritual: {
+        inicio: 4,
+        intervalo: 8,
+        secuencia: [
+          { id: "orbe", aviso: 5 },
+          { id: "luz", aviso: 3 },
+          { id: "pisoton", aviso: 3 },
+          { id: "braseros", aviso: 4 },
+        ],
+      },
       pausa: 1.8, // s entre ataques en fase 1 («pausas largas»). PROVISIONAL
       arena: {
         radioL: 2.2, // claro de ~15 m de radio: con 3 L (21 m) la cámara se alejaba y todo se veía diminuto
         jefe: [0, -0.4], // en L. PROVISIONAL
         sael: [-0.3, 1.1],
         odo: [0.3, 1.1], // en L. PROVISIONAL
-        // ficha: 4 espantapájaros a ~2 L del centro (propuesta). r en m (técnico, como los pilares del hito 1)
+        // Distancias en largos de cadena: claros amplios alternados con grupos de cobertura.
         pilares: [
-          { id: 0, angDeg: 45, distL: 1.45, r: 0.75 },
-          { id: 1, angDeg: 135, distL: 1.45, r: 0.75 },
-          { id: 2, angDeg: 225, distL: 1.45, r: 0.75 },
-          { id: 3, angDeg: 315, distL: 1.45, r: 0.75 },
+          { id: 0, angDeg: 28, distL: 1.34, r: 0.75 },
+          { id: 1, angDeg: 137, distL: 1.67, r: 0.75 },
+          { id: 2, angDeg: 208, distL: 1.19, r: 0.75 },
+          { id: 3, angDeg: 321, distL: 1.73, r: 0.75 },
+          { id: 4, angDeg: 54, distL: 0.78, r: 0.75 },
+          { id: 5, angDeg: 161, distL: 1.53, r: 0.75 },
+          { id: 6, angDeg: 245, distL: 1.46, r: 0.75 },
+          { id: 7, angDeg: 346, distL: 0.91, r: 0.75 },
         ],
       },
       // D-153: 2 fases por vida. `desde` = fracción de vida a la que empieza.

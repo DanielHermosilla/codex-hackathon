@@ -186,7 +186,7 @@ export {};
  * @property {Punto[]} tiron
  * @property {(t: number | Record<string, number>) => number} tele
  * @property {(acc: { objetivo: number } | null, out: Punto) => Punto} posObjetivo
- * @property {(b: Bloque, i: number, dano: number, empuje: number, fx: number, fz: number, tick?: boolean) => boolean} golpear
+ * @property {(b: {accion: {id: string}}, i: number, dano: number, empuje: number, fx: number, fz: number, tick?: boolean) => boolean} golpear
  * @property {(tipo: string, datos?: Record<string, any>) => Evento} emitir
  * @property {string[]} _cand
  */
@@ -206,6 +206,13 @@ export {};
  * @property {string} estado  presentacion | pelea | derrota | victoria
  * @property {string | null} resultado
  * @property {number} t
+ * @property {ReturnType<typeof import('./arena-mirra.js').crearArenaMirra>} arenaMirra
+ * @property {ReturnType<typeof import('./ritos.js').crearRitos>} ritos
+ * @property {number} turnoArena
+ * @property {number} proximoRito
+ * @property {(i:number, dano:number)=>boolean} golpeRito
+ * @property {string} avisoRito
+ * @property {number} finAviso
  * @property {number} tPelea
  * @property {{ t: number, T: number, saltable: boolean }} presentacion
  * @property {number} derrotaT
