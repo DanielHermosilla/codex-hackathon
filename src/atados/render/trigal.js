@@ -930,7 +930,7 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
         (hash(i, 7) - 0.5) * 0.4,
       );
       d.scale.set(h * 1.5 + 0.12, h, h * 1.5 + 0.12);
-      // El trigo reaparece al retirarse el borde del ácido o del vacío.
+      // El trigo reaparece al evaporarse el charco de ácido.
       if (oculta) d.scale.setScalar(0);
       d.updateMatrix();
       dentro.setMatrixAt(i, d.matrix);
@@ -950,9 +950,8 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
   function sync(w, c, dt, tiempo, vfx) {
     arcoSalida.visible = c.estado === "victoria";
     uViento.value = tiempo * T.viento.velocidad;
-    peligrosSuelo.length = 0; // Reutiliza la lista al dibujar ambos tipos de suelo.
-    if (c.arenaMirra)
-      peligrosSuelo.push(...c.arenaMirra.charcos, ...c.arenaMirra.huecos);
+    peligrosSuelo.length = 0; // Reutiliza la lista al dibujar el ácido.
+    if (c.arenaMirra) peligrosSuelo.push(...c.arenaMirra.charcos);
     if (peligrosSuelo.length || habiaPeligros) colocarDentro(true);
     habiaPeligros = peligrosSuelo.length > 0;
     molinoAspas.rotation.z = tiempo * 0.25;
