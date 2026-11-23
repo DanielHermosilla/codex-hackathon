@@ -9,7 +9,8 @@
 - Antes de editar, inspecciona estado, rama, worktrees y base. Trabaja desde `main` en `feature/<nombre>` o `fix/<nombre>`. Coordina escenas, recursos y otros archivos compartidos con su responsable.
 - Conserva cambios ajenos y archivos fuera de alcance. Pide autorización para operaciones destructivas y aprobación específica antes de cada commit, push o publicación de un PR. Nunca fuerces un push ni incluyas credenciales. Usa GitHub como autoridad sobre protecciones remotas.
 - Antes de cada commit, incluido el mensaje de squash o merge, aplica [`$humanizer`](.agents/skills/humanizer/SKILL.md) al título y al cuerpo. Presenta el texto final con la solicitud de aprobación y usa exactamente ese texto.
-- Abre los PR de trabajo hacia `main`. Ejecuta una integración solo con aprobación explícita para el PR y SHA revisados. Prohibidos el merge automático y los atajos a las reglas.
+- **Todos los merges, en cualquier rama, deben hacerse mediante un pull request en GitHub.** Cada integración requiere aprobación explícita para el PR y el SHA revisados. Se prohíben el merge automático y los atajos a las reglas.
+- **Solo Daniel puede modificar `main`.** Él integra los pull requests en esa rama. Los agentes y el resto del equipo tienen prohibido hacer commits, pushes o merges en `main`.
 - Usa `$new-feature`, `$code-review` y `$merge-feature` para los flujos del equipo. Usa especialistas cuando aporten evidencia adicional y mantén en el agente principal las operaciones de publicación e integración.
 - Si está disponible `fm respond`, guarda las salidas extensas y sus códigos en archivos temporales y pide a `fm` extraer la evidencia necesaria. Usa directamente los resultados deterministas y consulta los originales para verificar datos o errores.
 
