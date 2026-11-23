@@ -1,0 +1,87 @@
+/* El puesto vive al borde de la arena. El teclado y los clics siguen llegando al juego. */
+.atados-mural {
+  position: absolute;
+  z-index: 2;
+  bottom: clamp(0.45rem, 1.75vw, 1rem);
+  left: clamp(0.45rem, 1.75vw, 1rem);
+  width: min(25rem, calc(100% - 2rem));
+  box-sizing: border-box;
+  pointer-events: none;
+  color: #f5eee0;
+  text-align: left;
+}
+
+.atados-mural[hidden] {
+  display: none;
+}
+
+/* Una placa de latón oscuro hace legible el diálogo encima del trigo. */
+.mural-ticket {
+  padding: 0.58rem 0.85rem 0.7rem;
+  border: 1px solid #9a8051;
+  border-left: 3px solid #e3be73;
+  background: #24241df5;
+  box-shadow: 0 3px 10px #11171338;
+}
+
+.mural-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding-bottom: 0.35rem;
+  font:
+    700 0.67rem/1.35 system-ui,
+    sans-serif;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  color: #f1cb89;
+}
+
+.mural-broadcast {
+  color: #d7cebc;
+  font-size: 0.61rem;
+  letter-spacing: 0.045em;
+  text-transform: none;
+}
+
+.mural-dialogue {
+  display: flex;
+  gap: 0.6rem;
+  align-items: end;
+  border-top: 1px solid #766746;
+  padding-top: 0.4rem;
+}
+
+.mural-dialogue dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.22rem 0.48rem;
+  margin: 0;
+  font:
+    400 clamp(0.77rem, 1.3vw, 0.87rem)/1.35 Georgia,
+    serif;
+}
+
+.mural-dialogue dt {
+  padding-top: 0.15em;
+  font:
+    700 0.62rem/1.4 system-ui,
+    sans-serif;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  color: #f0e45a;
+}
+
+.mural-dialogue dt:nth-of-type(2) {
+  color: #84c9ff;
+}
+
+.mural-dialogue dd {
+  margin: 0;
+}
+
+.mural-dialogue img {
+  display: block;
+  flex: 0 0 24px;
+}

@@ -1,23 +1,37 @@
-# Hackaton Codex
+# Hackatón Codex
 
-**Es importante que USTEDES (no una IA) lean esto antes de ponerse a desarrollar**:
+**AtaDos** es un boss rush cooperativo de Geek Labs para navegador de escritorio. Sael y Odo están unidos por una cadena, y la cadena es su única arma: corta cuando está tensa y la pasan a través del enemigo. Empiezas practicando con un muñeco de paja y después enfrentas a Mirra la Hambrienta, que tiene seis ataques y dos fases.
 
-1. Confirmen que tienen Git y Python 3.11 (o más) instalado. Desde mac pueden ver al correr
+## Jugar
 
-```
-git --version && python3 --version
-```
+Instala Git, Python 3.11 o posterior y Node.js 24 con npm. Si usas nvm, ejecuta `nvm install` y `nvm use` desde la raíz.
 
-Si **no tienen** algunas de esas dos, instalarlo con homebrew:
-
-```
-brew install git python
+```sh
+npm ci
+npm run dev
 ```
 
-2. Abran Codex **desde el terminal**. Deben poner `/hooks` y dar permiso a los hooks que están en el repositorio. Por ejemplo, `PreToolUse` tiene el hook `Comprobando Operación GitHub` que deben aceptar. 
+Abre la dirección que imprima Vite, normalmente `http://localhost:5173`. Deja la terminal abierta mientras juegas. Pulsa Ctrl+C para cerrar el servidor. Usa un navegador de escritorio con WebGL 2 y teclado.
 
-3. Ahora, ponen `/skills` y acá deben buscar **las tres skills que son fundamentales para el desarrollo**. DEBEN usar esas skills **siempre** que quieran implementar una feature nueva: (i) `merge_feature`: para hacer un merge, que idealmente NO lo deben hacer sin supervisión, ya que es **necesario** probar y asegurar que todo esté funcionando correctamente antes de un merge; (ii) `new_feature`: cada vez que quieran añadir para nueva feature al juego; (iii) `code-review`: para evaluar los cambios en el código.
+Elige **Solo** para mover a Sael con WASD y a Odo con las flechas. Espacio hace esquivar a ambos. Enreda la cadena en un pilar para fijar un extremo y barrer desde ahí. En **Dos jugadores**, Sael esquiva con Espacio y Odo con Shift derecho. Mantén Shift izquierdo o Enter para anclar a Sael u Odo. La partida se pausa con Esc o al cambiar de ventana. El menú **Controles** también indica cómo jugar con mando.
 
-4. Correr `python3 scripts/validate.py --harness` para verificar que todo esté bien. 
+La [pista 3D de prueba](pista.html) sigue disponible desde **Controles**. La [dirección de diseño](docs/atados/), los [créditos de recursos](CREDITS.md) y la [arquitectura](docs/architecture.md) acompañan al juego.
 
-Esto si se lo pueden tirar a una IA para que se los lea. Ver la [guía para principiantes](docs/beginner-guide.md) y [publicación y protección en GitHub](docs/collaboration.md).
+## Comprobar un cambio
+
+Instala Chromium para Playwright una vez por cada versión de Playwright. Luego ejecuta la validación completa.
+
+```sh
+npx playwright install chromium
+python3 scripts/validate.py --strict
+```
+
+PowerShell, macOS y Linux pueden ejecutar los comandos de npm. Para el flujo de Codex en Windows, consulta los pasos de WSL en la guía de configuración.
+
+`npm run build` deja la versión web en `dist/`. `npm run preview` permite abrir esa compilación localmente. El test de navegador guarda una captura del canvas en `test-results/`.
+
+## Trabajar con Codex
+
+Lee [Configurar Codex](docs/codex-setup.md) para activar los hooks del repositorio y comprobar las skills. [Arquitectura](docs/architecture.md) muestra dónde cambiar la pista y las reglas. [Colaboración](docs/collaboration.md) describe las ramas, el PR y las aprobaciones.
+
+El [diseño de AtaDos](docs/atados/) reúne las mecánicas, las fichas de jefes y las decisiones del prototipo.

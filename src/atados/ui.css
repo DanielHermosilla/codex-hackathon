@@ -1,0 +1,480 @@
+@font-face {
+  font-family: Cinzel;
+  src: url("/atados/fonts/Cinzel.woff2") format("woff2");
+  font-weight: 400 900;
+  font-display: swap;
+}
+:root {
+  color-scheme: dark;
+  --ivory: #f5ecd7;
+  --gold: #e8c57d;
+  --muted: #c6bb9f;
+  --ink: #191e1b;
+  font-family: system-ui, sans-serif;
+  color: var(--ivory);
+  background: var(--ink);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+[hidden] {
+  display: none !important;
+}
+button,
+a {
+  touch-action: manipulation;
+}
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+button:hover,
+a:hover {
+  color: #ffe1a1;
+}
+:focus-visible {
+  outline: 2px solid #f3cd8c;
+  outline-offset: 3px;
+}
+.mast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(16px, 4vw, 70px);
+  height: 58px;
+  border-bottom: 1px solid #59533e;
+}
+.studio {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  font-family: Cinzel, Georgia, serif;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+}
+.brand-mark {
+  width: 22px;
+  height: 22px;
+  position: relative;
+  display: inline-block;
+  transform: rotate(45deg);
+  border: 1px solid var(--gold);
+}
+.brand-mark::before,
+.brand-mark::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid var(--gold);
+}
+.brand-mark::after {
+  inset: 8px;
+  background: var(--gold);
+}
+nav {
+  display: flex;
+  gap: clamp(12px, 2vw, 36px);
+}
+nav button,
+.lower button {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  font-size: 0.82rem;
+  min-height: 40px;
+}
+.audio-bars {
+  display: inline-flex;
+  height: 12px;
+  align-items: center;
+  gap: 2px;
+}
+.audio-bars i {
+  width: 2px;
+  background: var(--gold);
+  height: 70%;
+}
+.audio-bars i:nth-child(2) {
+  height: 100%;
+}
+.audio-bars i:last-child {
+  height: 40%;
+}
+[aria-pressed="false"] > .audio-bars {
+  opacity: 0.4;
+}
+.stage {
+  isolation: isolate;
+  position: relative;
+  overflow: hidden;
+  background: #343930;
+  height: calc(100svh - 150px);
+  min-height: 400px;
+  max-height: 1120px;
+  border-bottom: 1px solid #6c634a;
+}
+#arena {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline-offset: -3px;
+}
+.veil {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding: clamp(20px, 5vw, 90px);
+  background: linear-gradient(
+    90deg,
+    rgba(19, 26, 24, 0.97) 0%,
+    rgba(26, 31, 26, 0.88) 24%,
+    rgba(26, 31, 26, 0.45) 48%,
+    transparent 74%
+  );
+  pointer-events: none;
+}
+.panel {
+  max-width: min(460px, 49vw);
+  text-shadow: 0 2px 22px #161a17;
+}
+.eyebrow,
+#phase,
+.name {
+  font:
+    600 0.72rem/1.35 system-ui,
+    sans-serif;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+.eyebrow {
+  color: var(--gold);
+  display: flex;
+  gap: 1em;
+  align-items: center;
+}
+.eyebrow::before {
+  content: "";
+  width: 2.4em;
+  border-top: 1px solid;
+}
+h1,
+h2,
+#target-name {
+  font-family: Cinzel, Georgia, serif;
+}
+h1 {
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.065em;
+  margin: 0.2em 0 0.12em;
+  font-size: clamp(4.3rem, 8.7vw, 9.75rem);
+  text-wrap: balance;
+}
+h1 span {
+  color: var(--gold);
+}
+.stage:not([data-screen="menu"]) h1 {
+  font-size: clamp(2.5rem, 5vw, 5rem);
+  letter-spacing: -0.04em;
+}
+#intro {
+  max-width: 26rem;
+  font-size: clamp(0.93rem, 1.2vw, 1.12rem);
+  line-height: 1.6;
+  color: #f0e9d7;
+  margin: 0.65em 0 1.4em;
+}
+#modes {
+  display: inline-flex;
+  border: 1px solid #9e9276;
+  background: #1b231dcc;
+  padding: 3px;
+  gap: 3px;
+}
+#modes button,
+.actions button,
+#pause {
+  pointer-events: auto;
+}
+#modes button {
+  padding: 7px 13px;
+  font-size: 0.85rem;
+}
+#modes [aria-pressed="true"] {
+  background: #d5c7a8;
+  color: #24271e;
+}
+.actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 1.1rem;
+}
+.actions > button {
+  font-size: 0.9rem;
+}
+.gold {
+  padding: 0.82em 1.5em;
+  background: var(--gold);
+  color: #28271d;
+  font-family: Cinzel, Georgia, serif;
+  font-size: 1.05rem !important;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px #ffe0a8;
+}
+.gold:hover {
+  color: #181d16;
+  background: #f6d79a;
+}
+.gold b {
+  margin-left: 28px;
+}
+#hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.target {
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 2px;
+  text-align: center;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #1b211de8 16%,
+    #1b211de8 84%,
+    transparent
+  );
+  padding: 6px 35px 10px;
+  width: min(345px, 64%);
+}
+#phase {
+  color: var(--gold);
+  font-size: 0.63rem;
+}
+#target-name {
+  font-size: 1.05rem;
+}
+progress {
+  margin: auto;
+  height: 5px;
+  width: 90%;
+  border: 0;
+  background: #554d3b;
+  appearance: none;
+}
+progress::-webkit-progress-bar {
+  background: #554d3b;
+}
+progress::-webkit-progress-value {
+  background: #f2cd75;
+}
+progress::-moz-progress-bar {
+  background: #f2cd75;
+}
+#pause {
+  position: absolute;
+  right: 15px;
+  top: 14px;
+  width: 42px;
+  height: 38px;
+  background: #20271feb;
+  border: 1px solid #c4b787;
+  font-weight: bold;
+}
+#objective,
+#damage {
+  margin: 0;
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  max-width: min(34%, 330px);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  padding: 7px 12px;
+  background: #19201bf0;
+  border-left: 2px solid var(--gold);
+}
+#damage {
+  bottom: 64px;
+  color: var(--gold);
+}
+#mural {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 2;
+  pointer-events: none;
+}
+.lower {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 4vw, 4.7rem);
+  padding: 10px clamp(14px, 4vw, 70px);
+  min-height: 90px;
+  color: var(--muted);
+}
+.lower > div > span {
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 0.78rem;
+}
+.name {
+  margin: 0 0 6px;
+  color: var(--ivory);
+  font-size: 0.68rem;
+}
+.name i {
+  display: inline-block;
+  width: 0.53rem;
+  height: 0.53rem;
+  transform: rotate(45deg);
+  margin-right: 0.55rem;
+}
+.sael i {
+  background: #f0e45a;
+}
+.odo i {
+  background: #4fb0ff;
+}
+.lower button {
+  margin-left: auto;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+kbd {
+  font:
+    0.74rem system-ui,
+    sans-serif;
+  padding: 1px 4px;
+  border: 1px solid #696b5d;
+  border-bottom-width: 2px;
+  margin-right: 2px;
+  border-radius: 3px;
+  color: var(--ivory);
+}
+dialog {
+  width: min(480px, 92vw);
+  max-height: 85svh;
+  background: #252b24;
+  color: var(--ivory);
+  padding: 28px;
+  border: 1px solid #968866;
+  line-height: 1.5;
+}
+dialog::backdrop {
+  background: #111711bd;
+}
+dialog form {
+  float: right;
+}
+dialog form button {
+  font-size: 1.5rem;
+}
+h2 {
+  margin: 0;
+  font-size: 1.7rem;
+}
+dt {
+  font-weight: bold;
+  color: var(--gold);
+}
+dd {
+  margin: 3px 0 12px;
+}
+a {
+  color: var(--gold);
+}
+#problem {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  padding: 30px;
+  text-align: center;
+}
+.sr {
+  position: absolute;
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+@media (max-width: 720px) {
+  .mast {
+    height: 48px;
+  }
+  .stage {
+    height: calc(100svh - 160px);
+    min-height: 360px;
+  }
+  .panel {
+    max-width: 72vw;
+  }
+  .veil {
+    background: linear-gradient(90deg, #151e19ee, #1e2922b5 58%, transparent);
+  }
+  .lower {
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .lower > div > span {
+    display: block;
+  }
+  .lower button {
+    font-size: 0.72rem;
+  }
+  .studio {
+    font-size: 0.78rem;
+  }
+  #objective {
+    font-size: 0.7rem;
+  }
+  .actions {
+    gap: 0.6rem;
+  }
+  #mural {
+    max-width: 55%;
+    bottom: 0.5rem;
+    left: 0.5rem;
+  }
+}
+@media (max-height: 540px) and (min-width: 680px) {
+  .stage {
+    min-height: 295px;
+  }
+  .mast {
+    height: 42px;
+  }
+  .lower {
+    min-height: 60px;
+  }
+  .stage {
+    height: calc(100svh - 104px);
+  }
+  h1 {
+    font-size: 3.5rem;
+  }
+  .panel #intro {
+    margin: 0.4rem 0;
+  }
+  .actions {
+    margin-top: 0.5rem;
+  }
+}
