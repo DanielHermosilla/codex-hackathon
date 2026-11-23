@@ -1,4 +1,4 @@
-// Entorno del recorrido (D-204, D-209, D-210): lobby al pie del Templo Ancla y pasillo de subida entre
+// Entorno del recorrido (D-204, D-209, D-210): lobby al pie del Templo Celestial y pasillo de subida entre
 // ruinas, como un olimpo caído. Claro de losas con la urna de bronce rota sobre su altar (01-setting-lore),
 // muros en ruinas, escalinata y rampas que suben (solo en el dibujo: la física es plana), columnas rotas
 // justo donde están los pilares de gameplay (mismo radio), losas de mural a los lados, el arco de la cima

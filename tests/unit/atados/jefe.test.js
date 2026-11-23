@@ -517,7 +517,7 @@ describe("Hambre contra la cadena tensa (D-148)", () => {
     expect(c.jefe.z).toBeLessThan(0);
   });
 
-  it("con la cadena floja la carga no se corta ni tropieza", () => {
+  it("con la cadena floja la carga recibe daño pero no tropieza", () => {
     const c = nuevo();
     saltarPresentacion(c);
     sinAtaques(c);
@@ -529,7 +529,7 @@ describe("Hambre contra la cadena tensa (D-148)", () => {
     for (let s = 0; s < 240 && c.jefe.accion; s++)
       pasoCombate(c, [inp({ anchor: true }), inp({ anchor: true })], DT);
     expect(acc.tropezo).toBe(false);
-    expect(hp0 - c.jefe.hp).toBeLessThan(50);
+    expect(hp0 - c.jefe.hp).toBeGreaterThan(0);
   });
 });
 

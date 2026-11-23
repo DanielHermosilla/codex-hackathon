@@ -1,4 +1,4 @@
-// Altura visual del suelo del recorrido (D-210): la subida al Templo Ancla se ve con rampas y peldaños,
+// Altura visual del suelo del recorrido (D-210): la subida al Templo Celestial se ve con rampas y peldaños,
 // pero la física sigue plana. Puro: sin three.js ni DOM. Lo leen personajes, cadena, VFX, enemigos,
 // cámara y el decorado para que nada flote ni quede enterrado. Unidades: metros.
 // La altura de un punto (x, z) sale de su proyección sobre la ruta (s) y de los tramos de

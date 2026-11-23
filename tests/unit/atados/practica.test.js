@@ -37,7 +37,7 @@ describe("práctica con el muñeco", () => {
     expect(c.w.players.every((p) => p.alive)).toBe(true);
   });
 
-  it("un barrido tenso le quita vida y uno flojo casi nada", () => {
+  it("un barrido flojo hace daño y el tenso hace más", () => {
     const tenso = practica();
     correr(tenso, { mx: -1 }, { mx: 1 }, 50);
     correr(tenso, { mx: -0.5, mz: -1 }, { mx: 0.5, mz: -1 }, 120);
@@ -46,7 +46,9 @@ describe("práctica con el muñeco", () => {
 
     const flojo = practica();
     correr(flojo, { mz: -1 }, { mz: -1 }, 120);
-    expect(flojo.jefe.hpMax - flojo.jefe.hp).toBeLessThan(quitado * 0.1);
+    const danoFlojo = flojo.jefe.hpMax - flojo.jefe.hp;
+    expect(danoFlojo).toBeGreaterThan(0);
+    expect(danoFlojo).toBeLessThan(quitado);
   });
 
   it("la proporción daño de una pasada tensa / vida del muñeco no cambia con la escala ×10 (D-202)", () => {

@@ -2,6 +2,8 @@
 /** @typedef {import('./tipos.js').Mundo} Mundo */
 /** @typedef {import('./tipos.js').Pilar} Circulo */
 /** @typedef {ReturnType<typeof crearRitos>} Ritos */
+/** @typedef {{ tipo: "pilar" | "caida" | "escudo" | "impacto", x: number, z: number }} ResolucionTiro */
+/** @typedef {{ x: number, z: number, activo: boolean, resolucion: ResolucionTiro | null }} Tiro */
 
 export const PISOTON = { aviso: 3, radio: 2, separacion: 2.6 };
 export const BRASEROS = {
@@ -21,7 +23,14 @@ export function crearRitos() {
     braseros: BRASEROS.colores.map((_, color) => ({ x: 0, z: 0, color })),
     colorObjetivo: -1,
     escudo: { color: -1, restante: 0 },
-    tiros: [0, 1].map(() => ({ x: 0, z: 0, activo: false })),
+    tiros: [0, 1].map(
+      /** @returns {Tiro} */ () => ({
+        x: 0,
+        z: 0,
+        activo: false,
+        resolucion: null,
+      }),
+    ),
   };
 }
 
@@ -86,19 +95,31 @@ export function iniciarBraseros(r, w, huecos = []) {
     const angulo = Math.atan2(p.z, p.x) + Math.PI + (i === 0 ? 0.2 : -0.2);
     Object.assign(r.tiros[i], {
       activo: p.alive,
+      resolucion: null, // La salva anterior ya no puede generar destellos.
       x: w.arenaRadius * Math.cos(angulo),
       z: w.arenaRadius * Math.sin(angulo),
     });
   }
 }
 
-/** @param {number} x @param {number} z @param {number} dx @param {number} dz @param {Circulo} p */
-function intercepta(x, z, dx, dz, p) {
-  const longitud = dx * dx + dz * dz;
-  const t = longitud
-    ? Math.max(0, Math.min(1, ((p.x - x) * dx + (p.z - z) * dz) / longitud))
-    : 0;
-  return Math.hypot(x + t * dx - p.x, z + t * dz - p.z) <= p.r;
+// Fracción de entrada en un círculo durante el paso (0 al salir, 1 al llegar).
+/** @param {number} x @param {number} z @param {number} dx @param {number} dz @param {number} largo @param {number} radio */
+function entradaCirculo(x, z, dx, dz, largo, radio) {
+  const afuera = x * x + z * z - radio ** 2; // Distancia al centro al cuadrado menos el radio al cuadrado (m²).
+  if (afuera <= 0) return 0; // El paso ya comienza dentro del círculo o sobre su borde.
+  if (largo === 0) return Infinity; // Sin movimiento desde fuera, el círculo queda sin tocar.
+  const proy = x * dx + z * dz;
+  const disc = proy * proy - largo * afuera;
+  if (disc < 0) return Infinity; // La trayectoria pasa por fuera del círculo.
+  const t = (-proy - Math.sqrt(disc)) / largo; // La raíz menor da la entrada.
+  return t >= 0 && t <= 1 ? t : Infinity;
+}
+
+/** @param {Tiro} tiro @param {ResolucionTiro["tipo"]} tipo */
+function resolverTiro(tiro, tipo) {
+  tiro.activo = false;
+  // Esta posición en metros queda disponible para la vista hasta la próxima salva.
+  tiro.resolucion = { tipo, x: tiro.x, z: tiro.z };
 }
 
 // Resuelve el primer cruce del borde de un brasero durante este paso fijo.
@@ -112,18 +133,14 @@ function primerBrasero(w, fuegos) {
       dz = p.z - p.pz,
       largo = dx * dx + dz * dz;
     for (const f of fuegos) {
-      const x = p.px - f.x,
-        z = p.pz - f.z;
-      const afuera = x * x + z * z - BRASEROS.radio ** 2;
-      let t = 0;
-      if (afuera > 0) {
-        if (largo === 0) continue;
-        const proy = x * dx + z * dz,
-          disc = proy * proy - largo * afuera;
-        if (disc < 0) continue;
-        t = (-proy - Math.sqrt(disc)) / largo;
-        if (t < 0 || t > 1) continue;
-      }
+      const t = entradaCirculo(
+        p.px - f.x,
+        p.pz - f.z,
+        dx,
+        dz,
+        largo,
+        BRASEROS.radio,
+      );
       if (t < instante) {
         instante = t;
         primero = f.color;
@@ -168,20 +185,43 @@ export function avanzarRitos(r, w, dt, golpear) {
   for (const [i, t] of r.tiros.entries()) {
     const p = w.players[i];
     if (!t.activo) continue;
-    // Se dirige a la posición actual, incluso después de un cambio de rumbo.
-    const paso = Math.min(1, dt / antes);
-    const dx = (p.x - t.x) * paso,
-      dz = (p.z - t.z) * paso;
-    if (!p.alive || w.pillars.some((o) => intercepta(t.x, t.z, dx, dz, o))) {
-      t.activo = false;
+    if (!p.alive) {
+      // Si cae el objetivo, el tiro se apaga donde estaba al comienzo del paso.
+      resolverTiro(t, "caida");
       continue;
     }
-    t.x += dx;
-    t.z += dz;
-    if (r.tiempo <= 1e-8) {
-      t.activo = false;
-      if (r.escudo.color !== r.colorObjetivo || r.escudo.restante <= 0)
-        golpear(i, w.cfg.jefes.mirra.ritual.dano.braseros);
+    // Se dirige a la posición actual, incluso después de un cambio de rumbo.
+    const llega = r.tiempo <= 1e-8; // El margen absorbe el error acumulado del reloj (s).
+    const paso = llega ? 1 : dt / antes;
+    const dx = (p.x - t.x) * paso,
+      dz = (p.z - t.z) * paso;
+    const largo = dx * dx + dz * dz;
+    let primerChoque = Infinity;
+    for (const pilar of w.pillars) {
+      // Si hay varios obstáculos en el paso, usamos el primer borde que cruza.
+      const entrada = entradaCirculo(
+        t.x - pilar.x,
+        t.z - pilar.z,
+        dx,
+        dz,
+        largo,
+        pilar.r,
+      );
+      primerChoque = Math.min(primerChoque, entrada);
+    }
+    if (primerChoque !== Infinity) {
+      t.x += dx * primerChoque;
+      t.z += dz * primerChoque;
+      resolverTiro(t, "pilar");
+      continue;
+    }
+    t.x = llega ? p.x : t.x + dx;
+    t.z = llega ? p.z : t.z + dz;
+    if (llega) {
+      const protegido =
+        r.escudo.color === r.colorObjetivo && r.escudo.restante > 0;
+      resolverTiro(t, protegido ? "escudo" : "impacto");
+      if (!protegido) golpear(i, w.cfg.jefes.mirra.ritual.dano.braseros);
     }
   }
   if (r.tiros.every((t) => !t.activo)) r.tipo = "";

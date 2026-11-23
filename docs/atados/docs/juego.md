@@ -5,15 +5,17 @@
 
 ## La mecánica: la cadena es el arma
 - Los dos personajes están unidos por una cadena física de largo fijo. No hay otra arma. [D-011, D-079]
-- **Tensa corta, floja no**: el daño sube de forma continua con la tensión y la velocidad del barrido. Sin combos. [D-012, D-068, D-081]
+- **La tensión refuerza el corte.** A igual velocidad y contacto, la cadena floja inflige el 25 % del daño de una completamente tensa. Sin combos. [D-012, D-068, D-081]
 - Golpes básicos con uno; los fuertes piden a los dos tirando hacia lados opuestos. [D-017]
 - La cadena se enreda en pilares. En el largo máximo, el que tira más fuerte arrastra al otro; el dash siempre gana el tirón. [D-022, D-048, D-190]
 - Botones por jugador: mover, **dash** (invulnerable, cooldown 0,6 s) y **ancla** (mantener: te clavas y el otro gira alrededor). Sin salto. [D-019, D-069, D-122]
 - Si uno muere, su **cadáver queda atado** y el otro lo arrastra y lo usa **como mangual**. Revive al terminar el jefe. [D-020, D-070]
 - Sin fuego amigo. Se eliminó lanzar al compañero. [D-023, D-144]
 
-## Lore: «La Brasa Primera»
-Mitología inventada con fantasía oscura. En el valle de Hestera, siete dioses eran puros gracias a la **Brasa Primera**. Dos ladrones rivales, **Odo** (saqueador de tumbas, corpulento) y **Sael** (ladrona de gremio, ágil), intentan robarla la misma noche, pelean y la rompen. Siete esquirlas se clavan en siete dioses y cada virtud se invierte en pecado. **Tavor, el Juez**, funde la urna y forja la cadena: *«Repararán lo que rompieron. Juntos, o ninguno.»* La cadena es el único metal que contuvo la Brasa: por eso corta dioses y sus runas brillan con la tensión. Luego Tavor también cae. [D-057, D-128]
+## La Brasa Eterna
+Sael roba para alimentar a su familia y a su pueblo. Odo saquea tumbas para pagar sus deudas y sacar a su hermano de prisión. Durante un robo en el **Templo Celestial**, los dos apagan la **Brasa Eterna**. Los siete dioses de Hestera se corrompen y entran en guerra. Tavor, un juez antes benevolente y generoso, los destierra y los une con la **Cadena del Castigo Eterno**. El bronce de la urna conserva poder suficiente para cortar a los dioses. [D-128, D-217]
+
+[Historia y prólogo](../diseno/gdd/01-setting-lore.md).
 
 ## Jefes
 | Jefe | Virtud → pecado | Arena | Fases | Duración |

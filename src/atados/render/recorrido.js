@@ -1,4 +1,4 @@
-// Render del recorrido de inicio (D-204 a D-211): lobby al pie del Templo Ancla y pasillo de subida entre
+// Render del recorrido de inicio (D-204 a D-211): lobby al pie del Templo Celestial y pasillo de subida entre
 // ruinas hasta el arco de la cima. Compone luz y niebla de la zona `pasillo` (base → clímax con el avance,
 // D-086/D-188), el entorno (templo.js), Sael y Odo con su cadena sobre el suelo visual (altura.js, D-210),
 // el muñeco de paja del lobby (D-208), los enemigos del pasillo (enemigos-arte.js), VFX, bloom y la cámara

@@ -34,9 +34,9 @@
 
 ## 3. Daño: la cuchilla tensa
 - Mecanismo principal: la cadena tensa corta al pasar por un enemigo [D-012].
-- Daño continuo por paso de simulación = **tensión × velocidad relativa cadena–cuerpo**, mientras la cadena atraviesa al enemigo [D-148].
+- El daño de cada paso multiplica la velocidad relativa, la longitud de cadena en contacto y un factor que sube con la tensión [D-148].
 - Si el jefe carga contra la cadena tensa, también se corta [D-148].
-- Sin umbral duro. Floja ≈ casi nada [D-068]. Sin combo ni multiplicador [D-081].
+- A igual contacto y velocidad, el daño sube gradualmente desde el 25 % con la cadena floja hasta el 100 % con tensión completa [D-068]. Sin combo ni multiplicador [D-081].
 - Solo daña enemigos. Sin fuego amigo [D-023].
 - Daño igual en todo el cuerpo. Único punto débil de la demo: la esquirla de Tavor en su fase final [D-092, D-160].
 - Golpes básicos con uno solo; los fuertes piden a los dos [D-017]. Salen de tensión y velocidad altas, sin categorías discretas [D-068, D-081, D-148].
@@ -47,7 +47,7 @@
 | Config | Qué | Valor | Decisión |
 |---|---|---|---|
 | `damage.chain.scale` | Daño por unidad de tensión × velocidad | ❓ | D-148 |
-| `damage.chain.tensionCurve` | Forma de la curva de tensión (floja ≈ 0, continua) | ❓ | D-068 |
+| `damage.chain.slackFactor` | Fracción del daño a tensión cero, con escala lineal hasta la tensión máxima | 0,25 | D-068 |
 | `damage.chain.speedCurve` | Forma de la curva de velocidad relativa | ❓ | D-148 |
 
 ❓ Pregunta abierta (P-31): D-165 atribuye el daño solo para las stats. ¿Los ataques que apuntan «al que más daño hace» [D-091] usan la misma atribución?
@@ -126,7 +126,7 @@ Las mejoras de cadena valen para los dos [D-095]. Ya decididas como drop: alarga
 ## 12. Criterios del greybox (hito 1)
 Salen de las decisiones. Se comprueban con `window.__game` y capturas.
 1. Los dos se mueven unidos; al largo máximo la cadena no se estira y arrastra quien empuja más [D-022, D-149].
-2. Cadena floja que atraviesa al muñeco: daño ≈ 0 [D-068].
+2. Con la misma velocidad y longitud de contacto, el barrido flojo inflige la cuarta parte del daño de uno completamente tenso [D-068].
 3. Más tensión y más velocidad relativa: más daño, sin saltos [D-148].
 4. Un muñeco que se mueve contra la cadena tensa quieta también se corta [D-148].
 5. La cadena se enreda en un pilar y el tramo recto sigue tenso [D-048, D-147].

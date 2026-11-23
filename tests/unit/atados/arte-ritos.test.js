@@ -99,3 +99,34 @@ it("el pisotón marca la posición segura y los tres braseros se muestran con su
   sync(null, 1 / 60, true, jefe); // el camino al Puesto 23 se dibuja sin señales de combate
   assert.equal(visibles(scene).length, 0);
 });
+
+it("el destello aparece en el encuentro registrado aunque el tiro no se haya dibujado", () => {
+  const scene = new THREE.Scene();
+  const jefe = { x: 2, z: -5 };
+  const sync = crearVistaRitos(scene, keep, crearBrillos(keep));
+  const rito = crearRitos();
+  rito.colorObjetivo = 1;
+  rito.tiros[0].resolucion = { tipo: "pilar", x: 1.5, z: 5 };
+  rito.tiros[1].resolucion = { tipo: "escudo", x: 8, z: 3 };
+
+  sync(rito, 0.1, true, jefe); // Primera imagen tras resolverse ambos tiros.
+  const luces = visibles(scene).filter((objeto) => objeto.isSprite);
+  assert.deepEqual(
+    luces.map(({ position }) => [position.x, position.z]),
+    [
+      [1.5, 5],
+      [8, 3],
+    ],
+  );
+  assert.deepEqual(
+    luces.map(({ material }) => material.color.getHex()),
+    [BRASEROS.colores[1], BRASEROS.colores[1]],
+  );
+  const escalas = luces.map(({ scale }) => scale.x);
+  sync(rito, 0.225, true, jefe); // A mitad de su vida, el escudo se encoge y la rotura se expande.
+  assert.ok(luces[0].scale.x > escalas[0]);
+  assert.ok(luces[1].scale.x < escalas[1]);
+  sync(rito, 0.225, true, jefe);
+  sync(rito, 0.1, true, jefe);
+  assert.equal(visibles(scene).length, 0); // El mismo resultado no vuelve a encender el destello.
+});

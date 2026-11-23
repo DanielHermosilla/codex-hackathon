@@ -60,7 +60,8 @@ export const CONFIG = {
   },
   damage: {
     chain: {
-      scale: 70, // daño por (tensión × m/s × m de cadena dentro) por segundo (D-012, D-081, D-148), provisional; ×10 por D-202 (antes 7)
+      scale: 70, // daño por (factor de tensión × m/s × m de cadena dentro) por segundo (D-012, D-081, D-148), provisional; ×10 por D-202 (antes 7)
+      slackFactor: 0.25, // proporción del daño máximo con la cadena floja; subirlo aumenta su daño sin alterar el de la cadena tensa
       maxRelSpeed: 30, // m/s, tope técnico para que una corrección brusca del solver no dispare el daño
     },
   },
@@ -174,16 +175,22 @@ export const CONFIG = {
           explosion: 520,
           luz: 320,
           acido: 180,
+          vacio: 180,
           pisoton: 300,
           braseros: 260,
         }, // puntos en la escala ×10 de D-202
         inicio: 4,
         intervalo: 8,
+        // Ácido y orbe alternan en el primer hueco de cada ciclo de cuatro ritos.
         secuencia: [
-          { id: "acido", aviso: 4.5 },
-          { id: "luz", aviso: 3 },
-          { id: "pisoton", aviso: 3 },
-          { id: "braseros", aviso: 4 },
+          "acido",
+          "luz",
+          "pisoton",
+          "braseros",
+          "orbe",
+          "luz",
+          "pisoton",
+          "braseros",
         ],
       },
       acido: {
@@ -715,7 +722,7 @@ export const CONFIG = {
         golpes: {
           siega: { sonido: "mirraSiega" },
           siega_doble: { sonido: "mirraSiega", repetirDe: "entre" }, // segundo barrido tras `entre` del bloque
-          grano: { sonido: "mirraGrano", retrasoDe: "vuelo" }, // caen al terminar el vuelo
+          grano: { sonido: "mirraGrano" }, // los impactos suenan cuando las semillas llegan al suelo
           hambre: { sonido: "mirraHambre" },
           enjambre: { sonido: "mirraEnjambre", bucle: true }, // suena mientras la nube existe
           banquete: { sonido: "mirraBanquete" },
@@ -1420,7 +1427,7 @@ export const CONFIG = {
         hurtOdo: "Digit2",
         killSael: "Digit9",
         killOdo: "Digit0",
-        revive: "KeyR",
+        revive: "KeyV",
         reset: "KeyT",
       },
     },
@@ -1531,12 +1538,12 @@ export const CONFIG = {
     },
   },
 
-  // Recorrido de inicio: lobby al pie del Templo Ancla → pasillo de subida → arco → Mirra (config-recorrido.js).
+  // Recorrido de inicio: lobby al pie del Templo Celestial → pasillo de subida → arco → Mirra (config-recorrido.js).
   recorrido: RECORRIDO,
 
   // Página: tiempos del flujo menú → caída → recorrido → Mirra (main.js). Solo presentación.
   ui: {
-    finJefe: 5.5, // s para leer la lápida de Mirra antes de la pantalla de victoria
+    finJefe: 5.5, // segundos para leer la lápida del Farolero antes del resultado
     // Al cruzar el arco la pantalla funde a negro (`recorrido.flujo.fundidoArco`) y, ya cargada la pradera, se
     // abre sobre ella durante el silencio (D-183, D-211). s de esa apertura. PROVISIONAL.
     aperturaJefe: 0.8,
@@ -1620,7 +1627,7 @@ export const CONFIG = {
         valle: { radio: 190, segmentos: 48, anillos: 12 },
       },
     },
-    // Escena del recorrido: lobby al pie del Templo Ancla y pasillo de subida entre ruinas (render/templo.js,
+    // Escena del recorrido: lobby al pie del Templo Celestial y pasillo de subida entre ruinas (render/templo.js,
     // render/recorrido.js). Solo dibujo: la física sigue plana (D-210). Todo PROVISIONAL, ajustado con captura.
     templo: {
       bordeEscalones: 1.5, // m por fuera del borde del pasillo en que los peldaños se funden en rampa (altura.js)

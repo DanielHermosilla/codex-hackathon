@@ -1,5 +1,11 @@
 // Textos en español (D-102). Las frases de jefe son BORRADOR de la ficha: las aprueba Diego.
 export default {
+  "mundo.caida": "Sael y Odo caen al valle, al pie del Templo Celestial.",
+  "salida.atajo": "Ir al carro de completos",
+  "mirra.victoria": "Mirra ha sido derrotada",
+  "menu.lore":
+    "Sael y Odo apagaron la Brasa Eterna. Ahora, su única arma contra los dioses es la cadena que los une.",
+  "mundo.templo": "El Templo Celestial",
   "jefe.farolero.nombre": "El Farolero",
   "jefe.farolero.antiguo": "el Guardián de Hestera",
   "jefe.farolero.presentacion": "«La última luz no os pertenece.»",
@@ -74,16 +80,19 @@ export default {
   "brasero.color.1": "azul",
   "brasero.color.2": "dorado",
   "brasero.escudo": "Escudo {color} · {tiempo} s",
+  "indicacion.orbe":
+    "Orbe de vacío · lleva la marca sobre el pilar y sal cuando caiga.",
   "indicacion.luz": "Luz divina · busca la sombra detrás de un obstáculo.",
   "indicacion.pisotonSolo": "Pisotón · entra al círculo marcado.",
   "indicacion.pisoton": "Pisotón · entren juntos al círculo marcado.",
   "indicacion.braseros":
-    "Proyectiles en 4 s · pisen el brasero {color} para proteger a ambos durante 3 s.",
+    "Proyectiles en {tiempo} s · pisen el brasero {color} para proteger a ambos durante 3 s.",
   "indicacion.muneco":
-    "Sepárense: la cadena solo corta cuando está tensa. Crúcenla por el muñeco.",
+    "Sepárense para tensar la cadena y hacer más daño. Crúcenla por el muñeco.",
   "indicacion.munecoPilar":
     "Bien. Prueben enredar la cadena en un pilar y barrer desde ahí.",
   "indicacion.mirra": "Crucen a Mirra con la cadena tensa.",
+  "indicacion.reinicio": "Mantén R para reiniciar · {porcentaje}%",
   "indicacion.siega": "Siega · sal del arco de la hoz.",
   "indicacion.siega_doble": "Siega doble · dos pasadas: sal del arco.",
   "indicacion.grano": "Grano · busca el hueco entre las marcas.",
@@ -100,13 +109,16 @@ export default {
   "jefe.mirra.nombre": "Mirra, la Hambrienta",
   "jefe.mirra.antiguo": "la que Alimentaba",
   "jefe.mirra.presentacion":
-    "«Alimenté este valle mil cosechas. Ahora el valle me alimenta a mí.»",
-  "jefe.mirra.muerte": "«Pan tibio… me acuerdo del pan tibio.»",
+    "«Mis cosechas alimentaron a la humanidad y sus pueblos prosperaron. Ahora ustedes serán mi alimento.»",
+  "jefe.mirra.muerte":
+    "«Enciendan la Brasa… antes de que el valle muera de hambre.»",
   "jefe.mirra.burla": "«Uno menos en la mesa.»",
-  "jefe.mirra.derrota": "«Gracias por la comida.»",
+  "jefe.mirra.derrota":
+    "«Gracias por la comida. Los demás mortales serán los siguientes.»",
 
   "combate.saltar": "{dash} para saltar",
   "combate.reiniciaRush": "Modo difícil: el rush empieza de nuevo",
+  "combate.ayudaReintento": "Mantén R un segundo para reintentar.",
   "combate.derrota": "Caísteis los dos",
 
   "lapida.titulo": "Aquí cayó {jefe}",
@@ -126,11 +138,11 @@ export default {
   "mural.prueba": "PLACEHOLDER: texto de mural de prueba.",
   // Murales del pasillo de subida (D-126, D-209): BORRADOR pendiente de aprobar por Diego.
   "mural.ladrones":
-    "«Él subió por oro. Ella, por su nombre. Bajó una lluvia de fuego.»",
+    "«Sael y Odo entraron al Templo Celestial para robar. En la pelea volcaron la urna y apagaron la Brasa Eterna.»",
   "mural.urna":
-    "«Siete chispas cayeron sobre siete dioses. Ninguna sobre los ladrones.»",
+    "«Cuando se apagó la Brasa Eterna, los dioses se corrompieron. Cegados por la ira y el poder, se declararon la guerra.»",
   "mural.mirra":
-    "«Primero vinieron las langostas, luego el polvo. Queda una pura hambre: la que Alimentaba ahora devora.»",
+    "«Mirra nos daba trigo. Cuando la Brasa se apagó, soltó una plaga de langostas y empezó a devorar los campos. Queda una pura hambre.»",
 
   // Tarjetas del tutorial (D-206, D-207): título corto y una línea. En tercera persona para que sirvan en solo
   // y en coop; las teclas las pone la tarjeta según el dispositivo en uso.
@@ -139,7 +151,7 @@ export default {
     "Sael y Odo van atados: si uno tira, arrastra al otro.",
   "tarjeta.cortar.titulo": "Tensar y cortar",
   "tarjeta.cortar.linea":
-    "Al separarse, la cadena se tensa y corta lo que cruza. Floja no corta.",
+    "Al separarse, la cadena se tensa y hace más daño al cruzar enemigos.",
   "tarjeta.ancla.titulo": "Anclarse",
   "tarjeta.ancla.linea":
     "Mientras se mantiene, uno queda fijo y el otro gira a su alrededor.",
@@ -159,6 +171,8 @@ export default {
     "Pasen a lados opuestos del objetivo y crucen la cadena tensa a través de él. Anclar a uno permite que el otro gire a su alrededor.",
   "ajustes.mandos":
     "En solitario, la esquiva de Sael mueve a ambos. Con un mando, usa los dos sticks, los gatillos para anclar y A para esquivar. Con dos mandos, cada jugador usa el stick izquierdo, A y el gatillo derecho.",
+  "ajustes.navegacion":
+    "Usa WASD o las flechas para moverte por los menús. Confirma con Enter, Shift o Espacio. Mantén R un segundo para reintentar.",
   "ajustes.pausa":
     "Tras vencer a Mirra, acércate al carro de completos y pulsa P para abrir la carta. Esc o Start pausa la partida.",
   "ajustes.cerrar": "Cerrar ajustes",
@@ -194,6 +208,16 @@ export default {
     "Cada producto alcanza para Sael y Odo. Gana monedas al derrotar jefes.",
   "tienda.moneda": "{cantidad} moneda",
   "tienda.monedas": "{cantidad} monedas",
+  "salida.arco":
+    "{victoria}. {premio}. Sal por el arco norte con tu compañero ↑",
+  "salida.camino":
+    "El carro de completos está a la derecha. Sigue hasta el final del muelle para llegar a Ondar ↑",
+  "salida.muelle": "El muelle",
+  "salida.destino": "Ondar el Ahogado",
+  "salida.finDemo":
+    "Llegaste al dominio de Ondar. Aquí termina esta versión del juego.",
+  "salida.volver": "Volver al carro de completos",
+  "salida.repetir": "Reintentar a Mirra",
   "tienda.recompensa": "Recompensa: +{cantidad}",
   "tienda.cerrar": "Volver al juego",
   "tienda.comprar": "Comprar",

@@ -281,8 +281,8 @@ export function crearAcidoMirra(raiz, keep, alturaArco) {
         brasa.position,
       );
     }
-    onda.visible = !!a.explosion;
-    if (a.explosion) {
+    onda.visible = a.explosion?.origen === "barril-polvora";
+    if (a.explosion?.origen === "barril-polvora") {
       onda.position.set(a.explosion.x, 0.15, a.explosion.z);
       onda.scale.setScalar(0.8 + a.explosion.t * 19);
     }

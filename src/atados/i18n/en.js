@@ -1,5 +1,12 @@
 // English texts (D-102). Boss lines translate a draft: TODO review with Diego.
 export default {
+  "mundo.caida":
+    "Sael and Odo fall into the valley at the foot of the Celestial Temple.",
+  "salida.atajo": "Go to the hot dog stand",
+  "mirra.victoria": "Mirra has been defeated",
+  "menu.lore":
+    "Sael and Odo put out the Eternal Ember. Now their only weapon against the gods is the chain that binds them.",
+  "mundo.templo": "The Celestial Temple",
   "jefe.farolero.nombre": "The Lamplighter",
   "jefe.farolero.antiguo": "the Guardian of Hestera",
   "jefe.farolero.presentacion": "“The last light is not yours.”",
@@ -72,16 +79,19 @@ export default {
   "brasero.color.1": "blue",
   "brasero.color.2": "gold",
   "brasero.escudo": "Shared shield ({color}) · {tiempo} s",
+  "indicacion.orbe":
+    "Void orb · lead the mark onto the pillar and get out when it falls.",
   "indicacion.luz": "Divine light · take cover in the shadow of an obstacle.",
   "indicacion.pisotonSolo": "Stomp · stand inside the marked circle.",
   "indicacion.pisoton": "Stomp · stand together inside the marked circle.",
   "indicacion.braseros":
-    "Shots arrive in 4 s · step into the {color} brazier to shield both players for 3 s.",
+    "Shots arrive in {tiempo} s · step into the {color} brazier to shield both players for 3 s.",
   "indicacion.muneco":
-    "Split up: the chain only cuts when taut. Sweep it through the dummy.",
+    "Split up to pull the chain taut and deal more damage. Sweep it through the dummy.",
   "indicacion.munecoPilar":
     "Nice. Now wrap the chain around a pillar and sweep from there.",
   "indicacion.mirra": "Sweep the taut chain through Mirra.",
+  "indicacion.reinicio": "Hold R to restart · {porcentaje}%",
   "indicacion.siega": "Reap · get out of the scythe arc.",
   "indicacion.siega_doble": "Double reap · two passes: leave the arc.",
   "indicacion.grano": "Grain · find the gap between the marks.",
@@ -98,13 +108,15 @@ export default {
   "jefe.mirra.nombre": "Mirra, the Ravenous",
   "jefe.mirra.antiguo": "she who Nourished",
   "jefe.mirra.presentacion":
-    "“I fed this valley for a thousand harvests. Now the valley feeds me.”",
-  "jefe.mirra.muerte": "“Warm bread… I remember warm bread.”",
+    "“My harvests fed humanity, and its villages thrived. Now I shall feast on you.”",
+  "jefe.mirra.muerte": "“Relight the Ember… before the valley starves.”",
   "jefe.mirra.burla": "“One less at the table.”",
-  "jefe.mirra.derrota": "“Thank you for the meal.”",
+  "jefe.mirra.derrota":
+    "“Thank you for the meal. The rest of the mortals are next.”",
 
   "combate.saltar": "{dash} to skip",
   "combate.reiniciaRush": "Hard mode: the rush starts over",
+  "combate.ayudaReintento": "Hold R for one second to retry.",
   "combate.derrota": "You both fell",
 
   "lapida.titulo": "Here fell {jefe}",
@@ -124,10 +136,11 @@ export default {
   "mural.prueba": "PLACEHOLDER: test mural text.",
   // Climb corridor murals (D-126, D-209): DRAFT pending Diego's approval.
   "mural.ladrones":
-    "“He climbed for gold. She, for her name. Fire rained down.”",
-  "mural.urna": "“Seven sparks fell on seven gods. None on the thieves.”",
+    "“Sael and Odo broke into the Celestial Temple to steal. In the struggle they knocked over the urn and put out the Eternal Ember.”",
+  "mural.urna":
+    "“When the Eternal Ember went out, the gods fell to corruption. Blinded by rage and power, they declared war on one another.”",
   "mural.mirra":
-    "“First came the locusts, then the dust. Only hunger remains: she who Nourished now devours.”",
+    "“Mirra once gave us wheat. When the Ember went out, she unleashed a plague of locusts and began devouring the fields. Only hunger remains.”",
 
   // Tutorial cards (D-206, D-207): short title and one line. Third person so they work in solo and co-op;
   // the card adds the keys for the device in use.
@@ -136,7 +149,7 @@ export default {
     "Sael and Odo are bound: when one pulls, the other gets dragged.",
   "tarjeta.cortar.titulo": "Pull taut, cut",
   "tarjeta.cortar.linea":
-    "Split apart and the chain pulls taut, cutting what it crosses. Slack won't cut.",
+    "Split apart to pull the chain taut and deal more damage when crossing enemies.",
   "tarjeta.ancla.titulo": "Anchor",
   "tarjeta.ancla.linea":
     "While held, one stays put and the other swings around them.",
@@ -155,6 +168,8 @@ export default {
     "Move to opposite sides of the target and sweep the taut chain through it. Anchor one character so the other can swing around.",
   "ajustes.mandos":
     "In solo mode, Sael’s dodge moves both characters. On one controller, use both sticks, the triggers to anchor and A to dodge. With two controllers, each player uses the left stick, A and the right trigger.",
+  "ajustes.navegacion":
+    "Use WASD or the arrows to navigate menus. Confirm with Enter, Shift or Space. Hold R for one second to retry.",
   "ajustes.pausa":
     "After defeating Mirra, approach the food cart and press P to open its menu. Esc or Start pauses the game.",
   "ajustes.cerrar": "Close settings",
@@ -189,6 +204,16 @@ export default {
   "tienda.nota": "Each item serves Sael and Odo. Defeat bosses to earn coins.",
   "tienda.moneda": "{cantidad} coin",
   "tienda.monedas": "{cantidad} coins",
+  "salida.arco":
+    "{victoria}. {premio}. Leave together through the northern arch ↑",
+  "salida.camino":
+    "The hot dog cart is on the right. Follow the pier to reach Ondar ↑",
+  "salida.muelle": "The pier",
+  "salida.destino": "Ondar the Drowned",
+  "salida.finDemo":
+    "You reached Ondar’s domain. This is the end of this version of the game.",
+  "salida.volver": "Return to the hot dog cart",
+  "salida.repetir": "Fight Mirra again",
   "tienda.recompensa": "Reward: +{cantidad}",
   "tienda.cerrar": "Back to game",
   "tienda.comprar": "Buy",

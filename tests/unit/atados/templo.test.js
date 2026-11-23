@@ -13,7 +13,7 @@ import { crearAlturaSuelo } from "../../../src/atados/render/altura.js";
 import { crearTemplo } from "../../../src/atados/render/templo.js";
 import { resolverPaleta } from "../../../src/atados/render/paleta.js";
 
-describe("suelo, columnas y paleta del Templo Ancla", () => {
+describe("suelo, columnas y paleta del Templo Celestial", () => {
   const scene = new THREE.Scene();
   const alturaSuelo = crearAlturaSuelo(cfg);
   const recursos = [];

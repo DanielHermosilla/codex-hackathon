@@ -219,8 +219,6 @@ export {};
  * @property {number} turnoArena
  * @property {number} proximoRito
  * @property {(i:number, dano:number)=>boolean} golpeRito
- * @property {string} avisoRito
- * @property {number} finAviso
  * @property {number} tPelea
  * @property {DesafioFarolero | null} farolero
  * @property {{ t: number, T: number, saltable: boolean }} presentacion

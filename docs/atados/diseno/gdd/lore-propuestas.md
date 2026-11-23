@@ -5,6 +5,8 @@
 
 ---
 
+> Estas propuestas son material histórico. El lore vigente de la Brasa Eterna está en [Setting y lore](01-setting-lore.md) [D-217].
+
 ## L1 · La Brasa Primera
 *Tema: culpa y reparación. Ecos: Prometeo, la caja de Pandora.*
 

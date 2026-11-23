@@ -49,7 +49,7 @@ Capturas de referencia: `../arte/referencias/`.
 - Su esquirla en la fase final es el único punto débil y debe leerse como tal [D-160].
 - Título de presentación: nombre corrupto grande, antiguo tachado debajo [D-180].
 - Animación con esqueleto hecho en Blender [D-090].
-- Corrupción: esquirlas de la Brasa clavadas y vetas brillantes que se extienden por el cuerpo y el suelo [D-084].
+- Corrupción: fragmentos de la urna de la Brasa Eterna clavados y vetas brillantes que se extienden por el cuerpo y el suelo [D-084].
 - Cambian de forma entre fases [D-025].
 
 ## Arenas [D-088]

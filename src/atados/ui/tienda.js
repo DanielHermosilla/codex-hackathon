@@ -73,6 +73,13 @@ export function crearCarta(contenedor, tienda, comprar, alCerrar) {
       if (comprar(id))
         confirmacion.textContent = nombre + " · " + t("tienda.comprado");
       actualizarCarta();
+      if (boton.disabled) {
+        // Conserva una selección visible tras comprar: otro producto disponible o la salida.
+        const siguiente =
+          lista.querySelector("button:enabled") ??
+          carta.querySelector(".carta-volver");
+        if (siguiente instanceof HTMLButtonElement) siguiente.focus();
+      }
     };
     lista.append(ficha);
     return actualizar;

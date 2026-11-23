@@ -253,11 +253,16 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
         if (a.tipo === "ataque") {
           if (a.etapa === "telegrafia") t = clamp01(a.t / Math.max(0.01, a.T));
           else if (a.etapa === "activo") {
-            // Siega doble: repite el golpe en cada vuelta.
-            t =
-              1 +
-              (a.id === "siega_doble" ? (a.t % 0.6) / 0.6 : clamp01(a.t / G)) *
-                G;
+            // Siega y Siega doble siguen al bloque real: «entre» vuelve a cargar (0..1 s del clip) y «golpe»
+            // recorre el tajo en los `activo` s que tarda la hoja en cruzar el arco.
+            // El clip mueve ambos brazos a la vez. El filo del suelo dibuja el sentido real del barrido.
+            const hoz =
+              a.id === "siega" || a.id === "siega_doble" ? a.bloques[0] : null;
+            if (hoz?.sub === "entre")
+              t = clamp01(hoz.subT / Math.max(0.01, hoz.entre));
+            else if (hoz)
+              t = 1 + clamp01(hoz.subT / Math.max(0.01, hoz.def.activo)) * G;
+            else t = 1 + clamp01(a.t / G) * G;
             if (a.id === "hambre" && vel > 2 && (polvoT += dt) > 0.05) {
               polvoT = 0;
               fx.polvo(j.x, j.z, 3, 1.4);

@@ -24,6 +24,9 @@ export const ESTILOS_JEFE = `
 .hud .pres .filete{width:clamp(120px,18vw,260px);height:1px;background:linear-gradient(90deg,transparent,var(--texto-suave),transparent);margin:.2em 0;}
 .hud .pres .antiguo{font-size:clamp(24px,2.8vw,40px);font-style:italic;font-weight:500;color:var(--texto-suave);
   text-decoration:line-through;text-decoration-thickness:.07em;text-decoration-color:var(--barra);text-shadow:0 1px 8px var(--fondo);}
+/* El título de Mirra escala de 28 a 46 px; el grosor acompaña al tamaño. */
+.hud .pres .antiguo.mirra{font-size:clamp(28px,3.4vw,46px);font-weight:700;color:var(--texto);
+  text-decoration-thickness:.11em;text-decoration-color:#ef6467;}
 .hud .pres .frase{font-size:clamp(20px,2.1vw,30px);font-style:italic;font-weight:500;max-width:56vw;text-shadow:0 1px 6px var(--fondo),0 0 14px var(--fondo);margin-top:.5em;}
 .hud .aviso{font-size:clamp(16px,1.5vw,21px);font-weight:600;letter-spacing:.04em;color:var(--texto-suave);text-shadow:0 1px 4px var(--fondo);min-height:1.4em;}
 .hud .sub{position:absolute;left:50%;bottom:9vh;transform:translateX(-50%);font-size:clamp(22px,2.2vw,30px);font-style:italic;font-weight:500;
@@ -130,6 +133,8 @@ export function crearHudJefe({
       const disp = { ...dispositivo(), solo: !!c.opts.solo };
       if (ultimoJefe !== def) {
         ultimoJefe = def;
+        // Aplica el tachado destacado solo a Mirra.
+        presAntiguo.classList.toggle("mirra", tx === "mirra");
         estela = 1;
         for (const m of marcas) m.remove();
         marcas.length = 0;
@@ -162,7 +167,11 @@ export function crearHudJefe({
         set(presFrase, t(`jefe.${tx}.presentacion`));
         renderTexto(presSaltar, P.saltable ? t("combate.saltar") : "", disp);
         op(presFilete, escalon(P.t, F.retrasoAntiguo * 0.6, F.fundidoTexto));
-        op(presAntiguo, escalon(P.t, F.retrasoAntiguo, F.fundidoTexto) * 0.9);
+        op(
+          presAntiguo,
+          escalon(P.t, F.retrasoAntiguo, F.fundidoTexto) *
+            (tx === "mirra" ? 1 : 0.9),
+        );
         op(presFrase, escalon(P.t, F.retrasoFrase, F.fundidoTexto));
       }
 

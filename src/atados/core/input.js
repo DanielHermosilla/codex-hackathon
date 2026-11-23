@@ -61,6 +61,7 @@ export function createInput(
   const onDown = (e) => {
     if (!tracked.has(e.code)) return;
     e.preventDefault(); // flechas y espacio no deben hacer scroll
+    if (e.repeat) return; // una tecla sostenida desde el menú no entra al juego
     if (!down.has(e.code)) pressed.add(e.code);
     down.add(e.code);
   };
@@ -169,6 +170,9 @@ export function createInput(
         if (pressed.has(code)) debug.push(accion);
       pressed.clear();
       return out;
+    },
+    confirmar() {
+      pressed.add(K.sael.dash[0]); // pulso de un muestreo: comparte el salto y reintento con el mando
     },
     debug,
     // Suelta todo al pausar o al perder el foco: ninguna tecla queda pegada.

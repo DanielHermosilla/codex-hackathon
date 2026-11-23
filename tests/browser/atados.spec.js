@@ -70,6 +70,10 @@ test("menú con el lobby → caída → pasillo → arco → Mirra con cinemáti
   expect(await leer(page, () => window.__game.escena)).toBe("recorrido");
   expect(await leer(page, () => window.__game.etapa)).toBe("caida");
   await expect(page.locator(".mast")).toBeVisible();
+  await expect(page.locator("#caption")).toHaveText("El Templo Celestial");
+  await expect(page.locator("#intro")).toContainText(
+    "apagaron la Brasa Eterna",
+  );
   await foto("01-menu");
 
   // Jugar: la caída empieza ahí mismo, sin pantalla de carga (D-205), y sin barras (D-200).
@@ -120,7 +124,22 @@ test("menú con el lobby → caída → pasillo → arco → Mirra con cinemáti
     window.__game.step(40);
   });
   expect(await tipos(page)).toContain("mural:activar");
+  const mural = page.locator("#hud-combate .mural");
+  await expect(mural).toContainText("volcaron la urna");
   await foto("05-mural");
+
+  // Los otros murales cuentan la guerra de los dioses y la corrupción de Mirra.
+  await page.evaluate(() => {
+    window.__game.irA(106);
+    window.__game.step(45);
+  });
+  await expect(mural).toContainText("se declararon la guerra");
+  await page.evaluate(() => {
+    window.__game.irA(168);
+    window.__game.step(45);
+  });
+  await expect(mural).toContainText("devorar los campos");
+  await expect(mural).toContainText("Queda una pura hambre");
 
   // La cima: el arco entra en el encuadre.
   await page.evaluate(() => {
@@ -152,6 +171,18 @@ test("menú con el lobby → caída → pasillo → arco → Mirra con cinemáti
   expect(cine.partida).toBe(true);
   expect(cine.franjas).toBeGreaterThan(0.5);
   expect(await leer(page, () => window.__game.fundido)).toBe(0);
+  const tituloAntiguo = page.getByText("la que Alimentaba", { exact: true });
+  await expect(tituloAntiguo).toBeVisible();
+  await expect(tituloAntiguo).toHaveCSS("text-decoration-line", "line-through");
+  await expect(tituloAntiguo).toHaveCSS(
+    "text-decoration-color",
+    "rgb(239, 100, 103)",
+  );
+  await expect(tituloAntiguo).toHaveCSS("font-weight", "700");
+  await expect(tituloAntiguo).toHaveCSS("opacity", "1");
+  await expect(page.locator(".pres .frase")).toContainText(
+    "ustedes serán mi alimento",
+  );
   await foto("07-cinematica");
 
   // Combate.
@@ -163,21 +194,50 @@ test("menú con el lobby → caída → pasillo → arco → Mirra con cinemáti
   await expect(page.locator("#hud-combate .barra")).toBeVisible();
   await foto("08-combate");
 
-  // Victoria: lápida y luego la pantalla de resultado.
+  // La pantalla de derrota permite reintentar sin repetir la subida ni la cinemática.
+  await page.evaluate(() => {
+    const g = window.__game;
+    g.matarJugadores();
+    g.step(2);
+  });
+  await expect(
+    page.getByRole("heading", { name: "Caísteis los dos" }),
+  ).toBeFocused();
+  await expect(page.locator("#intro")).toContainText(
+    "Los demás mortales serán los siguientes",
+  );
+  await page.keyboard.down("r");
+  await pasos(page, 61);
+  await page.keyboard.up("r");
+  const reintento = await leer(page, () => window.__game.combate);
+  expect(reintento.reintentos).toBe(1);
+  expect(reintento.estado).toBe("presentacion");
+  expect(await leer(page, () => window.__game.cinematica.partida)).toBe(false);
+  expect(await leer(page, () => window.__game.cinematica.franjas)).toBe(0);
+  expect(await leer(page, () => window.__game.escena)).toBe("jefe");
+  await foto("09-reintento");
+
+  // Tras vencer se puede permanecer en la pradera sin que un temporizador abra el menú.
   await page.evaluate(() => {
     const g = window.__game;
     g.saltarPresentacion();
     g.step(20);
     g.setVidaJefe(0);
-    g.step(420);
+    g.step(40);
   });
-  await expect(
-    page.getByRole("heading", { name: "Mirra ha caído" }),
-  ).toBeVisible();
-  await comprobarAyudaCentrada(page);
+  await expect(page.locator(".hud .sub")).toContainText(
+    "antes de que el valle muera de hambre",
+  );
+  await pasos(page, 380);
+  await expect(page.locator("#objective")).toContainText(
+    "Mirra ha sido derrotada",
+  );
+  await expect(page.locator("#objective")).toContainText("Sal por el arco");
+  expect(await leer(page, () => window.__game.pantalla)).toBe("playing");
   await foto("10-victoria");
-  // Volver a jugar deja el resultado y devuelve a ambos a la pradera, con la presentación corta.
-  await page.getByRole("button", { name: "Volver a jugar" }).click();
+  // Quien quiera repetir la pelea puede hacerlo desde la pausa.
+  await page.keyboard.press("Escape");
+  await page.locator("#restart").click();
   await pasos(page, 1);
   expect(await leer(page, () => window.__game.etapa)).toBe("jefe");
   expect(await leer(page, () => window.__game.combate.estado)).toBe(
@@ -187,10 +247,10 @@ test("menú con el lobby → caída → pasillo → arco → Mirra con cinemáti
   expect(errores).toEqual([]);
 });
 
-test("tras caer ambos ante Mirra, la única acción vuelve a la portada", async ({
+test("en difícil, al caer ambos la única salida vuelve a la portada", async ({
   page,
 }) => {
-  await abrir(page, "/?seed=3&coop");
+  await abrir(page, "/?seed=3&coop&dificil");
   await page.locator("#play").click();
   await page.evaluate(async () => {
     const g = window.__game;
@@ -206,7 +266,10 @@ test("tras caer ambos ante Mirra, la única acción vuelve a la portada", async 
   await page.keyboard.press("ShiftRight");
   await page.keyboard.press("Escape");
   await page.evaluate(() => window.dispatchEvent(new window.Event("blur")));
+  await page.keyboard.down("r");
   await pasos(page, 90);
+  await page.keyboard.up("r");
+  await expect(page.locator("#intro")).not.toContainText("Mantén R");
   expect(await leer(page, () => window.__game.combate.estado)).toBe("derrota");
   await expect(page.getByRole("button")).toHaveText(["Volver al inicio"]);
   await page.keyboard.press("Tab");
@@ -273,7 +336,7 @@ test("Mirra: ataque con telegrafía y segunda fase", async ({ page }, info) => {
   expect(errores).toEqual([]);
 });
 
-test("Mirra intercala y dibuja los cuatro avisos de arena", async ({
+test("Mirra intercala los cuatro turnos de arena y alterna ácido y orbe", async ({
   page,
 }, info) => {
   test.setTimeout(120000);
@@ -292,15 +355,17 @@ test("Mirra intercala y dibuja los cuatro avisos de arena", async ({
     ["luz", "Luz divina"],
     ["pisoton", "Pisotón"],
     ["braseros", "brasero rojo"],
+    ["orbe", "Orbe de vacío"],
   ]) {
     await expect(page.locator("#objective")).toContainText(aviso);
     await page.screenshot({ path: info.outputPath(id + ".png") });
     if (id === "braseros") {
       const rito = await leer(page, () => window.__game.combate.rito);
       expect(rito.braseros.map((f) => f.color)).toEqual([0, 1, 2]);
-    } else {
+    }
+    if (id !== "orbe") {
       // Mantiene abierta la pelea para fotografiar el siguiente rito aun si un personaje cayó.
-      await page.keyboard.press("KeyR");
+      await page.keyboard.press("KeyV");
       await pasos(page, 480); // ocho segundos entre señales en la rotación de Mirra
     }
   }

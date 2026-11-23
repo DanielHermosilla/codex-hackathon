@@ -8,6 +8,7 @@
 import {
   crearArenaMirra,
   iniciarAcido,
+  iniciarOrbe,
   iniciarLuz,
   avanzarArenaMirra,
 } from "./arena-mirra.js";
@@ -118,8 +119,6 @@ export function crearCombate(cfg, opts = {}) {
       ritos: crearRitos(),
       turnoArena: 0,
       proximoRito: cfg.jefes.mirra.ritual.inicio,
-      avisoRito: "",
-      finAviso: 0,
       presentacion: {
         t: 0,
         T: o.primeraVez ? C.presentacion.primera : C.presentacion.reintento,
@@ -176,8 +175,9 @@ export function crearCombate(cfg, opts = {}) {
     _cand: [],
   };
   c.ctx = ctx;
+  // El rito conserva su tipo hasta terminar de resolver sus impactos.
   c.golpeRito = (i, dano) =>
-    golpear(c, { accion: { id: c.avisoRito } }, i, dano, 0, 0, 0);
+    golpear(c, { accion: { id: c.ritos.tipo } }, i, dano, 0, 0, 0);
   w.dummy.invulnerable = true;
   emitir(c, "presentacion_inicio", { jefe: o.jefe, completa: o.primeraVez });
   if (o.primeraVez) emitir(c, "silencio", { motivo: "nombre" }); // D-183: solo la primera vez
@@ -296,6 +296,8 @@ function especialEnCurso(c) {
   const a = c.arenaMirra;
   return !!(
     c.ritos.tipo ||
+    a.orbe ||
+    a.pilar ||
     a.acido ||
     a.barril ||
     a.explosion ||
@@ -304,17 +306,30 @@ function especialEnCurso(c) {
   );
 }
 
+/** El HUD sigue la misma señal que existe en la arena. @param {Combate} c */
+export function avisoRitoActual(c) {
+  if (c.id !== "mirra" || c.estado !== "pelea") return "";
+  const { acido, orbe, luz } = c.arenaMirra;
+  if (acido) return "acido"; // la mira y la trayectoria siguen visibles hasta el impacto
+  if (orbe) return "orbe"; // el círculo sigue siendo un aviso hasta que se abre el suelo
+  if (luz && !luz.impacto) return "luz"; // buscar sombra sirve hasta el instante del destello
+  return c.ritos.tipo; // los braseros se retiran si los obstáculos interceptan todos los tiros
+}
+
 /** @param {Combate} c @param {number} dt */
 function pasoArena(c, dt) {
   if (c.tPelea >= c.proximoRito && !especialEnCurso(c)) {
     const { secuencia, intervalo } = c.cfg.jefes.mirra.ritual;
-    const { id, aviso } = secuencia[c.turnoArena % secuencia.length];
-    if (id === "acido") iniciarAcido(c.arenaMirra, c.ctx);
-    if (id === "luz") iniciarLuz(c.arenaMirra, c.ctx);
-    if (id === "pisoton") iniciarPisoton(c.ritos, c.w, c.arenaMirra.charcos);
-    if (id === "braseros") iniciarBraseros(c.ritos, c.w, c.arenaMirra.charcos);
-    c.avisoRito = id;
-    c.finAviso = c.tPelea + aviso;
+    const id = secuencia[c.turnoArena % secuencia.length];
+    const a = c.arenaMirra;
+    if (id === "acido") iniciarAcido(a, c.ctx);
+    if (id === "orbe") iniciarOrbe(a, c.ctx);
+    if (id === "luz") iniciarLuz(a, c.ctx);
+    // Las franjas seguras y los braseros evitan el suelo que aún puede dañar.
+    if (id === "pisoton")
+      iniciarPisoton(c.ritos, c.w, [...a.charcos, ...a.huecos]);
+    if (id === "braseros")
+      iniciarBraseros(c.ritos, c.w, [...a.charcos, ...a.huecos]);
     c.turnoArena++;
     c.proximoRito = c.tPelea + intervalo;
   }
@@ -456,11 +471,10 @@ function limpiarEmpujes(c) {
 /** Retira los avisos, el escudo y el barril temporal al terminar la pelea. El terreno destruido no reaparece.
  * @param {Combate} c */
 function cerrarArena(c) {
-  const temporal = c.arenaMirra.barril;
+  const temporal = c.arenaMirra.barril ?? c.arenaMirra.pilar;
   if (temporal) c.w.pillars = c.w.pillars.filter((p) => p !== temporal);
   c.arenaMirra = crearArenaMirra(); // no quedan charcos, luz ni explosiones junto a la lápida
   c.ritos = crearRitos();
-  c.avisoRito = "";
 }
 
 /** @param {Combate} c */
@@ -687,6 +701,9 @@ export function snapshotCombate(c) {
     arenaMirra:
       c.id === "mirra"
         ? {
+            orbe: c.arenaMirra.orbe && { ...c.arenaMirra.orbe },
+            pilar: c.arenaMirra.pilar && { ...c.arenaMirra.pilar },
+            huecos: c.arenaMirra.huecos.map((hueco) => ({ ...hueco })),
             acido: c.arenaMirra.acido
               ? {
                   ...c.arenaMirra.acido,

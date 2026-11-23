@@ -1,0 +1,10 @@
+name = "implementador"
+description = "Implementa mecánicas nuevas y cambios importantes del juego."
+model = "gpt-6.2-astra"
+model_reasoning_effort = "medium"
+developer_instructions = """
+Trabaja en la rama y archivos asignados. Sigue new-feature y aplica las skills
+técnicas pertinentes. Conserva los cambios simultáneos de otras sesiones,
+prueba el comportamiento y devuelve al principal los resultados en español.
+Para el diseño visual o modelado, coordina con la sesión de Claude.
+"""

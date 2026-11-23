@@ -372,15 +372,16 @@ describe("avisos y buses (D-106)", () => {
     expect(acc[1].duracion).toBeCloseTo(b.entre.dificil);
     expect(acc[2].retraso).toBeCloseTo(b.activo + b.entre.dificil);
   });
-  it("grano cae tras el vuelo; enjambre en bucle mientras exista", () => {
+  it("Grano suena en la caída de las semillas, cuando la zona se activa", () => {
     const g = accionesDeEvento(
       CONFIG,
       { tipo: "ataque_activo", ataque: "grano" },
       "mirra",
     );
-    expect(g[0].retraso).toBe(
-      CONFIG.jefes.mirra.ataques.grano.bloques[0].vuelo,
-    );
+    expect(g).toEqual([{ tipo: "sfx", id: "mirraGrano", ataque: "grano" }]);
+    expect(planSonido(A.sfx.mirraGrano).capas[0].offset).toBe(0); // la primera semilla golpea de inmediato
+  });
+  it("Enjambre suena en bucle mientras exista la nube", () => {
     expect(
       accionesDeEvento(
         CONFIG,

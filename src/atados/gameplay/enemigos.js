@@ -534,7 +534,7 @@ function golpes(h, w, e) {
 }
 
 /**
- * Daño de la cadena (D-148, D-068: floja ≈ nada). El daño de un corte se agrupa y se emite como
+ * Daño de la cadena: floja hace menos daño y tensa alcanza el máximo. El daño de un corte se agrupa y se emite como
  * `enemigo:herido` al cerrar el corte (`feedback.damageNumber.gap` s sin contacto) o al morir.
  * @param {Horda} h
  * @param {Mundo} w

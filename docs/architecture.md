@@ -23,7 +23,7 @@ Playwright solo se usa para la prueba en navegador. Prettier comprueba el format
 
 La portada carga `src/atados/main.js`. La dirección antigua `pista.html` redirige a la portada. La pista solo se usa en las pruebas.
 
-`main.js` une la página (menú, modos Solo y Dos jugadores, pausa y resultados) con la partida. El lobby y el pasillo comparten un mundo. Al cruzar el arco se prepara la pradera de Mirra y se transfieren los puntos de vida de cada jugador. Tras la victoria, el botón «Continuar al carro de completos» abre el primer tramo del siguiente pasillo. Desde el carro se puede entrar al combate del Farolero con los puntos de vida y las compras de la pareja. El HUD sigue al mundo activo. El audio y la entrada duran toda la sesión.
+`main.js` une la página (menú, modos Solo y Dos jugadores, pausa y resultados) con la partida. El lobby y el pasillo comparten un mundo. Al cruzar el arco se prepara la pradera de Mirra y se transfieren los puntos de vida de cada jugador. Tras la victoria, la pareja cruza el arco norte hacia el pasillo del carro de completos. Desde el carro puede enfrentar al Farolero con sus compras o seguir a pie hasta el muelle de Ondar. El HUD sigue al mundo activo. El audio y la entrada duran toda la sesión.
 
 | Carpeta | Qué hay |
 |---|---|

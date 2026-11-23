@@ -1,7 +1,7 @@
 // Flujo de la partida completa: máquina de estados pura, sin three.js ni DOM, sobre el paso fijo.
 //
 //   caida ──(aterrizan, D-205)──▶ recorrido ──(cruzan el arco, D-211)──▶ arco
-//     arco ──(fundido + silencio y la pradera ya cargó)──▶ jefe ──(Mirra cae)──▶ victoria
+//     arco ──(fundido + silencio y la pradera ya cargó)──▶ jefe ──(Mirra cae)──▶ victoria ──(arco norte)──▶ puesto ──(fin del muelle)──▶ destino
 //   recorrido: caer los dos reinicia el pasillo dentro del recorrido (D-168), sin salir de este estado.
 //   jefe: si ambos caen, la pantalla de derrota permite volver al inicio.
 //
@@ -46,7 +46,7 @@ import { colocarParaPrueba, heredarJugadores } from "../gameplay/combate.js";
 /** @typedef {import('./juego.js').Muestreo} Muestreo */
 /** @typedef {import('./input.js').Entrada} Entrada */
 /** @typedef {import('../gameplay/tipos.js').Evento} Evento */
-/** @typedef {"caida" | "recorrido" | "arco" | "jefe" | "victoria" | "puesto"} EstadoPartida */
+/** @typedef {"caida" | "recorrido" | "arco" | "jefe" | "victoria" | "puesto" | "destino"} EstadoPartida */
 /** @typedef {ReturnType<typeof crearJuegoRecorrido>} JuegoRecorrido */
 /** @typedef {ReturnType<typeof crearJuegoJefe>} JuegoJefe */
 
@@ -195,6 +195,45 @@ export function crearPartida(cfg, opciones) {
     if (tEstado >= F.fundidoArco + F.silencioArco - EPS) entrarJefe();
   }
 
+  /** Tras la victoria cualquiera puede guiar a su compañero por el arco norte.
+   * @param {Entrada[]} ins */
+  function cruzarSalida(ins) {
+    const salida = cfg.recorrido.salida;
+    if (!juegoJefe || jefe === "farolero") return; // la victoria final conserva su propia lápida
+    const jugadores = juegoJefe.world.players;
+    // El compañero puede llegar a un lado del arco. Si se queda atrás, el primero lo espera.
+    if (
+      jugadores.some(
+        (p) =>
+          p.alive && Math.hypot(p.x, p.z - salida.zInicio) > salida.reunion,
+      )
+    )
+      return;
+    // Exigimos caminar hacia fuera para que ganar junto al arco permita quedarse a leer la lápida.
+    if (
+      !jugadores.some(
+        (p, i) =>
+          !p.anchored &&
+          p.z <= salida.zInicio &&
+          Math.abs(p.x) <= salida.anchoArco / 2 &&
+          (ins[i]?.mz ?? 0) < -0.1,
+      )
+    )
+      return;
+    entrarPuesto(); // caminar y pulsar el atajo completan la misma transición una sola vez
+  }
+
+  /** Pasa de la lápida de Mirra al carro y conserva la salud de la pareja. */
+  function entrarPuesto() {
+    if (estado !== "victoria" || !juegoJefe || jefe === "farolero")
+      return false;
+    abrirPasilloPuesto(juegoRecorrido.recorrido, juegoJefe.world);
+    juegoJefe = null; // el puesto conserva los PV, la cadena se coloca a la entrada del muelle
+    cambiar("puesto");
+    emitir("zona_entra", { zona: "pasillo" });
+    return true;
+  }
+
   /** Revisa todas las transiciones (al final de cada paso fijo y tras las utilidades de prueba). */
   function revisar() {
     if (juegoJefe) {
@@ -220,13 +259,26 @@ export function crearPartida(cfg, opciones) {
     t += dt;
     tEstado += dt;
     drenarActivo();
+    // Comprobamos la salida antes de revisar la victoria para no cruzar en el mismo paso en que cae Mirra.
+    if (estado === "victoria") cruzarSalida(ins);
+    else if (estado === "puesto") {
+      const meta = cfg.recorrido.salida.zFin + 1; // m: último tablón antes del borde físico
+      const jugadores = juegoRecorrido.world.players;
+      if (
+        jugadores.some((p) => p.z <= meta) &&
+        jugadores.every(
+          (p) => !p.alive || p.z <= meta + cfg.recorrido.salida.reunion,
+        )
+      )
+        cambiar("destino");
+    }
     revisar();
     return r;
   }
 
   /** Vuelve a la presentación corta de Mirra desde el resultado o el reinicio de depuración. */
   function reintentarJefe() {
-    if (estado === "puesto") {
+    if (estado === "puesto" || estado === "destino") {
       // Un desafío repetido desde el puesto usa las mejoras compradas y omite la cinemática.
       juegoJefe = crearJuegoJefe(cfg, {
         solo,
@@ -236,8 +288,9 @@ export function crearPartida(cfg, opciones) {
         sample,
         primeraVez: false,
       });
-    } else if (juegoJefe) juegoJefe.reiniciar(false);
-    else return;
+    } else if (juegoJefe) {
+      juegoJefe.reintentar(); // conserva el contador entre intentos
+    } else return;
     if (estado !== "jefe") cambiar("jefe"); // la partida vuelve al combate junto con los jugadores
     drenarActivo(); // entrega los eventos de la nueva presentación una sola vez
   }
@@ -248,7 +301,7 @@ export function crearPartida(cfg, opciones) {
    */
   function aplicarDebug(acciones) {
     for (const a of acciones) {
-      if (estado === "puesto") {
+      if (estado === "puesto" || estado === "destino") {
         if (a === "reset") {
           const { sael, odo } = cfg.recorrido.salida.spawn;
           colocarEnRecorrido(juegoRecorrido.recorrido, sael, odo);
@@ -276,14 +329,14 @@ export function crearPartida(cfg, opciones) {
 
   /** Termina la caída al instante (prueba). */
   function saltarCaida() {
-    if (juegoJefe || estado === "puesto") return;
+    if (juegoJefe || estado === "puesto" || estado === "destino") return;
     saltarCaidaRecorrido(juegoRecorrido.recorrido);
     drenarActivo();
     revisarRecorrido();
   }
 
   return {
-    /** @returns {EstadoPartida} caida | recorrido | arco | jefe | victoria */
+    /** @returns {EstadoPartida} Etapa actual de la partida. */
     get estado() {
       return estado;
     },
@@ -298,15 +351,13 @@ export function crearPartida(cfg, opciones) {
     /** Eventos pendientes (recorrido, combate y flujo, en orden). Vaciar con `length = 0` tras leerlos. */
     eventos,
     reintentarJefe,
-    /** Abre el pasillo de la tienda tras ganar. Un segundo clic no vuelve a crear la sala. */
-    entrarPuesto() {
-      if (estado !== "victoria" || !juegoJefe || jefe === "farolero")
-        return false;
-      abrirPasilloPuesto(juegoRecorrido.recorrido, juegoJefe.world);
-      juegoJefe = null; // el HUD deja de leer el combate y se liberan sus recursos
+    entrarPuesto,
+    /** Desde el final de la demo se puede volver a visitar el carro con la misma salud y saldo. */
+    volverAlPuesto() {
+      if (estado !== "destino") return;
+      const { sael, odo } = cfg.recorrido.salida.spawn;
+      colocarEnRecorrido(juegoRecorrido.recorrido, sael, odo);
       cambiar("puesto");
-      emitir("zona_entra", { zona: "pasillo" }); // cambia la música de combate por el ambiente del pasillo
-      return true;
     },
     /** Conserva la salud y las compras al pasar del carro a la arena final. */
     entrarFarolero() {
@@ -383,20 +434,26 @@ export function crearPartida(cfg, opciones) {
      * @param {number} s  m
      */
     irA(s) {
-      if (juegoJefe || estado === "puesto") return;
+      if (juegoJefe || estado === "puesto" || estado === "destino") return;
       if (estado === "caida") saltarCaida();
       irARecorrido(juegoRecorrido.recorrido, s);
     },
     /** Cruza el arco en el acto (estado `arco`). */
     cruzarArco() {
-      if (juegoJefe || estado === "arco" || estado === "puesto") return;
+      if (
+        juegoJefe ||
+        estado === "arco" ||
+        estado === "puesto" ||
+        estado === "destino"
+      )
+        return;
       cruzarUmbral(juegoRecorrido.recorrido);
       drenarActivo();
       revisarRecorrido();
     },
     /** Entra al jefe en el acto, como la primera vez (con cinemática). */
     saltarAlJefe() {
-      if (juegoJefe || estado === "puesto") return;
+      if (juegoJefe || estado === "puesto" || estado === "destino") return;
       jefeCargado = true;
       entrarJefe();
     },
