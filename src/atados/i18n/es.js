@@ -59,13 +59,31 @@ export default {
   "tecla.Escape": "Esc",
   "tecla.stickIzq": "Stick izq.",
 
+  "tienda.abrir": "Ver carta",
+  "tienda.pausa": "Partida en pausa",
+  "tienda.titulo": "Carro de completos",
+  "tienda.nota":
+    "Cada producto alcanza para Sael y Odo. Gana monedas al derrotar jefes.",
+  "tienda.moneda": "{cantidad} moneda",
+  "tienda.monedas": "{cantidad} monedas",
+  "tienda.recompensa": "Recompensa: +{cantidad}",
+  "tienda.cerrar": "Volver al juego",
+  "tienda.comprar": "Comprar",
+  "tienda.comprado": "Comprado",
+  "tienda.italiano": "Completo italiano",
+  "tienda.mote": "Mote con huesillos",
+  "tienda.sopaipilla": "Sopaipilla",
+  "tienda.efecto.italiano": "+25 de vida y de vida máxima.",
+  "tienda.efecto.mote": "20 % menos de espera entre esquivas.",
+  "tienda.efecto.sopaipilla": "0,4 s más de protección tras un golpe.",
+
   "jugador.sael": "Sael",
   "jugador.odo": "Odo",
 };
 
-// Cartel del puesto: condiciones de la hackatón (23, 31 minutos, completo italiano, «quiero una pura»).
+// Cartel del puesto: diálogo de Sael y Odo junto a la radio.
 export const muralText = {
-  stall: "Puesto 23 · El Trigal",
+  stall: "Carro de completos · El Trigal",
   radio: "Radio · 31 minutos",
   sael: "¿También te robaste el carro del completo italiano?",
   odo: "Yo quiero un puro completo. ¡Se me enganchó la cadena!",

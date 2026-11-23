@@ -37,15 +37,14 @@ test("menú → práctica con el cartel → Mirra → victoria", async ({
   await page.locator("#play").click();
   await page.waitForFunction(() => window.__game.pantalla === "playing");
 
-  // El cartel del puesto cumple las condiciones de la hackatón y carga el emblema.
+  // El cartel conserva el diálogo de la práctica y lleva solo el nombre del carro.
   const mural = page.locator("#mural");
-  await expect(mural).toContainText("Puesto 23");
+  await expect(mural).toContainText("Carro de completos");
   await expect(mural).toContainText("31 minutos");
   await expect(mural).toContainText("completo italiano");
   await expect(mural).toContainText("quiero un puro completo");
-  await expect
-    .poll(() => mural.getByAltText("Codex").evaluate((img) => img.naturalWidth))
-    .toBeGreaterThan(0);
+  await expect(mural).not.toContainText("23");
+  await expect(mural.getByAltText("Codex")).toHaveCount(0);
 
   // Un corte real: separarse hasta tensar la cadena y barrer tirando hacia afuera.
   await page.evaluate(() => {

@@ -59,13 +59,30 @@ export default {
   "tecla.Escape": "Esc",
   "tecla.stickIzq": "Left stick",
 
+  "tienda.abrir": "Shop",
+  "tienda.pausa": "Game paused",
+  "tienda.titulo": "Completo cart",
+  "tienda.nota": "Each item serves Sael and Odo. Defeat bosses to earn coins.",
+  "tienda.moneda": "{cantidad} coin",
+  "tienda.monedas": "{cantidad} coins",
+  "tienda.recompensa": "Reward: +{cantidad}",
+  "tienda.cerrar": "Back to game",
+  "tienda.comprar": "Buy",
+  "tienda.comprado": "Purchased",
+  "tienda.italiano": "Completo italiano",
+  "tienda.mote": "Mote con huesillos",
+  "tienda.sopaipilla": "Sopaipilla",
+  "tienda.efecto.italiano": "+25 health and maximum health.",
+  "tienda.efecto.mote": "20% shorter dodge cooldown.",
+  "tienda.efecto.sopaipilla": "0.4 s more protection after a hit.",
+
   "jugador.sael": "Sael",
   "jugador.odo": "Odo",
 };
 
-// Cartel del puesto: condiciones de la hackatón (23, 31 minutos, completo italiano, «quiero una pura»).
+// Cartel del puesto: diálogo de Sael y Odo junto a la radio.
 export const muralText = {
-  stall: "Stall 23 · El Trigal",
+  stall: "Completo cart · El Trigal",
   radio: "Radio · 31 minutos",
   sael: "Did you steal the completo italiano cart too?",
   odo: "I only wanted one completo. The chain got caught!",

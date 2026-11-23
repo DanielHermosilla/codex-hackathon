@@ -20,6 +20,8 @@ import {
   colocarParaPrueba,
   sinAtaques,
 } from "./gameplay/combate.js";
+import { crearTienda, posicionCarro, juntoAlCarro } from "./gameplay/tienda.js";
+import { crearCarta, textoMonedas } from "./ui/tienda.js";
 import { createMural } from "./mural.js";
 import "./ui.css";
 
@@ -99,8 +101,45 @@ async function arrancar() {
   let muralHasta = 0; // segundo del combate hasta el que se ve el cartel
   let montaje = 0; // contador para descartar cargas viejas si el jugador cambia de sala rápido
 
-  /** @type {null | {juego: ReturnType<typeof crearJuegoJefe>, vista: Awaited<ReturnType<typeof crearRenderSlice>>, hud: ReturnType<typeof crearHud>}} */
+  /** @type {null | {puesto: {x:number,z:number}, juego: ReturnType<typeof crearJuegoJefe>, vista: Awaited<ReturnType<typeof crearRenderSlice>>, hud: ReturnType<typeof crearHud>}} */
   let sala = null;
+
+  // Las mejoras duran desde la portada hasta el final de la partida, incluidos los reintentos.
+  let tienda = crearTienda(CONFIG);
+  const carta = crearCarta(
+    elemento("tienda"),
+    () => tienda,
+    (id) => tienda.comprar(id, sala?.juego.world.players ?? []),
+    () => {
+      input.clear();
+      aplicarVolumen();
+      if (pantalla === "playing") canvas.focus({ preventScroll: true });
+    },
+  );
+  // Se comprueba de nuevo al pulsar P para que un aviso del cuadro anterior nunca dé acceso.
+  function puedeComprar() {
+    return (
+      pantalla === "playing" &&
+      etapa === "muneco" &&
+      sala?.juego.combate.estado === "pelea" &&
+      juntoAlCarro(sala.juego.world.players, sala.puesto, CONFIG.tienda.alcance)
+    );
+  }
+  canvas.addEventListener("keydown", (e) => {
+    if (
+      e.code !== "KeyP" ||
+      e.repeat ||
+      e.ctrlKey ||
+      e.altKey ||
+      e.metaKey ||
+      !puedeComprar()
+    )
+      return;
+    e.preventDefault();
+    input.clear();
+    carta.abrir();
+    aplicarVolumen();
+  });
 
   // Eventos del combate (avisos de ataque, golpes, fases): se reparten al audio, al HUD y a las pruebas.
   /** @type {any[]} */
@@ -146,7 +185,7 @@ async function arrancar() {
    */
   async function montar(nueva, { presentacion = true } = {}) {
     const id = ++montaje;
-    const juego = crearJuegoJefe(CONFIG, {
+    const juego = crearJuegoJefe(tienda.cfg, {
       solo,
       dificil: params.has("dificil"),
       seed,
@@ -156,9 +195,11 @@ async function arrancar() {
     if (!presentacion) juego.reiniciar(false); // reintento: presentación corta
     // El muñeco no necesita presentación: la práctica empieza enseguida.
     if (nueva === "muneco") saltarPresentacion(juego.combate);
+    const puesto = posicionCarro(juego.world.arenaRadius, CONFIG.tienda);
     const vista = await crearRenderSlice({
+      posicionPuesto: puesto,
       renderer,
-      cfg: CONFIG,
+      cfg: tienda.cfg,
       getWorld: () => juego.world,
       getCombate: () => juego.combate,
       params,
@@ -173,17 +214,21 @@ async function arrancar() {
     anterior?.vista.dispose();
     anterior?.hud.dispose();
     const hud = crearHud({
-      cfg: CONFIG,
+      cfg: tienda.cfg,
       getCombate: () => juego.combate,
       toScreen: vista.toScreen,
       solo,
       parent: stage,
     });
-    sala = { juego, vista, hud };
+    sala = { juego, vista, hud, puesto };
     etapa = nueva;
     finT = 0;
     recientes.length = 0;
     oyentes.clear();
+    // El combate emite la victoria una sola vez, aunque la lápida siga visible varios cuadros.
+    oyentes.add((e) => {
+      if (e.tipo === "victoria") tienda.acreditar(e.monedas);
+    });
     oyentes.add(hud.alEvento);
     oyentes.add(audio.evento);
     ajustar();
@@ -192,7 +237,7 @@ async function arrancar() {
 
   /** Ajusta el volumen general según el botón «Sonido» y la pantalla (en pausa no suena nada). */
   function aplicarVolumen() {
-    const callado = silencio || pantalla === "paused";
+    const callado = silencio || pantalla === "paused" || carta.abierta;
     audio.api.volumen("master", callado ? 0 : CONFIG.audio.volumen.master);
   }
 
@@ -213,6 +258,8 @@ async function arrancar() {
     input.clear();
     const jugando = siguiente === "playing";
     const menu = siguiente === "menu";
+    carta.ocultarAviso();
+    if (!jugando) carta.cerrar();
     hudPagina.hidden = !jugando;
     velo.hidden = jugando;
     if (sala) sala.hud.visible = jugando || siguiente === "paused";
@@ -259,7 +306,12 @@ async function arrancar() {
         intro,
         practica
           ? "La cadena cortó el muñeco. Mirra aguarda en el trigal."
-          : "La Brasa de Mirra vuelve a encender un eslabón.",
+          : "La Brasa de Mirra vuelve a encender un eslabón. " +
+              t("tienda.recompensa", {
+                cantidad: textoMonedas(
+                  sala?.juego.combate.jefe.def.monedas ?? 0,
+                ),
+              }),
       );
       texto(primary, practica ? "Enfrentar a Mirra" : "Volver a jugar");
     }
@@ -286,6 +338,7 @@ async function arrancar() {
     if (pantalla === "playing") mostrar("paused");
   }
   async function alMenu() {
+    tienda = crearTienda(CONFIG); // Una nueva partida vuelve a tener los tres productos disponibles.
     mostrar("cargando");
     if (await montar("muneco")) mostrar("menu");
   }
@@ -324,7 +377,14 @@ async function arrancar() {
     if (document.hidden) pausar();
   });
   window.addEventListener("keydown", (event) => {
-    if (controls.open || event.metaKey || event.ctrlKey || event.altKey) return;
+    if (
+      carta.abierta ||
+      controls.open ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.altKey
+    )
+      return;
     if (event.code === "Escape" && !event.repeat) {
       if (pantalla === "playing") pausar();
       else if (pantalla === "paused") mostrar("playing");
@@ -346,7 +406,7 @@ async function arrancar() {
     const start = pads.some((p) => !!p?.buttons[9]?.pressed);
     const flanco = start && !startAntes;
     startAntes = start;
-    if (!flanco || controls.open) return;
+    if (!flanco || controls.open || carta.abierta) return;
     if (pantalla === "playing") pausar();
     else if (pantalla === "paused") mostrar("playing");
     else if (pantalla === "menu") {
@@ -387,7 +447,7 @@ async function arrancar() {
   /** Un cuadro: simula (si se juega), actualiza audio y acumula tiempo para el render. @param {number} dt */
   function cuadro(dt) {
     leerStart();
-    if (!sala) return;
+    if (!sala || carta.abierta) return;
     if (pantalla === "playing") {
       sala.juego.update(dt);
       drenar();
@@ -397,8 +457,10 @@ async function arrancar() {
     audio.update(dt);
     pendiente += dt;
   }
+  // Reutilizamos el punto proyectado: el aviso sigue al carro al moverse la cámara.
+  const puntoAviso = { x: 0, y: 0, visible: false };
   function dibujar() {
-    if (!sala) return;
+    if (!sala || carta.abierta) return;
     // En pausa la escena se congela; en el menú el trigal sigue meciéndose de fondo.
     const dt = pantalla === "paused" ? 0 : pendiente;
     pendiente = 0;
@@ -407,6 +469,15 @@ async function arrancar() {
     sala.hud.update(dt);
     if (pantalla === "playing") pintarIndicacion();
     sala.vista.render();
+    if (puedeComprar()) {
+      sala.vista.toScreen(
+        sala.puesto.x,
+        2.75 * CONFIG.render.puesto.escala,
+        sala.puesto.z,
+        puntoAviso,
+      );
+      carta.situarAviso(puntoAviso);
+    } else carta.ocultarAviso();
   }
 
   const timer = new THREE.Timer();

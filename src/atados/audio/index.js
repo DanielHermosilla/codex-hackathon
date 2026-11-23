@@ -391,7 +391,7 @@ export function conectarAudio({
           ? Math.min(
               ...vivos.map(
                 (/** @type {Record<string, any>} */ p) =>
-                  p.hp / cfg.player.maxHp,
+                  p.hp / c.cfg.player.maxHp,
               ),
             )
           : 0,

@@ -1,0 +1,255 @@
+/* Globo sobre el furgón: la punta marca el objeto y la tecla tiene el mismo relieve que los controles. */
+#aviso-puesto {
+  position: absolute;
+  z-index: 4;
+  left: clamp(5.5rem, var(--puesto-x), calc(100% - 5.5rem));
+  top: clamp(3.1rem, var(--puesto-y), calc(100% - 1rem));
+  transform: translate(-50%, -100%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.38rem 0.72rem 0.38rem 0.4rem;
+  border: 1px solid #b9be94;
+  border-radius: 0.4rem;
+  background: #16382e;
+  color: #fff4d9;
+  font:
+    700 0.875rem/1.25 system-ui,
+    sans-serif;
+  box-shadow: 0 2px 8px #15231b60;
+  white-space: nowrap;
+  pointer-events: none;
+}
+#aviso-puesto::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  border: 5px solid transparent;
+  border-top-color: #b9be94;
+}
+#aviso-puesto kbd,
+.carta-volver kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.6rem;
+  height: 1.5rem;
+  border: 1px solid currentColor;
+  border-radius: 0.25rem;
+  font:
+    700 0.76rem/1 system-ui,
+    sans-serif;
+}
+#aviso-puesto kbd {
+  color: #17392e;
+  background: #f3e5b9;
+}
+
+#carta-productos {
+  --pino: #153e34;
+  --papel: #fff3d5;
+  --tinta: #21392d;
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: transparent;
+  color: var(--papel);
+  font-family: system-ui, sans-serif;
+}
+/* Conserva el encuadre de la escena y evita superponer dos juegos de textos y controles. */
+body:has(#carta-productos[open])
+  :is(.mast, .lower, #hud, .stage > .hud, #mural) {
+  visibility: hidden;
+}
+#carta-productos::backdrop {
+  /* El diálogo conserva las tarjetas opacas. El velo atenúa la arena que quedó en pausa. */
+  background: linear-gradient(
+    180deg,
+    rgb(19 18 16 / 84%),
+    rgb(19 18 16 / 68%) 60%,
+    rgb(19 18 16 / 60%)
+  );
+}
+.carta-interior {
+  width: min(76rem, 100%);
+  margin-inline: auto;
+  padding: clamp(1rem, 3vh, 2.5rem) clamp(1rem, 4.8vw, 4rem) 2rem;
+}
+.carta-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: clamp(0.75rem, 2vh, 1.5rem);
+  border-bottom: 1px solid #739080;
+}
+.carta-saldo {
+  margin-left: auto;
+  color: #ffdb92;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.carta-pausa {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.carta-pausa i {
+  font-style: normal;
+  color: #e5c079;
+}
+#carta-productos form {
+  float: none;
+  margin: 0;
+}
+#carta-productos .carta-volver {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 44px;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #9eae93;
+  color: var(--papel);
+  border-radius: 0.25rem;
+  font:
+    600 0.87rem/1.2 system-ui,
+    sans-serif;
+}
+.carta-volver kbd {
+  padding: 0 0.24rem;
+  color: #ead7ac;
+}
+#titulo-carta {
+  margin: clamp(1.1rem, 4vh, 3rem) 0 0.35rem;
+  font:
+    bold clamp(2.5rem, 6.2vw, 5.4rem)/1.02 Georgia,
+    serif;
+  letter-spacing: -0.045em;
+  color: var(--papel);
+}
+.carta-nota {
+  margin: 0 0 clamp(1rem, 3.2vh, 2.5rem);
+  color: #e5dec9;
+  font-size: clamp(0.94rem, 1.5vw, 1.08rem);
+}
+.carta-productos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.65rem, 2vw, 1.65rem);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.carta-productos li {
+  display: flex;
+  flex-direction: column;
+  background: var(--papel);
+  color: var(--tinta);
+  border-radius: 0.35rem;
+  overflow: hidden;
+  box-shadow: 0 4px 0 #0c2b23;
+}
+.carta-productos img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 768 / 585;
+  object-fit: contain;
+  background: #fce4ac;
+}
+.carta-detalle {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin: 0 clamp(0.85rem, 1.8vw, 1.55rem);
+  padding: 1rem 0 1.25rem;
+  border-top: 1px dashed #9b9678;
+}
+.carta-detalle h3 {
+  margin: 0;
+  font:
+    bold clamp(1.35rem, 2.25vw, 2rem)/1.03 Georgia,
+    serif;
+  letter-spacing: -0.035em;
+}
+.carta-detalle p {
+  margin: 0.6rem 0 1.3rem;
+  font-size: 0.96rem;
+  line-height: 1.45;
+}
+.carta-detalle button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  margin-top: auto;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--pino);
+  border-radius: 0.24rem;
+  font:
+    700 0.95rem/1.2 system-ui,
+    sans-serif;
+  color: var(--papel);
+  background: var(--pino);
+}
+.carta-detalle button b {
+  font-size: 0.95rem;
+}
+.carta-detalle button:hover:enabled,
+#carta-productos .carta-volver:hover {
+  background: #325c47;
+  color: white;
+}
+.carta-detalle button:disabled {
+  background: transparent;
+  color: #465b44;
+  border-color: #8b987e;
+  cursor: default;
+}
+#carta-productos button:focus-visible {
+  outline: 3px solid #f2b851;
+  outline-offset: 3px;
+}
+@media (max-width: 690px) {
+  .carta-cabecera {
+    flex-wrap: wrap;
+    gap: 0.4rem 0.75rem;
+  }
+  .carta-productos {
+    grid-template-columns: 1fr;
+  }
+  .carta-productos li {
+    display: grid;
+    grid-template-columns: minmax(6.25rem, 34%) 1fr;
+  }
+  .carta-productos img {
+    width: 100%;
+    height: 100%;
+    max-height: 14rem;
+    align-self: center;
+  }
+  .carta-detalle {
+    border: 0;
+    padding: 1rem 0;
+    margin-inline: 0.8rem;
+  }
+  .carta-detalle h3 {
+    font-size: 1.4rem;
+  }
+  .carta-detalle p {
+    margin: 0.4rem 0 0.75rem;
+  }
+}

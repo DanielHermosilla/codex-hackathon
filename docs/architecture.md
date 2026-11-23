@@ -29,10 +29,12 @@ La portada carga `src/atados/main.js`. La pista anterior usa `pista.html` y `src
 |---|---|
 | `src/atados/core/` | `config.js` (todos los números, la paleta y los tiempos), RNG con semilla (`?seed=N`), entrada de teclado y mandos, bucle de paso fijo (60 pasos por segundo, `dt` con tope) |
 | `src/atados/gameplay/` | Reglas puras sin three.js ni DOM: cadena de eslabones con enredo en pilares y daño por tensión, jugadores (dash, ancla, cadáver), jefe genérico con fases y bloques de ataque reutilizables |
-| `src/atados/render/` | Escena del trigal, cámara 3/4, personajes y Mirra con modelos GLB, cadena de metal, telegrafías planas, partículas con pools, muñeco de práctica y Puesto 23 |
+| `src/atados/render/` | Escena del trigal, cámara 3/4, personajes y Mirra con modelos GLB, cadena de metal, telegrafías planas, partículas con pools, muñeco de práctica y carro de completos |
 | `src/atados/audio/` | Música por capas que sigue la pelea, avisos sonoros por ataque, zumbido de la cadena según la tensión (zzfx) |
 | `src/atados/ui/` | HUD del combate: barra del jefe, números de daño, lápida de victoria |
 | `src/atados/i18n/` | Textos en español e inglés (`?lang=en`) |
+
+Durante la práctica, Sael u Odo pueden acercarse al carro del borde derecho. Aparece un aviso sobre el furgón y P abre la tienda a pantalla completa. La simulación queda en pausa hasta cerrar la carta. Las compras de la pareja viven en `gameplay/tienda.js` y la interfaz en `ui/tienda.js`. Las mejoras se conservan al pasar a Mirra y al reintentar. La pareja empieza con cero monedas. El evento de victoria abona la recompensa definida en la ficha del jefe (cero para el muñeco). Los precios están en `CONFIG.tienda.precios`. Volver al inicio abre una partida nueva y reinicia el saldo.
 
 Un jefe nuevo es un bloque de datos en `CONFIG.jefes`: vida, arena, fases y ataques hechos con los bloques de `gameplay/bloques.js` (barrido, zona, proyectiles en arco, carga, zona móvil, tirón). Todo ataque se puede cancelar y libera lo que creó. La práctica es un jefe más (`muneco`) sin ataques.
 
