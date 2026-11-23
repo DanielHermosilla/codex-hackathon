@@ -3,7 +3,7 @@
 // assets-src/atados/blender/mirra.py): idle, camina, siega, grano, hambre, dolor, destello, muerte.
 // Los clips se «friegan» con el tiempo del gameplay (telegrafía = 0..1 s del clip, golpe, recuperación),
 // así la animación siempre coincide con el aviso. Fase 2: la copa se abre en alas.
-// También la lápida (haz de trigal atado con una hoz, ficha) y los drops. Solo lee el estado.
+// También la lápida (haz de trigal atado con una hoz, ficha) de la victoria. Solo lee el estado.
 import * as THREE from "three";
 import { mezclarHex } from "./paleta.js";
 
@@ -124,7 +124,7 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
     });
   }
 
-  // ─── Lápida y drops ───
+  // ─── Lápida ───
   const lapida = new THREE.Group();
   const haz = new THREE.Mesh(
     keep(new THREE.CylinderGeometry(0.45, 0.6, 1.8, 7)),
@@ -149,18 +149,6 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
   });
   lapida.visible = false;
   scene.add(lapida);
-  const dropGeo = keep(new THREE.OctahedronGeometry(0.32, 0));
-  const J = cfg.paleta.jugadores;
-  const dropMats = [J.sael, J.odo, X.brasaPura].map((/** @type {number} */ h) =>
-    std(h, { emissive: h, emissiveIntensity: 0.35 }),
-  );
-  const drops = [0, 1, 2].map(() => {
-    const m = new THREE.Mesh(dropGeo, dropMats[0]);
-    m.visible = false;
-    scene.add(m);
-    return m;
-  });
-
   /** @type {import('./tipos.js').Paleta | null} */
   let pal = null;
   /** @param {import('./tipos.js').Paleta} p */
@@ -356,18 +344,9 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
       mixer.update(0);
     }
 
-    // Lápida y drops.
+    // Lápida.
     lapida.visible = !!c.lapida;
     if (c.lapida) lapida.position.set(c.lapida.x, 0, c.lapida.z);
-    for (let i = 0; i < drops.length; i++) {
-      const d = c.drops[i],
-        m = drops[i];
-      m.visible = !!d;
-      if (!d) continue;
-      m.material = dropMats[d.jugador >= 0 ? d.jugador : 2];
-      m.position.set(d.x, 0.8 + Math.sin(tiempo * 2 + i) * 0.15, d.z);
-      m.rotation.y = tiempo * 1.5;
-    }
   }
 
   return {

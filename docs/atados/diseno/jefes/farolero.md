@@ -1,6 +1,6 @@
 # El Farolero
 
-El guardián de Hestera convierte la arena en un instrumento. Con su farol dibuja tres pruebas sobre el piso. Cuando Sael y Odo responden bien, la luz golpea al propio guardián. La entrada desde el carro de completos y el acceso directo con `?jefe=farolero` llevan al mismo encuentro.
+El guardián de Hestera convierte la arena en un instrumento. Con su farol dibuja tres pruebas sobre el piso. Cuando Sael y Odo responden bien, la luz golpea al propio guardián. La entrada desde el muelle y el acceso directo con `?jefe=farolero` llevan al mismo encuentro.
 
 ## Cómo se juega
 

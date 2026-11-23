@@ -23,7 +23,7 @@ Playwright solo se usa para la prueba en navegador. Prettier comprueba el format
 
 La portada carga `src/atados/main.js`. La dirección antigua `pista.html` redirige a la portada. La pista solo se usa en las pruebas.
 
-`main.js` une la página (menú, modos Solo y Dos jugadores, pausa y resultados) con la partida. El lobby y el pasillo comparten un mundo. Al cruzar el arco se prepara la pradera de Mirra y se transfieren los puntos de vida de cada jugador. Tras la victoria, la pareja cruza el arco norte hacia el pasillo del carro de completos. Desde el carro puede enfrentar al Farolero con sus compras o seguir a pie hasta el muelle de Ondar. El HUD sigue al mundo activo. El audio y la entrada duran toda la sesión.
+`main.js` une la página (menú, modos Solo y Dos jugadores, pausa y resultados) con la partida. El lobby y el pasillo comparten un mundo. Al cruzar el arco se prepara la pradera de Mirra y se transfieren los puntos de vida de cada jugador. Tras vencer a Mirra, la pareja puede comprar en la arena y salir por el arco norte. Desde el muelle puede enfrentar al Farolero o seguir a pie hasta Ondar. El HUD sigue al mundo activo. El audio y la entrada duran toda la sesión.
 
 | Carpeta | Qué hay |
 |---|---|
@@ -34,7 +34,7 @@ La portada carga `src/atados/main.js`. La dirección antigua `pista.html` rediri
 | `src/atados/ui/` | Tarjetas del tutorial, murales, presentación del jefe, barra de vida, números de daño y lápida de victoria |
 | `src/atados/i18n/` | Textos en español e inglés (`?lang=en`) |
 
-La tienda pertenece a la partida. El evento de victoria concede la recompensa de Mirra. Cerca de la ventanilla, P abre la carta de Dani y pausa la simulación. Las compras se comparten entre los dos jugadores, duran al reintentar y se reinician al volver al menú. Los precios se definen en `CONFIG.tienda.precios`, los efectos en `gameplay/tienda.js` y la presentación en `ui/tienda.js`.
+La tienda pertenece a la partida. Al derrotar a Mirra o al Farolero, caen monedas y el evento de victoria suma 25 pesos al saldo compartido. El carro de completos de Bodoque llega al centro de la arena. Cuando se detiene, cualquiera de los dos jugadores puede acercarse a la ventanilla y pulsar P para abrir la carta. Esc la cierra. También se puede continuar sin comprar. Las compras se comparten entre los dos jugadores, duran al reintentar y se reinician al volver al menú. Los precios se definen en `CONFIG.tienda.precios`, los efectos en `gameplay/tienda.js` y la presentación en `ui/tienda.js`.
 
 Mirra intercala los seis ataques de sus dos fases con la luz divina, el pisotón y los braseros. El escupitajo de ácido y la gota alternan al comienzo de cada vuelta de ritos. La rotación y los avisos se coordinan en `gameplay/combate.js`. Las reglas del ácido y de la luz están en `gameplay/arena-mirra.js`. La gota, el pisotón y los braseros se resuelven en `gameplay/ritos.js`. El Farolero dirige sus tres pruebas desde `gameplay/farolero.js`.
 

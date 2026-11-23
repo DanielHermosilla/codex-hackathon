@@ -1,16 +1,10 @@
-// Furgón de completos del trigal. Las piezas se montan una sola vez al crear la sala.
+// Furgón de completos de Bodoque. Las piezas se montan una sola vez al crear la sala.
 import * as THREE from "three";
 import { juntoAlCarro } from "../gameplay/tienda.js";
 import { crearVendedor } from "./vendedor.js";
 
-/** @param {{scene: THREE.Scene, cfg: typeof import("../core/config.js").CONFIG, keep: <T>(o: T) => T, posicion: {x:number, z:number}, mirarA?: number[]}} opciones */
-export function crearPuesto({
-  scene,
-  cfg,
-  keep,
-  posicion,
-  mirarA = cfg.render.puesto.mirarA,
-}) {
+/** @param {{scene: THREE.Scene, cfg: typeof import("../core/config.js").CONFIG, keep: <T>(o: T) => T, posicion: {x:number, z:number}}} opciones */
+export function crearPuesto({ scene, cfg, keep, posicion }) {
   const p = cfg.render.puesto;
   const carro = new THREE.Group();
   const caja = keep(new THREE.BoxGeometry());
@@ -78,14 +72,12 @@ export function crearPuesto({
   }
 
   carro.position.set(posicion.x, 0, posicion.z);
-  carro.rotation.y = Math.atan2(
-    mirarA[0] - carro.position.x,
-    mirarA[1] - carro.position.z,
-  );
+  // La ventanilla ya mira hacia +z, el lado de la cámara.
   carro.scale.setScalar(p.escala);
   scene.add(carro);
 
   return {
+    carro, // La llegada mueve el furgón entero, incluido Bodoque tras el mesón.
     /** @param {number} dt @param {Parameters<typeof juntoAlCarro>[0]} jugadores @param {boolean} animar */
     sync(dt, jugadores, animar) {
       vendedor.sync(
@@ -93,10 +85,6 @@ export function crearPuesto({
         juntoAlCarro(jugadores, posicion, cfg.tienda.alcance),
         animar,
       );
-    },
-    /** @param {number[]} puntos */
-    foco(puntos) {
-      puntos.push(carro.position.x, carro.position.z, 2);
     },
     dispose() {
       scene.remove(carro);

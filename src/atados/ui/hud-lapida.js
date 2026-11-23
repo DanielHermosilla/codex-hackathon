@@ -1,12 +1,16 @@
-// Lápida (D-098, D-100, D-174): las stats del combate escritas sobre la marca física del jefe, en el mundo
-// y no en una pantalla de resultados. El texto aparece poco después de que la marca emerge y sigue a la marca
-// en pantalla (se proyecta desde su posición de mundo). No persiste entre partidas en la demo.
+// Lápida (D-098, D-100, D-174): muestra las estadísticas al terminar el combate.
+// Al llegar el carro, el resumen ocupa una esquina y la marca física sigue donde cayó el jefe.
 import { t } from "../i18n/index.js";
 import { escalon, formatoTiempo } from "./hud-logica.js";
 
 export const ESTILOS_LAPIDA = `
 .hud .lapida{position:absolute;transform:translate(-50%,-100%);min-width:250px;text-align:center;padding:14px 20px 12px;border-radius:4px;
   background:color-mix(in srgb,var(--fondo) 84%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--texto-suave) 40%,transparent);}
+.hud .lapida.con-carro{transform:none;min-width:0;width:min(36vw,340px);padding:8px 12px;}
+.hud .lapida .despedida{margin:4px 0;font:italic 16px/1.15 Georgia,serif;}
+.hud .lapida .despedida:empty{display:none;}
+.hud .lapida.con-carro .cuadro{font-size:15px;}
+.hud .lapida.con-carro .tiempo{font-size:21px;}
 .hud .lapida .epitafio{font:700 17px/1.2 'Cinzel',Georgia,serif;letter-spacing:.08em;margin-bottom:2px;}
 .hud .lapida .tiempo{font-size:30px;font-weight:600;line-height:1.1;margin:2px 0 6px;font-variant-numeric:lining-nums tabular-nums;}
 .hud .lapida .cuadro{display:grid;grid-template-columns:1fr auto auto;column-gap:18px;row-gap:1px;font-size:20px;line-height:1.35;text-align:right;
@@ -42,6 +46,7 @@ export function crearHudLapida({ cfg, parent, toScreen }) {
   const L = cfg.hud.lapida;
   const root = el("div", "lapida", parent);
   const epitafio = el("div", "epitafio", root);
+  const despedida = el("div", "despedida", root);
   const tiempo = el("div", "tiempo", root);
   const cuadro = el("div", "cuadro", root);
   el("span", "k", cuadro);
@@ -83,11 +88,16 @@ export function crearHudLapida({ cfg, parent, toScreen }) {
         return;
       }
       visibleT += dt;
-      toScreen(c.lapida.x, L.altura, c.lapida.z, pos);
+      // Con el carro en el centro, las cifras van al borde superior y las monedas quedan a la vista.
+      const conCarro = (c.jefe.def.monedas ?? 0) > 0;
+      root.classList.toggle("con-carro", conCarro);
+      set(despedida, conCarro && c.frase ? t(c.frase.clave) : "");
+      if (!conCarro) toScreen(c.lapida.x, L.altura, c.lapida.z, pos);
       const o = escalon(visibleT, L.retraso, L.fundido);
-      root.style.display = pos.visible && o > 0 ? "block" : "none";
-      root.style.left = `${pos.x}px`;
-      root.style.top = `${pos.y}px`;
+      root.style.display =
+        (conCarro || pos.visible) && o > 0 ? "block" : "none";
+      root.style.left = conCarro ? "12px" : `${pos.x}px`;
+      root.style.top = conCarro ? "12px" : `${pos.y}px`;
       root.style.opacity = o.toFixed(2);
       const s = c.stats;
       set(

@@ -12,8 +12,9 @@ export const CONFIG = {
 
   tienda: {
     precios: { italiano: 25, mote: 25, sopaipilla: 23 }, // monedas por producto, compartidas por la pareja
-    carroPractica: { x: 10.5, z: -7.5 }, // m: hueco del muro del claro, a la derecha de la escalinata
-    carro: { x: 4, z: -26 }, // m: ventanilla en el lateral del pasillo posterior a Mirra
+    carroVictoria: { x: 0, z: 0 }, // m: al vencer al jefe, Bodoque estaciona en el centro de la arena.
+    llegadaCarro: 1.5, // s desde la victoria hasta que Bodoque estaciona y se abre la salida.
+    huellaCarro: { semiancho: 1.55, fondo: 0.7, frente: 1 }, // m del modelo antes de escalarlo: carrocería, ruedas y mesón
     vidaItaliano: 250, // puntos por jugador en la escala ×10 (antes 25)
     alcance: 3.8, // Metros desde el centro hasta donde se puede pedir por la ventanilla.
   },
@@ -375,7 +376,7 @@ export const CONFIG = {
     },
     // El Farolero dirige tres pruebas por vuelta. El ensayo enseña la misma secuencia que el duelo.
     farolero: {
-      monedas: 1, // recompensa por vencer al Farolero
+      monedas: 25, // pesos compartidos por vencer al Farolero
       textos: "farolero",
       arte: "farolero",
       vida: 6000, // seis aciertos; escala de puntos D-202
@@ -1543,7 +1544,6 @@ export const CONFIG = {
 
   // Página: tiempos del flujo menú → caída → recorrido → Mirra (main.js). Solo presentación.
   ui: {
-    finJefe: 5.5, // segundos para leer la lápida del Farolero antes del resultado
     // Al cruzar el arco la pantalla funde a negro (`recorrido.flujo.fundidoArco`) y, ya cargada la pradera, se
     // abre sobre ella durante el silencio (D-183, D-211). s de esa apertura. PROVISIONAL.
     aperturaJefe: 0.8,
@@ -1663,7 +1663,6 @@ export const CONFIG = {
     },
     // Furgón (render/puesto.js): tienda de completos al borde de la arena. Colores sin rojo (D-188).
     puesto: {
-      mirarA: [0, -23], // punto (x, z en m) al que mira el frente del carrito
       escala: 1.5,
       carro: 0x326950,
       borde: 0xf9eaca,

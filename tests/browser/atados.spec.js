@@ -225,14 +225,15 @@ test("menú con el lobby → caída → pasillo → arco → Mirra con cinemáti
     g.setVidaJefe(0);
     g.step(40);
   });
-  await expect(page.locator(".hud .sub")).toContainText(
+  await expect(page.locator(".lapida .despedida")).toBeVisible();
+  await expect(page.locator(".lapida .despedida")).toContainText(
     "antes de que el valle muera de hambre",
   );
   await pasos(page, 380);
   await expect(page.locator("#objective")).toContainText(
     "Mirra ha sido derrotada",
   );
-  await expect(page.locator("#objective")).toContainText("Sal por el arco");
+  await expect(page.locator("#objective")).toContainText("arco norte");
   expect(await leer(page, () => window.__game.pantalla)).toBe("playing");
   await foto("10-victoria");
   // Quien quiera repetir la pelea puede hacerlo desde la pausa.

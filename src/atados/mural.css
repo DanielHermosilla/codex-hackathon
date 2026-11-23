@@ -4,7 +4,8 @@
   z-index: 2;
   bottom: clamp(0.45rem, 1.75vw, 1rem);
   left: clamp(0.45rem, 1.75vw, 1rem);
-  width: min(25rem, calc(100% - 2rem));
+  /* Deja la columna derecha libre para la salida y el objetivo de victoria. */
+  width: min(25rem, 52%);
   box-sizing: border-box;
   pointer-events: none;
   color: var(--ivory);
@@ -13,12 +14,6 @@
 
 .atados-mural[hidden] {
   display: none;
-}
-
-/* Durante la práctica, las tarjetas de controles ocupan la parte inferior del claro. */
-.atados-mural.en-practica {
-  top: clamp(0.45rem, 1.75vw, 1rem);
-  bottom: auto;
 }
 
 /* La misma placa de latón de la carta en un panel que deja visible el juego. */
