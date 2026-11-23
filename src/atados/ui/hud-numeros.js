@@ -13,12 +13,11 @@ export const ESTILOS_NUMEROS = CSS;
 /**
  * @param {object} deps
  * @param {import('./hud-logica.js').Config} deps.cfg
- * @param {() => import('./hud-logica.js').Mundo} deps.getWorld
  * @param {import('./hud-logica.js').ToScreen} deps.toScreen
  * @param {() => number} deps.altura Altura del jefe sobre el suelo.
  * @param {HTMLElement} deps.parent
  */
-export function crearHudNumeros({ cfg, getWorld, toScreen, altura, parent }) {
+export function crearHudNumeros({ cfg, toScreen, altura, parent }) {
   const el = document.createElement("div");
   el.className = "numero oculto";
   parent.appendChild(el);
@@ -27,10 +26,10 @@ export function crearHudNumeros({ cfg, getWorld, toScreen, altura, parent }) {
     tam = "",
     fuerte = false;
   return {
-    update() {
-      const w = getWorld();
-      const d = datosNumero(w.dummy.hit, cfg);
-      if (!d) {
+    /** @param {import('./hud-logica.js').Mundo | null} w */
+    update(w) {
+      const d = w ? datosNumero(w.dummy.hit, cfg) : null;
+      if (!w || !d) {
         if (!el.classList.contains("oculto")) el.classList.add("oculto");
         return;
       }

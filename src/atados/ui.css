@@ -17,8 +17,11 @@
 * {
   box-sizing: border-box;
 }
+html,
 body {
   margin: 0;
+  height: 100%; /* la página mide exactamente la ventana */
+  overflow: hidden; /* sin scroll: el canvas ocupa todo y las barras flotan encima */
 }
 [hidden] {
   display: none !important;
@@ -42,13 +45,29 @@ a:hover {
   outline: 2px solid #f3cd8c;
   outline-offset: 3px;
 }
+/* Las barras flotan sobre el canvas (que siempre ocupa toda la ventana). */
 .mast {
+  position: fixed; /* se superpone al canvas en vez de ocupar espacio */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5; /* por encima del escenario */
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 clamp(16px, 4vw, 70px);
   height: 58px;
+  background: linear-gradient(
+    180deg,
+    #151a17f2,
+    #151a17b3
+  ); /* velo oscuro para leer el texto sobre la escena */
   border-bottom: 1px solid #59533e;
+}
+/* Mientras se juega no se ven ni ocupan espacio: lo decide el atributo data-screen del body. */
+body[data-screen="playing"] .mast,
+body[data-screen="playing"] .lower {
+  display: none;
 }
 .studio {
   display: flex;
@@ -83,8 +102,7 @@ nav {
   display: flex;
   gap: clamp(12px, 2vw, 36px);
 }
-nav button,
-.lower button {
+nav button {
   display: flex;
   align-items: center;
   gap: 0.6em;
@@ -113,13 +131,10 @@ nav button,
 }
 .stage {
   isolation: isolate;
-  position: relative;
+  position: fixed; /* siempre ocupa toda la ventana, en todas las pantallas */
+  inset: 0;
   overflow: hidden;
   background: #343930;
-  height: calc(100svh - 150px);
-  min-height: 400px;
-  max-height: 1120px;
-  border-bottom: 1px solid #6c634a;
 }
 #arena {
   display: block;
@@ -133,6 +148,7 @@ nav button,
   display: flex;
   align-items: center;
   padding: clamp(20px, 5vw, 90px);
+  padding-block: 70px 100px; /* deja libres las barras flotantes de arriba (58px) y abajo */
   background: linear-gradient(
     90deg,
     rgba(19, 26, 24, 0.97) 0%,
@@ -313,20 +329,20 @@ progress::-moz-progress-bar {
   bottom: 64px;
   color: var(--gold);
 }
-#mural {
-  position: absolute;
-  bottom: 1rem;
-  left: 1rem;
-  z-index: 2;
-  pointer-events: none;
-}
 .lower {
+  position: fixed; /* flota sobre el canvas, abajo */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
   display: flex;
   align-items: center;
   gap: clamp(1rem, 4vw, 4.7rem);
   padding: 10px clamp(14px, 4vw, 70px);
   min-height: 90px;
   color: var(--muted);
+  background: linear-gradient(0deg, #151a17f2, #151a17b3);
+  border-top: 1px solid #59533e;
 }
 .lower > div > span {
   display: inline-block;
@@ -350,11 +366,6 @@ progress::-moz-progress-bar {
 }
 .odo i {
   background: #4fb0ff;
-}
-.lower button {
-  margin-left: auto;
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 kbd {
   font:
@@ -419,10 +430,6 @@ a {
   .mast {
     height: 48px;
   }
-  .stage {
-    height: calc(100svh - 160px);
-    min-height: 360px;
-  }
   .panel {
     max-width: 72vw;
   }
@@ -437,9 +444,6 @@ a {
   .lower > div > span {
     display: block;
   }
-  .lower button {
-    font-size: 0.72rem;
-  }
   .studio {
     font-size: 0.78rem;
   }
@@ -449,24 +453,16 @@ a {
   .actions {
     gap: 0.6rem;
   }
-  #mural {
-    max-width: 55%;
-    bottom: 0.5rem;
-    left: 0.5rem;
-  }
 }
 @media (max-height: 540px) and (min-width: 680px) {
-  .stage {
-    min-height: 295px;
-  }
   .mast {
     height: 42px;
   }
   .lower {
     min-height: 60px;
   }
-  .stage {
-    height: calc(100svh - 104px);
+  .veil {
+    padding-block: 52px 70px; /* barras más bajas en pantallas bajas */
   }
   h1 {
     font-size: 3.5rem;

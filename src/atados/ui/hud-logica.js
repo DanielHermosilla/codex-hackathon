@@ -8,8 +8,8 @@ import { t } from "../i18n/index.js";
 /** @typedef {import('../gameplay/tipos.js').Mundo} Mundo */
 /** @typedef {import('../gameplay/tipos.js').Combate} Combate */
 /** Proyecta una posición de mundo a píxeles de la capa del HUD; rellena `out`. @typedef {(x: number, y: number, z: number, out: { x: number, y: number, visible: boolean }) => void} ToScreen */
-/** Estado del dispositivo por jugador: `dispositivo` ('teclado' | 'mando') y `familia` de mando ('xbox' | 'ps'). @typedef {{ dispositivo: string[], familia: string[] }} EstadoDispositivo */
-/** Pinta un texto con marcas {dash} {ancla} {mover} en `el`, con los iconos del dispositivo en uso. @typedef {(el: HTMLElement, texto: string, estado: { dispositivo?: string | string[], familia?: string | string[], solo?: boolean }) => void} RenderTexto */
+/** Estado del dispositivo por jugador: `dispositivo` ('teclado' | 'mando') y `familia` de mando ('xbox' | 'ps'). @typedef {{ dispositivo: string[], familia: string[], mandoCompartido?: boolean }} EstadoDispositivo */
+/** Pinta un texto con marcas {dash} {ancla} {mover} en `el`, con los iconos del dispositivo en uso. @typedef {(el: HTMLElement, texto: string, estado: { dispositivo?: string | string[], familia?: string | string[], solo?: boolean, mandoCompartido?: boolean }) => void} RenderTexto */
 /** Una indicación en pantalla (tutorial o mural) con su fundido. @typedef {{ clave: string, t: number, saliendo: boolean, s: number, o: number }} Aviso */
 /** Estado de las indicaciones: la del tutorial y la del mural (o null si no hay). @typedef {{ tutorial: Aviso | null, mural: Aviso | null }} EstadoUI */
 /** Evento de UI del flujo: `tipo` más `clave` (tutorial) o `id` (mural). @typedef {{ tipo?: string, clave?: any, id?: any }} EventoUI */
@@ -185,12 +185,17 @@ const etiquetaMover = (m) =>
 // es un solo icono (el mismo botón para los dos); en solo, el dash es uno solo (D-016, D-120).
 /**
  * @param {string} accion
- * @param {{ dispositivo?: string | string[], solo?: boolean, familia?: string | string[] }} estado
+ * @param {{ dispositivo?: string | string[], solo?: boolean, familia?: string | string[], mandoCompartido?: boolean }} estado
  * @param {Config} cfg
  */
 export function iconosAccion(
   accion,
-  { dispositivo = "teclado", solo = false, familia = "xbox" },
+  {
+    dispositivo = "teclado",
+    solo = false,
+    familia = "xbox",
+    mandoCompartido = false,
+  },
   cfg,
 ) {
   const ds = Array.isArray(dispositivo)
@@ -226,9 +231,32 @@ export function iconosAccion(
         : etiquetaTecla((accion === "dash" ? map.dash : map.anchor)[0]);
     return { tipo: "tecla", etiqueta, jugador: JUG[i] };
   };
+  // Un solo mando en modo solo: la misma regla que core/input.js (`sample(solo)` con mando solo en el hueco de
+  // Sael). La asignación se comprueba incluso si el segundo mando está quieto. Cada mitad del mando lleva a un
+  // personaje (stick izq. + gatillo izq. = Sael, stick der. + gatillo der. = Odo) y el botón de dash hace
+  // esquivar a los dos, así que el dash es un solo icono común.
+  if (solo && mandoCompartido && ds[0] === "mando") {
+    const S = G.solo;
+    const familias = /** @type {Record<string, string[]>} */ (cfg.hud.mando);
+    const rotulos = familias[fam[0]] ?? familias.xbox; // la familia es la del único mando (el de Sael)
+    /** @param {number} idx */
+    const boton = (idx) => rotulos[idx] ?? `B${idx}`;
+    if (accion === "dash")
+      return [{ tipo: "mando", etiqueta: boton(G.dash), jugador: null }];
+    if (accion === "mover")
+      return [
+        { tipo: "mando", etiqueta: t("tecla.stickIzq"), jugador: "sael" },
+        { tipo: "mando", etiqueta: t("tecla.stickDer"), jugador: "odo" },
+      ];
+    return [
+      { tipo: "mando", etiqueta: boton(S.anclaSael), jugador: "sael" },
+      { tipo: "mando", etiqueta: boton(S.anclaOdo), jugador: "odo" },
+    ];
+  }
   if (accion === "dash" && solo) {
-    // Solo la tecla común hace dashear a los dos: el mando en solo está pendiente (CONFIG.controls.keyboard.soloDash),
-    // y cada mando alimenta solo a su jugador, así que no se promete un botón que no funcionaría.
+    // Solo con teclado (o con un mando por personaje): la tecla común hace dashear a los dos
+    // (CONFIG.controls.keyboard.soloDash). Con dos mandos, cada uno alimenta solo a su jugador, así que no se
+    // promete un botón que no funcionaría.
     return [
       { tipo: "tecla", etiqueta: etiquetaTecla(K.soloDash[0]), jugador: null },
     ];
@@ -305,12 +333,22 @@ export function asignarMandos(slots, pads) {
 /**
  * @param {Gamepad | null | undefined} pad
  * @param {Config['controls']['gamepad']} G
+ * @param {boolean} compartido En solo, también se usan el stick derecho y el gatillo de Sael.
  */
-export function mandoActivo(pad, G) {
+export function mandoActivo(pad, G, compartido = false) {
   if (!pad) return false;
   const ax = pad.axes[G.axisX] ?? 0,
     ay = pad.axes[G.axisY] ?? 0;
   if (Math.hypot(ax, ay) >= G.deadzone) return true;
+  if (compartido) {
+    const S = G.solo;
+    // Odo puede mover solo el stick derecho o Sael apretar el gatillo sin activar «pressed».
+    if (
+      Math.hypot(pad.axes[S.odoX] ?? 0, pad.axes[S.odoY] ?? 0) >= G.deadzone ||
+      (pad.buttons[S.anclaSael]?.value ?? 0) > G.anchorThreshold
+    )
+      return true;
+  }
   if (
     (pad.buttons[G.anchor]?.value ?? (pad.buttons[G.anchor]?.pressed ? 1 : 0)) >
     G.anchorThreshold

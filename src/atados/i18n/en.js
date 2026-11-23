@@ -58,6 +58,29 @@ export default {
   "tutorial.ancla": "Hold {ancla} to anchor",
   "tutorial.dash": "{dash} to dash away",
   "mural.prueba": "PLACEHOLDER: test mural text.",
+  // Climb corridor murals (D-126, D-209): DRAFT pending Diego's approval.
+  "mural.ladrones":
+    "“He climbed for gold. She, for her name. Fire rained down.”",
+  "mural.urna": "“Seven sparks fell on seven gods. None on the thieves.”",
+  "mural.mirra":
+    "“First came the locusts, then the dust. She who Nourished no longer gives: she devours.”",
+
+  // Tutorial cards (D-206, D-207): short title and one line. Third person so they work in solo and co-op;
+  // the card adds the keys for the device in use.
+  "tarjeta.mover.titulo": "Move",
+  "tarjeta.mover.linea":
+    "Sael and Odo are bound: when one pulls, the other gets dragged.",
+  "tarjeta.cortar.titulo": "Pull taut, cut",
+  "tarjeta.cortar.linea":
+    "Split apart and the chain pulls taut, cutting what it crosses. Slack won't cut.",
+  "tarjeta.ancla.titulo": "Anchor",
+  "tarjeta.ancla.linea":
+    "While held, one stays put and the other swings around them.",
+  "tarjeta.dash.titulo": "Dash",
+  "tarjeta.dash.linea": "A quick dodge: attacks can't hurt you mid-dash.",
+  "tarjeta.enredo.titulo": "Wrap",
+  "tarjeta.enredo.linea":
+    "Circle a column: the chain wraps around it and stays taut for a sweep.",
 
   "tecla.Space": "Space",
   "tecla.ShiftLeft": "Left Shift",
@@ -69,6 +92,7 @@ export default {
   "tecla.Tab": "Tab",
   "tecla.Escape": "Esc",
   "tecla.stickIzq": "Left stick",
+  "tecla.stickDer": "Right stick",
 
   "tienda.abrir": "Shop",
   "tienda.pausa": "Game paused",
@@ -83,7 +107,7 @@ export default {
   "tienda.italiano": "Completo italiano",
   "tienda.mote": "Mote con huesillos",
   "tienda.sopaipilla": "Sopaipilla",
-  "tienda.efecto.italiano": "+25 health and maximum health.",
+  "tienda.efecto.italiano": "+250 health and maximum health.",
   "tienda.efecto.mote": "20% shorter dodge cooldown.",
   "tienda.efecto.sopaipilla": "0.4 s more protection after a hit.",
 

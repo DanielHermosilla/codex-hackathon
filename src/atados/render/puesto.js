@@ -1,8 +1,14 @@
 // Furgón de completos del trigal. Las piezas se montan una sola vez al crear la sala.
 import * as THREE from "three";
 
-/** @param {{scene: THREE.Scene, cfg: typeof import("../core/config.js").CONFIG, keep: <T>(o: T) => T, posicion: {x:number, z:number}}} opciones */
-export function crearPuesto({ scene, cfg, keep, posicion }) {
+/** @param {{scene: THREE.Scene, cfg: typeof import("../core/config.js").CONFIG, keep: <T>(o: T) => T, posicion: {x:number, z:number}, mirarA?: number[]}} opciones */
+export function crearPuesto({
+  scene,
+  cfg,
+  keep,
+  posicion,
+  mirarA = cfg.render.puesto.mirarA,
+}) {
   const p = cfg.render.puesto;
   const carro = new THREE.Group();
   const caja = keep(new THREE.BoxGeometry());
@@ -63,8 +69,8 @@ export function crearPuesto({ scene, cfg, keep, posicion }) {
 
   carro.position.set(posicion.x, 0, posicion.z);
   carro.rotation.y = Math.atan2(
-    p.mirarA[0] - carro.position.x,
-    p.mirarA[1] - carro.position.z,
+    mirarA[0] - carro.position.x,
+    mirarA[1] - carro.position.z,
   );
   carro.scale.setScalar(p.escala);
   scene.add(carro);

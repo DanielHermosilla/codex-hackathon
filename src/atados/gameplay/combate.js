@@ -3,7 +3,8 @@
 //
 // D-006/D-064/D-074/D-180 presentación (completa la 1.ª vez, saltable en reintentos);
 // D-020/D-167 el caído revive al terminar el jefe con vida llena; D-028/D-111/D-173 derrota con frase
-// y reintento muy rápido; D-029/D-172 en difícil caer los dos reinicia el rush; D-098/D-100/D-165/D-174
+// y reintento muy rápido (D-213: siempre con la presentación corta; el reinicio del rush de D-029/D-172
+// lo decide el flujo de partida, core/flujo.js); D-098/D-100/D-165/D-174
 // lápida con stats; D-099 drop extra sin daño; D-106 eventos de sonido de aviso; D-183 silencios.
 
 import {
@@ -22,6 +23,7 @@ import { createWorld, stepWorld } from "./mundo.js";
 import { createChain } from "./cadena.js";
 import {
   hurtPlayer,
+  killPlayer,
   revivePlayer,
   pushOutOfCircle,
   keepInsideCircle,
@@ -440,9 +442,20 @@ function limpiarEmpujes(c) {
   }
 }
 
+/** Retira los avisos, el escudo y el pilar temporal al terminar la pelea. El terreno destruido no reaparece.
+ * @param {Combate} c */
+function cerrarArena(c) {
+  const temporal = c.arenaMirra.pilar;
+  if (temporal) c.w.pillars = c.w.pillars.filter((p) => p !== temporal);
+  c.arenaMirra = crearArenaMirra(); // no quedan huecos, luz ni explosiones junto a la lápida
+  c.ritos = crearRitos();
+  c.avisoRito = "";
+}
+
 /** @param {Combate} c */
 function derrota(c) {
   cancelarAccion(c.ctx, "derrota");
+  cerrarArena(c);
   limpiarEmpujes(c);
   c.jefe.cola.length = 0;
   liberarTodo(c.zonas);
@@ -460,6 +473,7 @@ function derrota(c) {
 /** @param {Combate} c */
 function victoria(c) {
   const { w, jefe, cfg } = c;
+  cerrarArena(c);
   liberarTodo(c.zonas);
   liberarTodo(c.proyectiles);
   limpiarEmpujes(c);
@@ -493,9 +507,10 @@ function victoria(c) {
   });
 }
 
-// Reintento (D-028, D-167): mismo jefe, los dos a vida llena, misma semilla (estado reproducible).
-// En difícil caer los dos reinicia el rush (D-029, D-172): con un solo jefe, empieza de cero con la
-// presentación completa (PROVISIONAL hasta que exista el rush).
+// Reintento (D-028, D-167, D-213): mismo jefe, los dos a vida llena, misma semilla (estado reproducible),
+// presentación corta y saltable también en difícil. Si en difícil caer los dos debe reiniciar el rush
+// (D-029, D-172), eso no lo decide el combate: lo resuelve el flujo de partida (core/flujo.js); el evento
+// `derrota` lo avisa con `reiniciaRush`.
 /**
  * @param {Combate} c
  * @returns {Combate}
@@ -504,11 +519,29 @@ export function reintentar(c) {
   const o = c.opts;
   const r = crearCombate(c.cfg, {
     ...o,
-    primeraVez: o.dificil ? true : false,
+    primeraVez: false, // presentación corta (D-213): la completa solo sale la primera vez
     reintentos: o.reintentos + 1,
   });
   r._dashPrev[0] = r._dashPrev[1] = true; // lo que siga apretado no salta además la presentación: hay que soltarlo
   return r;
+}
+
+// Primer combate tras un pasillo (D-020, D-168): cada jugador entra con la vida que traía y el caído sigue
+// caído (revive al vencer al jefe, no al cruzar el arco). Las posiciones son las de entrada de la arena.
+// Solo para el primer combate: el reintento (`reintentar`) vuelve a empezar con los dos a vida llena.
+/**
+ * @param {Combate} c  combate recién creado (aún en la presentación)
+ * @param {{ hp: number, alive: boolean }[]} jugadores  Sael y Odo al salir del pasillo
+ */
+export function heredarJugadores(c, jugadores) {
+  for (let i = 0; i < 2; i++) {
+    const p = c.w.players[i];
+    const q = jugadores[i];
+    if (!q.alive)
+      killPlayer(p); // cadáver unido a la cadena: el otro lo arrastra (D-020)
+    else p.hp = Math.min(q.hp, c.cfg.player.maxHp); // puntos: la vida que traía del pasillo
+    c._vivos[i] = p.alive; // ya venía caído: no se anuncia otra caída (`jugador_cae`) en el primer paso
+  }
 }
 
 /**

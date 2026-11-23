@@ -5,7 +5,7 @@
 /** @typedef {typeof import('../core/config.js').CONFIG} Config */
 /** @typedef {Record<string, any>} CapaZzfx Capa zzfx: claves en español de ORDEN_ZZFX más `retraso`, `desdeFin` y `ajuste`. */
 /** @typedef {{ categoria: string, bus?: string, capas: CapaZzfx[] }} DefSfx */
-/** @typedef {{ rompeCon?: string | null, soloPrimeraVez?: boolean, habilitado: boolean, duracionMs: number, buses: string[], nivel?: number, fadeOutMs?: number, fadeInMs?: number }} MomentoSilencio */
+/** @typedef {{ rompeCon?: string | null, soloPrimeraVez?: boolean, habilitado: boolean, duracionMs: number | null, buses: string[], nivel?: number, fadeOutMs?: number, fadeInMs?: number }} MomentoSilencio */
 /** @typedef {{ sinte: string, ganancia: number, estados: string[], patron?: number[], cada?: number, acordes?: number[][], porFase?: number[], faseMin?: number, faseMax?: number, intensidadMin?: number, intensidadAncho?: number, alta?: boolean }} CapaMusica */
 /** @typedef {{ ganancia: number, estados: Record<string, number>, porFase?: number[] }} CompletaMusica */
 /** @typedef {{ carpeta: string, completa?: CompletaMusica, bpm: number, raiz: number, escala: number[], capas: Record<string, CapaMusica> }} ZonaMusica */
@@ -290,6 +290,7 @@ export const zonaDeJefe = (cfg, jefe) =>
 // ─── Silencios [D-183] ───
 // Plan de un silencio para `motivo` (evento `silencio`). `vistos` = Set de ids ya usados (soloPrimeraVez).
 // Devuelve { id, omitido, rompeCon, duracionS, buses, nivel, fadeOutS, fadeInS }. Nunca incluye 'blanco' ni 'cadena'.
+// duracionS = Infinity si el momento no tiene duración (`duracionMs: null`): dura hasta que lo rompan.
 /** @param {Cfg} cfg @param {string} motivo @param {Set<string>} [vistos] @returns {PlanSilencio} */
 export function planSilencio(cfg, motivo, vistos = new Set()) {
   const S = cfg.audio.silencios;
@@ -309,7 +310,8 @@ export function planSilencio(cfg, motivo, vistos = new Set()) {
   return {
     ...base,
     omitido: null,
-    duracionS: M.duracionMs / 1000,
+    // duracionMs null = silencio abierto: no termina solo, lo cierra el gameplay (evento `silencio:fin`).
+    duracionS: M.duracionMs == null ? Infinity : M.duracionMs / 1000,
     buses,
     nivel: clamp01(M.nivel ?? 0),
     fadeOutS: (M.fadeOutMs ?? S.fadeOutMs) / 1000,
@@ -363,6 +365,10 @@ export function accionesDeEvento(cfg, e, jefeId, tele = teleNormal) {
       ];
     case "silencio":
       return [{ tipo: "silencio", motivo: e.motivo }];
+    case "silencio:fin":
+      // El flujo cierra un silencio abierto (el del umbral, al entrar a la presentación o al cancelar el
+      // arco). Romperlo ejecuta su `rompeCon` (null en el umbral) y suelta los temas en espera.
+      return [{ tipo: "romperSilencio" }];
     case "pelea_inicio":
       return [
         { tipo: "musica", estado: "pelea" },

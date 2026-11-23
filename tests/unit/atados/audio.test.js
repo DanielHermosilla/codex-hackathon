@@ -400,3 +400,18 @@ describe("avisos y buses (D-106)", () => {
     expect(accionesDeEvento(CONFIG, { tipo: "burla" }, "mirra")).toEqual([]);
   });
 });
+
+describe("revisión: silencio del umbral (D-183, D-211)", () => {
+  it("queda abierto hasta que el flujo lo cierra y no se rompe con el efecto de inicio de pelea", () => {
+    const p = planSilencio(CONFIG, "umbral");
+    expect(p.omitido).toBe(null);
+    expect(p.duracionS).toBe(Infinity); // no termina solo: lo cierra `silencio:fin`
+    expect(p.rompeCon).toBe(null); // `peleaInicio` suena una sola vez, con `pelea_inicio`
+    expect(accionesDeEvento(CONFIG, { tipo: "silencio:fin" }, "mirra")).toEqual(
+      [{ tipo: "romperSilencio" }],
+    );
+    // Ningún silencio vuelve a sonar el efecto de inicio de pelea.
+    for (const m of Object.values(A.silencios.momentos))
+      expect(m.rompeCon).not.toBe("peleaInicio");
+  });
+});

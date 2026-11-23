@@ -1,5 +1,6 @@
 // Iconos de tecla/botón en el DOM: seguimiento del dispositivo en uso (teclado o mando) y render de textos
 // con marcas {dash} {ancla} {mover}. La lógica de qué icono toca es pura (hud-logica.js).
+import { leerMandos } from "../core/input.js";
 import {
   asignarMandos,
   familiaMando,
@@ -23,6 +24,8 @@ export function crearDispositivo(cfg, target = window) {
   const tecla = [false, false];
   /** @type {(number | null)[]} */
   let slots = [null, null];
+  // Un mando conectado puede seguir quieto mientras se muestra la tarjeta.
+  const estado = { dispositivo: actual, familia, mandoCompartido: false };
   let forzado = false; // pruebas: mantiene el dispositivo forzado aunque no haya mando real
   /** @param {KeyboardEvent} e */
   const onKey = (e) => {
@@ -31,19 +34,22 @@ export function crearDispositivo(cfg, target = window) {
   };
   target.addEventListener("keydown", /** @type {EventListener} */ (onKey));
   return {
+    estado,
     get actual() {
       return actual;
     },
     get familia() {
       return familia;
     },
-    update() {
-      const pads = navigator.getGamepads?.() ?? [];
+    /** @param {boolean} solo */
+    update(solo) {
+      const pads = leerMandos();
       slots = asignarMandos(slots, pads);
+      estado.mandoCompartido = solo && slots[0] !== null && slots[1] === null;
       for (let i = 0; i < 2; i++) {
         const pad =
           slots[i] !== null ? pads[/** @type {number} */ (slots[i])] : null;
-        const mando = mandoActivo(pad, G);
+        const mando = mandoActivo(pad, G, estado.mandoCompartido && i === 0);
         actual[i] = elegirDispositivo(actual[i], {
           tecla: tecla[i],
           mando: mando && !tecla[i],
@@ -72,8 +78,9 @@ export function crearDispositivo(cfg, target = window) {
 export function crearRenderTexto(cfg) {
   const cache = new WeakMap();
   /** @type {import('./hud-logica.js').RenderTexto} */
-  return function renderTexto(el, texto, { dispositivo, familia, solo }) {
-    const clave = `${/** @type {any[]} */ ([]).concat(dispositivo)}|${/** @type {any[]} */ ([]).concat(familia)}|${solo ? 1 : 0}|${texto}`;
+  return function renderTexto(el, texto, estado) {
+    const { dispositivo, familia, solo, mandoCompartido } = estado;
+    const clave = `${/** @type {any[]} */ ([]).concat(dispositivo)}|${/** @type {any[]} */ ([]).concat(familia)}|${solo ? (mandoCompartido ? 2 : 1) : 0}|${texto}`;
     if (cache.get(el) === clave) return;
     cache.set(el, clave);
     el.textContent = "";
@@ -82,11 +89,7 @@ export function crearRenderTexto(cfg) {
         el.append(document.createTextNode(trozo.v));
         continue;
       }
-      for (const ic of iconosAccion(
-        trozo.v,
-        { dispositivo, familia, solo },
-        cfg,
-      )) {
+      for (const ic of iconosAccion(trozo.v, estado, cfg)) {
         const k = document.createElement("kbd");
         k.textContent = ic.etiqueta;
         k.className = [ic.tipo === "mando" ? "mando" : "", ic.jugador ?? ""]

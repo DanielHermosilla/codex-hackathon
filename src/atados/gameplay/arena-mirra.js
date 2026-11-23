@@ -77,6 +77,7 @@ export function bajoSombra(luz, jugador, pilares) {
 /** @param {Arena} a @param {Ctx} ctx @param {number} dt */
 export function avanzarArenaMirra(a, ctx, dt) {
   const { players } = ctx.w;
+  const dano = ctx.cfg.jefes.mirra.ritual.dano; // puntos de cada peligro de la arena
   // Simulación y dibujo consultan el mismo radio. El hueco recién abierto empieza entero.
   for (let i = a.huecos.length - 1; i >= 0; i--) {
     const h = a.huecos[i];
@@ -101,7 +102,15 @@ export function avanzarArenaMirra(a, ctx, dt) {
       ctx.w.pillars = coberturas.filter((p) => !destruidas.has(p));
       a.pilar = null;
       players.forEach((p, i) =>
-        ctx.golpear({ accion: { id: "pilar-void" } }, i, 52, 0, x, z, true),
+        ctx.golpear(
+          { accion: { id: "pilar-void" } },
+          i,
+          dano.explosion,
+          0,
+          x,
+          z,
+          true,
+        ),
       );
     }
   }
@@ -139,7 +148,7 @@ export function avanzarArenaMirra(a, ctx, dt) {
           ctx.golpear(
             { accion: { id: "luz-divina" } },
             i,
-            32,
+            dano.luz,
             0,
             luz.x,
             luz.z,
@@ -154,7 +163,15 @@ export function avanzarArenaMirra(a, ctx, dt) {
     a.danoHuecoEn[i] = Math.max(0, a.danoHuecoEn[i] - dt);
     if (!p.alive || a.danoHuecoEn[i] > 0) continue;
     if (a.huecos.some((h) => Math.hypot(p.x - h.x, p.z - h.z) < h.r)) {
-      ctx.golpear({ accion: { id: "suelo-void" } }, i, 18, 0, p.x, p.z, true);
+      ctx.golpear(
+        { accion: { id: "suelo-void" } },
+        i,
+        dano.vacio,
+        0,
+        p.x,
+        p.z,
+        true,
+      );
       a.danoHuecoEn[i] = 0.8;
     }
   }

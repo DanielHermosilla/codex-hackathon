@@ -36,10 +36,9 @@ function el(tag, cls, parent, text) {
  * @param {object} deps
  * @param {import('./hud-logica.js').Config} deps.cfg
  * @param {HTMLElement} deps.parent
- * @param {() => import('./hud-logica.js').Combate} deps.getCombate
  * @param {import('./hud-logica.js').ToScreen} deps.toScreen
  */
-export function crearHudLapida({ cfg, parent, getCombate, toScreen }) {
+export function crearHudLapida({ cfg, parent, toScreen }) {
   const L = cfg.hud.lapida;
   const root = el("div", "lapida", parent);
   const epitafio = el("div", "epitafio", root);
@@ -76,9 +75,8 @@ export function crearHudLapida({ cfg, parent, getCombate, toScreen }) {
   let visibleT = 0;
 
   return {
-    /** @param {number} dt */
-    update(dt) {
-      const c = getCombate();
+    /** @param {number} dt @param {import('./hud-logica.js').Combate} c */
+    update(dt, c) {
       if (!c.lapida) {
         visibleT = 0;
         root.style.display = "none";
@@ -107,6 +105,13 @@ export function crearHudLapida({ cfg, parent, getCombate, toScreen }) {
       set(filas.arrastres[0], s.arrastres[0]);
       set(filas.arrastres[1], s.arrastres[1]);
       set(sinDano, s.sinDano ? t("lapida.sinDano") : "");
+    },
+    // Sin combate (recorrido) la lápida no se ve; con combate la vuelve a mostrar update() cuando toca.
+    /** @param {boolean} v */
+    set visible(v) {
+      if (v) return;
+      visibleT = 0;
+      root.style.display = "none";
     },
     dispose() {
       root.remove();

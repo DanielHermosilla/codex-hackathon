@@ -80,6 +80,11 @@ export {};
  */
 
 /**
+ * Límite transitable: mete `pos` dentro dejando `margen` m de holgura y devuelve true si lo movió.
+ * @typedef {(pos: Punto, margen: number) => boolean} Limite
+ */
+
+/**
  * @typedef {object} Mundo
  * @property {Cfg} cfg
  * @property {boolean} solo
@@ -88,6 +93,7 @@ export {};
  * @property {Cadena} chain
  * @property {Pilar[]} pillars
  * @property {number} arenaRadius
+ * @property {Limite | null} limite  borde transitable distinto del círculo (p. ej. la ruta del recorrido); null = círculo de `arenaRadius`
  * @property {Muneco} dummy
  * @property {Punto[]} ext  velocidad externa por jugador (tirón, empuje)
  * @property {boolean[]} drag
@@ -233,4 +239,60 @@ export {};
  * @property {boolean[]} _dashPrev
  * @property {Punto} _pos
  * @property {Ctx} ctx
+ */
+
+// ─── Recorrido de inicio (lobby + pasillo, D-204 a D-211) ───
+// Contrato entre gameplay (gameplay/recorrido.js, gameplay/enemigos.js, core/flujo.js) y render/HUD.
+// Gameplay actualiza estos objetos en su sitio cada paso (sin crear objetos nuevos); render y HUD solo leen.
+
+/**
+ * Marca en el suelo del ataque de un enemigo (telegrafía y golpe activo).
+ * @typedef {object} ZonaEnemigo
+ * @property {"arco" | "linea"} forma  arco = tajo alrededor del cuerpo; linea = embestida recta
+ * @property {number} x  m: origen de la marca
+ * @property {number} z
+ * @property {number} ang  rad: hacia dónde apunta
+ * @property {number} radio  m (arco)
+ * @property {number} angulo  grados de apertura (arco)
+ * @property {number} largo  m (linea)
+ * @property {number} ancho  m (linea)
+ */
+
+/**
+ * Lo que render y HUD leen de cada enemigo de pasillo.
+ * @typedef {object} EnemigoVista
+ * @property {number} id
+ * @property {"segador" | "brincador"} tipo
+ * @property {number} x  m
+ * @property {number} z  m
+ * @property {number} face  rad: hacia dónde mira
+ * @property {number} r  m: radio del cuerpo
+ * @property {boolean} vivo
+ * @property {"quieto" | "acecha" | "telegrafia" | "activo" | "recupera" | "muere"} etapa
+ * @property {number} etapaK  0..1: avance dentro de la etapa
+ * @property {number} hp
+ * @property {number} hpMax
+ * @property {number} golpeT  s desde el último corte recibido (Infinity si nunca)
+ * @property {ZonaEnemigo | null} zona  marca del ataque en telegrafía o activo; null si no ataca
+ */
+
+/**
+ * Estado del muñeco de práctica del lobby (D-208).
+ * @typedef {object} MunecoVista
+ * @property {number} x  m
+ * @property {number} z  m
+ * @property {number} r  m
+ * @property {boolean} caido  true mientras está en el suelo tras recibir su vida en daño
+ * @property {number} rearmeK  0..1: avance hasta volver a levantarse (1 = de pie)
+ */
+
+/**
+ * Lo que render y HUD leen del recorrido.
+ * @typedef {object} EstadoRecorrido
+ * @property {"caida" | "recorrido" | "arco" | "puesto"} fase
+ * @property {number} caidaK  0..1: avance de la caída al valle (1 = aterrizaron, D-205)
+ * @property {number} s  m de ruta del jugador vivo más adelantado (lobby = 0)
+ * @property {MunecoVista} muneco
+ * @property {EnemigoVista[]} enemigos
+ * @property {boolean} umbralCruzado  se cruzó el arco de la cima (D-211)
  */

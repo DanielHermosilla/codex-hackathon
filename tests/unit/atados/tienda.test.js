@@ -14,22 +14,22 @@ test("el italiano da vida una sola vez y respeta a los jugadores caídos", () =>
   const tienda = crearTienda(CONFIG);
   const sael = createPlayer("sael", 0, 0, tienda.cfg);
   const odo = createPlayer("odo", 0, 0, tienda.cfg);
-  sael.hp = 40;
+  sael.hp = 400;
   assert.equal(tienda.saldo, 0);
   assert.equal(tienda.comprar("italiano", [sael, odo]), false);
-  assert.equal(sael.hp, 40);
+  assert.equal(sael.hp, 400);
   assert.equal(tienda.vendido("italiano"), false);
   tienda.acreditar(2);
   odo.hp = 0;
   odo.alive = false;
   assert.ok(tienda.comprar("italiano", [sael, odo]));
-  assert.equal(sael.hp, 65);
+  assert.equal(sael.hp, 650);
   assert.equal(odo.hp, 0);
   assert.equal(tienda.saldo, 1);
   assert.equal(tienda.comprar("italiano", [sael, odo]), false);
-  assert.equal(sael.hp, 65);
+  assert.equal(sael.hp, 650);
   assert.equal(tienda.saldo, 1);
-  assert.equal(tienda.cfg.player.maxHp, CONFIG.player.maxHp + 25);
+  assert.equal(tienda.cfg.player.maxHp, CONFIG.player.maxHp + 250);
 });
 
 test("las mejoras de esquiva y protección se aplican solo a esa partida", () => {

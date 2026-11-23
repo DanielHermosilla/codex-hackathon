@@ -53,7 +53,6 @@ function el(tag, cls, parent, text) {
  * @param {object} deps
  * @param {import('./hud-logica.js').Config} deps.cfg
  * @param {HTMLElement} deps.parent
- * @param {() => import('./hud-logica.js').Combate} deps.getCombate
  * @param {import('./hud-logica.js').ToScreen} deps.toScreen
  * @param {import('./hud-logica.js').RenderTexto} deps.renderTexto
  * @param {() => import('./hud-logica.js').EstadoDispositivo} deps.dispositivo
@@ -61,7 +60,6 @@ function el(tag, cls, parent, text) {
 export function crearHudJefe({
   cfg,
   parent,
-  getCombate,
   toScreen,
   renderTexto,
   dispositivo,
@@ -89,7 +87,6 @@ export function crearHudJefe({
   const der = el("div", "velo der", parent);
   const derTitulo = el("div", "titulo", der);
   const derFrase = el("div", "frase", der);
-  const derRush = el("div", "aviso", der);
   const derAviso = el("div", "aviso", der);
 
   const sub = el("div", "sub", parent);
@@ -121,9 +118,8 @@ export function crearHudJefe({
   let estela = 1;
 
   return {
-    /** @param {number} dt */
-    update(dt) {
-      const c = getCombate();
+    /** @param {number} dt @param {import('./hud-logica.js').Combate} c */
+    update(dt, c) {
       const escudo = escudoVisible(c);
       proteccion.hidden = !escudo;
       if (escudo) {
@@ -185,7 +181,7 @@ export function crearHudJefe({
       if (enDer) {
         set(derTitulo, t("combate.derrota"));
         set(derFrase, t(`jefe.${tx}.derrota`));
-        set(derRush, c.opts.dificil ? t("combate.reiniciaRush") : "");
+        // Esta demo reintenta en la pradera en ambas dificultades (D-213).
         renderTexto(
           derAviso,
           c.derrotaT >= cfg.jefes.comun.derrota.esperaReintento
@@ -214,8 +210,17 @@ export function crearHudJefe({
         set(e, d.extra ? t("drop.extra") : t("drop.placeholder"));
       }
     },
+    // Sin combate (recorrido) se ocultan todas las capas del jefe; con combate las vuelve a mostrar update().
+    /** @param {boolean} v */
+    set visible(v) {
+      if (v) return; // update() decide qué se ve en cada cuadro
+      proteccion.hidden = true; // al salir de la arena también desaparece la protección del rito
+      for (const e of [barra, pres, der, sub, ...dropsEl])
+        e.style.display = "none";
+    },
     dispose() {
-      for (const e of [barra, pres, der, sub, ...dropsEl]) e.remove();
+      for (const e of [barra, proteccion, pres, der, sub, ...dropsEl])
+        e.remove();
     },
   };
 }

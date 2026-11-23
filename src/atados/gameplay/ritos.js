@@ -3,14 +3,13 @@
 /** @typedef {import('./tipos.js').Pilar} Circulo */
 /** @typedef {ReturnType<typeof crearRitos>} Ritos */
 
-export const PISOTON = { aviso: 3, radio: 2, separacion: 2.6, dano: 30 };
+export const PISOTON = { aviso: 3, radio: 2, separacion: 2.6 };
 export const BRASEROS = {
   colores: [0xff513d, 0x4dafff, 0xffc641],
   viaje: 4,
   margenAparicion: 4.5,
   radio: 1.15,
   ventana: 3,
-  dano: 26,
 };
 
 export function crearRitos() {
@@ -153,7 +152,7 @@ export function avanzarRitos(r, w, dt, golpear) {
       );
     if (!juntos)
       w.players.forEach((p, i) => {
-        if (p.alive) golpear(i, PISOTON.dano);
+        if (p.alive) golpear(i, w.cfg.jefes.mirra.ritual.dano.pisoton);
       });
     r.tipo = "";
     return;
@@ -182,7 +181,7 @@ export function avanzarRitos(r, w, dt, golpear) {
     if (r.tiempo <= 1e-8) {
       t.activo = false;
       if (r.escudo.color !== r.colorObjetivo || r.escudo.restante <= 0)
-        golpear(i, BRASEROS.dano);
+        golpear(i, w.cfg.jefes.mirra.ritual.dano.braseros);
     }
   }
   if (r.tiros.every((t) => !t.activo)) r.tipo = "";

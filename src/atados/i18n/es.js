@@ -58,6 +58,31 @@ export default {
   "tutorial.ancla": "Mantén {ancla} para anclarte",
   "tutorial.dash": "{dash} para esquivar con un dash",
   "mural.prueba": "PLACEHOLDER: texto de mural de prueba.",
+  // Murales del pasillo de subida (D-126, D-209): BORRADOR pendiente de aprobar por Diego.
+  "mural.ladrones":
+    "«Él subió por oro. Ella, por su nombre. Bajó una lluvia de fuego.»",
+  "mural.urna":
+    "«Siete chispas cayeron sobre siete dioses. Ninguna sobre los ladrones.»",
+  "mural.mirra":
+    "«Primero vinieron las langostas, luego el polvo. La que Alimentaba ya no da: devora.»",
+
+  // Tarjetas del tutorial (D-206, D-207): título corto y una línea. En tercera persona para que sirvan en solo
+  // y en coop; las teclas las pone la tarjeta según el dispositivo en uso.
+  "tarjeta.mover.titulo": "Moverse",
+  "tarjeta.mover.linea":
+    "Sael y Odo van atados: si uno tira, arrastra al otro.",
+  "tarjeta.cortar.titulo": "Tensar y cortar",
+  "tarjeta.cortar.linea":
+    "Al separarse, la cadena se tensa y corta lo que cruza. Floja no corta.",
+  "tarjeta.ancla.titulo": "Anclarse",
+  "tarjeta.ancla.linea":
+    "Mientras se mantiene, uno queda fijo y el otro gira a su alrededor.",
+  "tarjeta.dash.titulo": "Dash",
+  "tarjeta.dash.linea":
+    "Esquiva rápida: durante el dash, los ataques no hacen daño.",
+  "tarjeta.enredo.titulo": "Enredar",
+  "tarjeta.enredo.linea":
+    "Al rodear una columna, la cadena se enrolla y queda tensa para barrer.",
 
   "tecla.Space": "Espacio",
   "tecla.ShiftLeft": "Shift izq.",
@@ -69,6 +94,7 @@ export default {
   "tecla.Tab": "Tab",
   "tecla.Escape": "Esc",
   "tecla.stickIzq": "Stick izq.",
+  "tecla.stickDer": "Stick der.",
 
   "tienda.abrir": "Ver carta",
   "tienda.pausa": "Partida en pausa",
@@ -84,7 +110,7 @@ export default {
   "tienda.italiano": "Completo italiano",
   "tienda.mote": "Mote con huesillos",
   "tienda.sopaipilla": "Sopaipilla",
-  "tienda.efecto.italiano": "+25 de vida y de vida máxima.",
+  "tienda.efecto.italiano": "+250 de vida y de vida máxima.",
   "tienda.efecto.mote": "20 % menos de espera entre esquivas.",
   "tienda.efecto.sopaipilla": "0,4 s más de protección tras un golpe.",
 

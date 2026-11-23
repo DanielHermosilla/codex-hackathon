@@ -65,7 +65,7 @@ test("perder el pilar detona una vez, derriba las coberturas más cercanas y alc
   paso(1);
   assert.equal(a.pilar, null);
   assert.deepEqual(new Set(ctx.w.pillars), new Set(ordenadas.slice(n)));
-  ctx.w.players.forEach((p, i) => assert.equal(p.hp, hp[i] - 52));
+  ctx.w.players.forEach((p, i) => assert.equal(p.hp, hp[i] - 520));
 });
 
 test("la luz respeta la dirección de llegada y solo cubre detrás del obstáculo", () => {
@@ -79,7 +79,7 @@ test("la luz respeta la dirección de llegada y solo cubre detrás del obstácul
   assert.equal(bajoSombra(a.luz, ctx.w.players[0], []), false);
   paso(2.5);
   assert.equal(ctx.w.players[0].hp, CONFIG.player.maxHp);
-  assert.equal(ctx.w.players[1].hp, CONFIG.player.maxHp - 32);
+  assert.equal(ctx.w.players[1].hp, CONFIG.player.maxHp - 320);
 });
 
 test("la explosión conserva la última cobertura disponible", () => {
@@ -104,11 +104,11 @@ test("el vacío se cierra en 12 s y deja de dañar desde el borde hacia el centr
   interior.x = 0.4;
   paso(1 / 60);
   assert.equal(exterior.hp, CONFIG.player.maxHp);
-  assert.equal(interior.hp, CONFIG.player.maxHp - 18);
+  assert.equal(interior.hp, CONFIG.player.maxHp - 180);
   interior.x = 3;
   paso(6);
   assert.equal(a.huecos.length, 0);
   interior.x = 0;
   paso(1);
-  assert.equal(interior.hp, CONFIG.player.maxHp - 18);
+  assert.equal(interior.hp, CONFIG.player.maxHp - 180);
 });

@@ -7,14 +7,6 @@ export const productos = /** @type {const} */ ([
 /** @typedef {(typeof productos)[number]} Producto */
 /** @typedef {typeof import("../core/config.js").CONFIG} Config */
 
-/** La escena y la interacción comparten este mismo punto, en metros del mundo.
- * @param {number} radioArena @param {Config["tienda"]} ajustes */
-export function posicionCarro(radioArena, ajustes) {
-  const angulo = (ajustes.anguloDeg * Math.PI) / 180;
-  const radio = radioArena + ajustes.margen;
-  return { x: Math.cos(angulo) * radio, z: Math.sin(angulo) * radio };
-}
-
 /** Basta con que uno de los dos llegue al carro caminando.
  * @param {ReadonlyArray<{x:number,z:number,alive:boolean}>} jugadores
  * @param {{x:number,z:number}} carro @param {number} alcance */
@@ -51,9 +43,10 @@ export function crearTienda(base) {
       const precio = cfg.tienda.precios[id];
       if (saldo < precio) return false;
       if (id === "italiano") {
-        cfg.player.maxHp += 25; // puntos de vida máxima por jugador
+        cfg.player.maxHp += cfg.tienda.vidaItaliano; // puntos de vida máxima por jugador
         for (const p of jugadores)
-          if (p.alive) p.hp = Math.min(cfg.player.maxHp, p.hp + 25);
+          if (p.alive)
+            p.hp = Math.min(cfg.player.maxHp, p.hp + cfg.tienda.vidaItaliano);
       } else if (id === "mote") {
         cfg.dash.cooldown *= 0.8; // un 20 % menos de espera entre esquivas
       } else {

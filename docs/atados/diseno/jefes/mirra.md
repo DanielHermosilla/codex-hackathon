@@ -1,9 +1,9 @@
 # Jefe: Mirra la Hambrienta
 
-**Orden en el rush:** 1 de 3 [D-024, D-026, D-058] · **Duración objetivo:** 2–3 min [D-141] · **Qué enseña/prueba de la cadena:** la cuchilla tensa básica (uno ancla, el otro rodea), el corte contra una carga y el enredo en pilares. Lo enseña, no lo obliga [D-012, D-019, D-048, D-054, D-148] · **Decisiones:** D-012, D-018, D-025, D-043, D-047, D-048, D-054, D-055, D-057, D-058, D-078, D-084, D-085, D-086, D-088, D-091, D-092, D-093, D-098, D-106, D-128, D-141, D-147, D-148, D-150, D-152–D-156, D-160, D-163–D-165, D-169–D-172, D-174, D-176, D-180, D-183, D-184
+**Orden en la demo:** primera de dos de acuerdo con D-203. La versión jugable llega al carro de completos después de Mirra · **Duración objetivo:** 2–3 min [D-141] · **Qué enseña/prueba de la cadena:** la cuchilla tensa básica (uno ancla, el otro rodea), el corte contra una carga y el enredo en pilares. Lo enseña, no lo obliga [D-012, D-019, D-048, D-054, D-148] · **Decisiones:** D-012, D-018, D-025, D-043, D-047, D-048, D-054, D-055, D-057, D-058, D-078, D-084, D-085, D-086, D-088, D-091, D-092, D-093, D-098, D-106, D-128, D-141, D-147, D-148, D-150, D-152–D-156, D-160, D-163–D-165, D-169–D-172, D-174, D-176, D-180, D-183, D-184
 
 > Convenciones de las fichas:
-> - **(de partida)** = número propuesto para afinar en playtest. No es decisión. Va a `src/core/config.js`.
+> - **(de partida)** = número propuesto para afinar en playtest. No es decisión. La configuración de la demo está en `src/atados/core/config.js`.
 > - **(propuesta)** = idea derivada de las decisiones citadas, pendiente de visto bueno.
 > - **(borrador)** = texto de jefe que Diego debe aprobar.
 > - **L** = largo base de la cadena [D-079].
@@ -46,12 +46,12 @@ Cada ataque da un rol a cada jugador [D-164]. "Objetivo" = a quien apunta; "otro
 
 | Ataque (bloque) | Telegrafía (visual + sonido, duración) | Daño (de partida) | Cómo se esquiva | Rol del objetivo / del otro [D-164] | Cómo se castiga con la cadena |
 |---|---|---|---|---|---|
-| **Siega** (`barrido` arco 120°, radio 1,5 L) | Echa atrás los brazos-rama; el arco se marca en el suelo. Sonido: hoz que se afila. 1,2 / 0,7 s | 20 | Salir del arco por detrás, o dash a través (invulnerable) [D-014, D-069] | Objetivo: sale por un lado y se ancla. Otro: se coloca al lado contrario para cruzar la cadena por la espalda | Brazos clavados 1,2 s: la cadena tensa pasa por la espalda [D-012, D-148] |
-| **Siega doble** (`barrido` arco, 2 vueltas) · fase 2 | Gira el torso dos veces antes. Sonido: dos afiladas. 1,2 / 0,7 s; 0,6 / 0,4 s entre barridos | 20 por barrido | Dash a destiempo o salir por detrás | Igual que la Siega; el otro espera el segundo barrido antes de entrar | Recuperación 1,5 s |
-| **Grano** (`proyectil_arco`: 5 semillas, `zona_circular` radio 0,4 L, `alrededorAmbos`) | Hincha el abdomen; círculos donde caerán, alrededor de los dos [D-091]. Sonido: tripas que rugen + silbido. 1,4 / 0,9 s | 15 por semilla; púas 0,5 s | Salir de los círculos. Siempre queda un hueco para los dos con la cadena puesta (propuesta) | Los dos esquivan; el que queda más cerca de Mirra se ancla y el otro rodea | Quieta escupiendo 1,5 s: se corta desde cualquier lado |
-| **Hambre** (`carga`: línea hasta 4 L, ancho 1 L, `masDano`) | Abre las mandíbulas y raspa el suelo; la línea se marca. Sonido: chasquido de mandíbulas. 1,0 / 0,6 s | 25 | Salir de la línea de lado o dash | Objetivo: sale de la línea hacia un lado. Otro: sale hacia el lado contrario, así la cadena tensa cruza la línea | Si carga contra la cadena tensa, se corta sola: daño por velocidad relativa [D-148]. Además tropieza y queda 1,5 s |
-| **Enjambre** (`zona_movil` radio 0,8 L, 6 s, 70 % de velocidad del jugador) · fase 2 | La copa se sacude; la nube se forma 1 s antes de moverse. Sonido: zumbido creciente. 1,5 / 1,0 s | 5 por tick de 0,5 s | Moverse | Objetivo: arrastra la nube lejos de Mirra. Otro: libre para cortar | Mirra no lanza otro bloque mientras dura (propuesta): ventana larga. Es un área de langostas, no esbirros [D-163] |
-| **Banquete** (`tiron_radial` 2 s + `zona_circular` radio 1,2 L bajo Mirra) · fase 2 | Se clava y aspira; trigal y polvo fluyen hacia ella; el círculo de la mordida se marca. Sonido: inhalación larga y grave. Tirón 2 s; mordida avisada 1,2 / 0,8 s | 30 | Varias salidas [D-054]: correr contra el tirón, dash hacia fuera, anclarse (reduce el tirón, es un ataque) [D-122, D-150], o enredar la cadena en un pilar [D-048] | El más cercano sale primero; el otro se ancla para frenarlo o lo arrastra con la cadena [D-022, D-149] | Tras la mordida queda saciada 2,5 s (letargo de la gula) [D-128]: ventana para el corte fuerte coordinado [D-017] |
+| **Siega** (`barrido` arco 120°, radio 1,5 L) | Echa atrás los brazos-rama; el arco se marca en el suelo. Sonido: hoz que se afila. 1,2 / 0,7 s | 200 | Salir del arco por detrás, o dash a través (invulnerable) [D-014, D-069] | Objetivo: sale por un lado y se ancla. Otro: se coloca al lado contrario para cruzar la cadena por la espalda | Brazos clavados 1,2 s: la cadena tensa pasa por la espalda [D-012, D-148] |
+| **Siega doble** (`barrido` arco, 2 vueltas) · fase 2 | Gira el torso dos veces antes. Sonido: dos afiladas. 1,2 / 0,7 s; 0,6 / 0,4 s entre barridos | 200 por barrido | Dash a destiempo o salir por detrás | Igual que la Siega; el otro espera el segundo barrido antes de entrar | Recuperación 1,5 s |
+| **Grano** (`proyectil_arco`: 5 semillas, `zona_circular` radio 0,4 L, `alrededorAmbos`) | Hincha el abdomen; círculos donde caerán, alrededor de los dos [D-091]. Sonido: tripas que rugen + silbido. 1,4 / 0,9 s | 150 por semilla; púas 0,5 s | Salir de los círculos. Siempre queda un hueco para los dos con la cadena puesta (propuesta) | Los dos esquivan; el que queda más cerca de Mirra se ancla y el otro rodea | Quieta escupiendo 1,5 s: se corta desde cualquier lado |
+| **Hambre** (`carga`: línea hasta 4 L, ancho 1 L, `masDano`) | Abre las mandíbulas y raspa el suelo; la línea se marca. Sonido: chasquido de mandíbulas. 1,0 / 0,6 s | 250 | Salir de la línea de lado o dash | Objetivo: sale de la línea hacia un lado. Otro: sale hacia el lado contrario, así la cadena tensa cruza la línea | Si carga contra la cadena tensa, se corta sola: daño por velocidad relativa [D-148]. Además tropieza y queda 1,5 s |
+| **Enjambre** (`zona_movil` radio 0,8 L, 6 s, 70 % de velocidad del jugador) · fase 2 | La copa se sacude; la nube se forma 1 s antes de moverse. Sonido: zumbido creciente. 1,5 / 1,0 s | 50 por tick de 0,5 s | Moverse | Objetivo: arrastra la nube lejos de Mirra. Otro: libre para cortar | Mirra no lanza otro bloque mientras dura (propuesta): ventana larga. Es un área de langostas, no esbirros [D-163] |
+| **Banquete** (`tiron_radial` 2 s + `zona_circular` radio 1,2 L bajo Mirra) · fase 2 | Se clava y aspira; trigal y polvo fluyen hacia ella; el círculo de la mordida se marca. Sonido: inhalación larga y grave. Tirón 2 s; mordida avisada 1,2 / 0,8 s | 300 | Varias salidas [D-054]: correr contra el tirón, dash hacia fuera, anclarse (reduce el tirón, es un ataque) [D-122, D-150], o enredar la cadena en un pilar [D-048] | El más cercano sale primero; el otro se ancla para frenarlo o lo arrastra con la cadena [D-022, D-149] | Tras la mordida queda saciada 2,5 s (letargo de la gula) [D-128]: ventana para el corte fuerte coordinado [D-017] |
 
 - Ataques sobre la cadena: ninguno. Solo Tavor intenta romperla [D-185]; los efectos sobre la cadena pasan poco [D-047].
 - Contacto con el cuerpo: solo empuja, no daña [D-152].
@@ -71,6 +71,7 @@ Cada ataque da un rol a cada jugador [D-164]. "Objetivo" = a quien apunta; "otro
 - Tono serio con chispa de humor [D-002].
 
 ## Drop / recompensa
+- En la demo, cada victoria entrega una moneda para la carta del furgón en el pasillo de salida [D-212].
 - Al morir, su esquirla se incrusta en la cadena: es narrativa, no un ítem [D-169].
 - Suelta un ítem para cada jugador, al azar de su pool [D-031, D-078]. Cada ítem lleva el color de su jugador y solo él lo recoge [D-170]. Pool de 3–4 ítems [D-170]. Todo nace del lore [D-030].
 - Pool (propuesta). Capa S1: virtud vs pecado del mismo dios; juntos hacen sinergia [D-096, D-128]:
@@ -98,8 +99,8 @@ Cada ataque da un rol a cada jugador [D-164]. "Objetivo" = a quien apunta; "otro
 - Semilla de referencia: `?seed=1` (propuesta). Cada fase arranca de estado reproducible: posición de Mirra, pilares y RNG.
 - Smoke: forzar cada ataque desde `window.__game`, capturar cada telegrafía en normal y difícil, forzar transición al 50 %, forzar muerte.
 - Criterios de "justo": 2–4 intentos en normal [D-109]; ningún daño sin aviso; ningún patrón sin salida para los dos con la cadena puesta; nunca dos ataques activos a la vez en fase 1.
-- Duración 2–3 min [D-141]. Vida (de partida): 1200 (≈ 24 pasadas a tensión máxima de ~50).
-- Vida de cada jugador (de partida): 100 [D-020]. Se revive con vida llena [D-167].
+- Duración 2–3 min [D-141]. Vida (de partida): 12 000 (≈ 24 pasadas a tensión máxima de ~500) [D-202].
+- Vida de cada jugador (de partida): 1000 [D-020, D-202]. Se revive con vida llena [D-167].
 
 ## ❓ Huecos abiertos
 - Ninguno bloqueante. Dependencia: colores de aviso v2 [D-087, D-143].

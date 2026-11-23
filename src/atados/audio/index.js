@@ -202,8 +202,20 @@ export function conectarAudio({
 
   /** @param {EventoCombate} e */
   function onEv(e) {
-    if (e.tipo === "presentacion_inicio") nuevoCombate();
+    // Enemigos del pasillo: reutilizan sonidos del combate (CONFIG.audio.enemigos); sin música ni silencios.
+    const sfxEnemigo =
+      A.enemigos?.[/** @type {keyof typeof A.enemigos} */ (e.tipo)];
+    if (sfxEnemigo) {
+      if (motor.estado === "activo") sonar(sfxEnemigo);
+      return;
+    }
     const c = getCombate?.();
+    if (e.tipo === "presentacion_inicio" || e.tipo === "zona_entra") {
+      nuevoCombate(); // cierra el silencio abierto, los temas pendientes y los ataques de la sala anterior
+      leerSinSonar(c); // el próximo cuadro ya reconoce este mundo y conserva el nuevo silencio del nombre
+      if (e.tipo === "zona_entra") vistos.clear(); // una partida nueva vuelve a presentar el nombre por primera vez
+    }
+    if (e.tipo === "pasillo:reinicio") leerSinSonar(c); // la nueva vida del lobby no es una resurrección
     const tele = c?.ctx?.tele;
     const acciones = accionesDeEvento(
       cfg,
@@ -248,7 +260,7 @@ export function conectarAudio({
   // Al desbloquear a mitad de partida, la música toma el estado actual del combate.
   function sincronizar() {
     const c = getCombate?.();
-    if (c) {
+    if (c?.id) {
       jefeId = c.id;
       const est =
         c.estado === "pelea"

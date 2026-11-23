@@ -5,14 +5,15 @@
 // Va por debajo de las telegrafías (renderOrder menor, sin escribir profundidad): el aviso siempre queda encima.
 // Se monta como `extra` de render/greybox.js. Nada de `new THREE.*` por frame: arcos prefabricados con drawRange.
 import * as THREE from "three";
+import { crearApoyoMarca } from "./apoyo-marca.js";
 import { estadoAnillo, segmentosVisibles } from "../ui/hud-logica.js";
 
 const INDICES_POR_SEGMENTO = 6; // RingGeometry con 1 segmento radial: 2 triángulos por segmento angular
 
 /** Devuelve la fábrica de `extra` que monta los anillos de los jugadores. */
 export function crearAnillosHud() {
-  /** @param {{ scene: THREE.Scene, cfg: import('./tipos.js').Cfg, keep: import('./tipos.js').Keep }} ctx */
-  return ({ scene, cfg, keep: k }) => {
+  /** @param {{ scene: THREE.Scene, cfg: import('./tipos.js').Cfg, keep: import('./tipos.js').Keep, alturaSuelo?: (x: number, z: number) => number }} ctx */
+  return ({ scene, cfg, keep: k, alturaSuelo }) => {
     const A = cfg.hud.anillo;
     const J = cfg.paleta.jugadores;
     // Empieza arriba (−z en pantalla) y da la vuelta completa; el drawRange recorta desde el final.
@@ -26,11 +27,8 @@ export function crearAnillosHud() {
           1,
           Math.PI / 2,
           Math.PI * 2,
-        ),
+        ).rotateX(-Math.PI / 2),
       );
-    const geoPista = arco(A.vida),
-      geoDashPista = arco(A.dash),
-      geoAncla = arco(A.ancla); // completas y compartidas
     const costra = cfg.paleta.corrupcion.costra; // fondo oscuro de los arcos: el color del jugador (limón) se pierde sobre suelos claros
     /** @param {number} color @param {number} opacity */
     const material = (color, opacity) =>
@@ -48,7 +46,6 @@ export function crearAnillosHud() {
     /** @param {THREE.BufferGeometry} geo @param {THREE.Material} mat @param {THREE.Group} grupo @param {number} [capa] */
     const malla = (geo, mat, grupo, capa = 0) => {
       const m = new THREE.Mesh(geo, mat);
-      m.rotation.x = -Math.PI / 2;
       m.renderOrder = A.orden + capa * 0.1; // fondo oscuro debajo, arcos encima; todo por debajo de las telegrafías
       grupo.add(m);
       return m;
@@ -58,9 +55,13 @@ export function crearAnillosHud() {
       const grupo = new THREE.Group();
       grupo.position.y = A.y;
       // Vida y dash recortan su geometría con drawRange: cada jugador tiene las suyas.
-      const pista = malla(geoPista, material(costra, A.pistaOpacidad), grupo);
+      const pista = malla(
+        arco(A.vida),
+        material(costra, A.pistaOpacidad),
+        grupo,
+      );
       const dashPista = malla(
-        geoDashPista,
+        arco(A.dash),
         material(costra, A.dashPistaOpacidad),
         grupo,
       );
@@ -71,9 +72,23 @@ export function crearAnillosHud() {
         grupo,
         1,
       );
-      const ancla = malla(geoAncla, material(color, 1), grupo, 1);
+      const ancla = malla(arco(A.ancla), material(color, 1), grupo, 1);
+      // Pista y arco ocupan el mismo lugar. Comparten posiciones, pero conservan su propio drawRange.
+      vida.geometry.setAttribute(
+        "position",
+        pista.geometry.getAttribute("position"),
+      );
+      dash.geometry.setAttribute(
+        "position",
+        dashPista.geometry.getAttribute("position"),
+      );
+      const apoyos = alturaSuelo
+        ? [pista, dashPista, ancla].map((m) =>
+            crearApoyoMarca(m.geometry, alturaSuelo),
+          )
+        : [];
       scene.add(grupo);
-      return { grupo, pista, dashPista, vida, dash, ancla };
+      return { grupo, pista, dashPista, vida, dash, ancla, apoyos };
     });
     /** @param {THREE.Mesh} m @param {number} n */
     const recortar = (m, n) => {
@@ -88,8 +103,9 @@ export function crearAnillosHud() {
           const p = w.players[i],
             v = vistas[i];
           const s = estadoAnillo(p, cfg, w.time);
-          v.grupo.position.x = p.x;
-          v.grupo.position.z = p.z;
+          const base = alturaSuelo?.(p.x, p.z) ?? 0;
+          v.grupo.position.set(p.x, base + A.y, p.z); // en la caída el indicador marca el lugar de aterrizaje
+          for (const apoyar of v.apoyos) apoyar(p.x, p.z, base);
           /** @type {THREE.Material} */ (v.pista.material).opacity = s.vivo
             ? A.pistaOpacidad
             : A.muertoOpacidad * A.pistaOpacidad;

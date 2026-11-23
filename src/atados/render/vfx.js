@@ -39,10 +39,12 @@ function crearPool(N) {
   };
 }
 
+// `alturaSuelo(x, z)` = altura visual del suelo (m) del recorrido (D-210): el polvo nace sobre los peldaños
+// y las partículas rebotan en ese suelo. Por defecto 0 (arenas planas: nada cambia).
 /**
- * @param {{ scene: import('three').Scene, cfg: import('./tipos.js').Cfg, keep: import('./tipos.js').Keep }} args
+ * @param {{ scene: import('three').Scene, cfg: import('./tipos.js').Cfg, keep: import('./tipos.js').Keep, alturaSuelo?: (x: number, z: number) => number }} args
  */
-export function crearVfx({ scene, cfg, keep }) {
+export function crearVfx({ scene, cfg, keep, alturaSuelo = () => 0 }) {
   const V = cfg.vfx;
   let semilla = 1; // ruido determinista propio (decorado, no gameplay)
   const rnd = () => {
@@ -198,11 +200,13 @@ export function crearVfx({ scene, cfg, keep }) {
       for (let k = 0; k < n; k++) {
         const a = rnd() * 6.28,
           v = (0.6 + rnd() * 1.4) * fuerza;
+        const px = x + Math.cos(a) * 0.2,
+          pz = z + Math.sin(a) * 0.2;
         emitir(
           pm,
-          x + Math.cos(a) * 0.2,
-          0.08,
-          z + Math.sin(a) * 0.2,
+          px,
+          alturaSuelo(px, pz) + 0.08, // m sobre el peldaño en el que realmente nace la mota
+          pz,
           Math.cos(a) * v,
           0.4 + rnd() * 0.8,
           Math.sin(a) * v,
@@ -256,8 +260,12 @@ export function crearVfx({ scene, cfg, keep }) {
     colorAmbiente(hex, mult) {
       bMat.color.setHex(hex).multiplyScalar(mult);
     },
-    /** @param {number} dt @param {number} tiempo @param {number} centroX @param {number} centroZ */
-    sync(dt, tiempo, centroX, centroZ) {
+    /**
+     * @param {number} dt @param {number} tiempo @param {number} centroX @param {number} centroZ
+     * @param {number} [centroY]  m: altura del suelo bajo el centro (las brasas flotan sobre él)
+     */
+    sync(dt, tiempo, centroX, centroZ, centroY = 0) {
+      brasas.position.y = centroY; // el cilindro de brasas sube con el suelo del recorrido
       // Partículas.
       actualizar(pb, brillo, dt);
       actualizar(pm, mate, dt);
@@ -310,9 +318,10 @@ export function crearVfx({ scene, cfg, keep }) {
       p.x[i] += p.vx[i] * dt;
       p.y[i] += p.vy[i] * dt;
       p.z[i] += p.vz[i] * dt;
-      if (p.y[i] < 0.03) {
-        p.y[i] = 0.03;
-        p.vy[i] *= -0.35;
+      const limite = alturaSuelo(p.x[i], p.z[i]) + 0.03; // m: rebota en la huella que está cruzando
+      if (p.y[i] < limite) {
+        p.y[i] = limite;
+        if (p.vy[i] < 0) p.vy[i] *= -0.35;
         p.vx[i] *= 0.6;
         p.vz[i] *= 0.6;
       }

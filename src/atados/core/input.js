@@ -3,6 +3,18 @@
 // `dash` = mantenido o pulsado desde el último muestreo (para no perder toques cortos entre frames).
 import { emptyInput } from "../gameplay/mundo.js";
 
+/** @type {readonly (Gamepad | null)[]} */
+const SIN_MANDOS = []; // lista compartida para cuadros sin acceso a la API
+
+/** Lee los mandos permitidos por el navegador. El teclado sigue disponible en páginas incrustadas. */
+export function leerMandos() {
+  try {
+    return globalThis.navigator?.getGamepads?.() ?? SIN_MANDOS;
+  } catch {
+    return SIN_MANDOS; // la política de la página puede bloquear la lectura aunque el método exista
+  }
+}
+
 /** @typedef {typeof import('./config.js').CONFIG} Config */
 /**
  * Entrada de un jugador en un muestreo. `dashDown` = dash solo mantenido (sin contar toques entre frames).
@@ -43,7 +55,10 @@ export function createInput(
   const onUp = (e) => {
     down.delete(e.code);
   };
-  const onBlur = () => down.clear();
+  const onBlur = () => {
+    down.clear(); // suelta las teclas sostenidas al salir del canvas
+    pressed.clear(); // descarta también un toque que todavía no había leído la simulación
+  };
   target.addEventListener("keydown", /** @type {EventListener} */ (onDown));
   target.addEventListener("keyup", /** @type {EventListener} */ (onUp));
   target.addEventListener("blur", onBlur);
@@ -110,7 +125,7 @@ export function createInput(
         o.dashDir = null;
       }
       // Asignación estable mando → jugador por gamepad.index (desconectar uno no le pasa el control al otro).
-      const pads = navigator.getGamepads?.() ?? [];
+      const pads = leerMandos();
       for (let i = 0; i < 2; i++)
         if (padSlot[i] !== null && !pads[/** @type {number} */ (padSlot[i])])
           padSlot[i] = null;
@@ -143,10 +158,7 @@ export function createInput(
     },
     debug,
     // Suelta todo al pausar o al perder el foco: ninguna tecla queda pegada.
-    clear() {
-      down.clear();
-      pressed.clear();
-    },
+    clear: onBlur,
     dispose() {
       target.removeEventListener(
         "keydown",

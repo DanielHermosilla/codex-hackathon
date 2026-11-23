@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { CONFIG } from "../../../src/atados/core/config.js";
 import {
   crearRitos,
   iniciarPisoton,
@@ -16,14 +17,17 @@ function caso(iniciar) {
     ],
     dummy: { x: 0, z: 0, r: 1.8 },
     pillars: [],
-    cfg: { player: { radius: 0.35 } },
+    cfg: CONFIG,
   };
   const r = crearRitos(),
     golpes = [];
   iniciar(r, mundo);
   const paso = (n) => {
     for (let i = 0; i < n; i++) {
-      avanzarRitos(r, mundo, 1 / 60, (id) => golpes.push(id));
+      avanzarRitos(r, mundo, 1 / 60, (id, dano) => {
+        assert.equal(dano, iniciar === iniciarPisoton ? 300 : 260);
+        golpes.push(id);
+      });
       for (const p of mundo.players) {
         p.px = p.x;
         p.pz = p.z;
