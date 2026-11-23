@@ -18,6 +18,13 @@
   --gold: #e8c57d;
   --muted: #c6bb9f;
   --ink: #191e1b;
+  --panel-superficie: #1b211e;
+  --panel-borde: #766c50;
+  --panel-separador: #494b3e;
+  --panel-velo: #0c120fbd;
+  --panel-sombra: 0 20px 80px #09100cb3;
+  --panel-control: #242a24;
+  --panel-control-borde: #4b5146;
   font-family: system-ui, sans-serif;
   color: var(--ivory);
   background: var(--ink);
@@ -455,15 +462,15 @@ kbd {
   width: min(410px, calc(100vw - 28px));
   max-height: calc(100dvh - 32px);
   overscroll-behavior: contain;
-  background: #1b211e;
+  background: var(--panel-superficie);
   color: var(--ivory);
   padding: 22px clamp(20px, 4vw, 32px);
-  border: 1px solid #766c50;
-  box-shadow: 0 20px 80px #09100cb3;
+  border: 1px solid var(--panel-borde);
+  box-shadow: var(--panel-sombra);
   scrollbar-width: thin;
 }
 #controls::backdrop {
-  background: #0c120fbd;
+  background: var(--panel-velo);
 }
 .settings-head,
 .keys-heading,
@@ -538,7 +545,7 @@ kbd {
   border: 0;
 }
 .keys-heading {
-  border-top: 1px solid #494b3e;
+  border-top: 1px solid var(--panel-separador);
   padding-top: 15px;
 }
 #reset-keys,
@@ -589,9 +596,9 @@ kbd {
 #bindings button {
   min-height: 32px;
   width: 100%;
-  border: 1px solid #4b5146;
+  border: 1px solid var(--panel-control-borde);
   border-radius: 3px;
-  background: #242a24;
+  background: var(--panel-control);
   font: 0.85rem system-ui;
 }
 #bindings button:hover,
@@ -606,7 +613,7 @@ kbd {
   min-height: 1.25em;
 }
 #how-to {
-  border-top: 1px solid #494b3e;
+  border-top: 1px solid var(--panel-separador);
   padding-top: 12px;
   line-height: 1.5;
 }

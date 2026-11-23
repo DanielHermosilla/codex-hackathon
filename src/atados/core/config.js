@@ -11,7 +11,7 @@ export const CONFIG = {
   // ─── Hito 1: greybox de la cadena (ADR-001). «provisional» = valor sin decidir, se ajusta en playtest ───
 
   tienda: {
-    precios: { italiano: 1, mote: 1, sopaipilla: 1 }, // monedas por producto, compartidas por la pareja
+    precios: { italiano: 25, mote: 25, sopaipilla: 23 }, // monedas por producto, compartidas por la pareja
     carroPractica: { x: 10.5, z: -7.5 }, // m: hueco del muro del claro, a la derecha de la escalinata
     carro: { x: 4, z: -26 }, // m: ventanilla en el lateral del pasillo posterior a Mirra
     vidaItaliano: 250, // puntos por jugador en la escala ×10 (antes 25)
@@ -159,7 +159,7 @@ export const CONFIG = {
       ataques: {},
     },
     mirra: {
-      monedas: 1, // recompensa por vencer a este jefe
+      monedas: 25, // recompensa por vencer a Mirra, suficiente para elegir un producto
       textos: "mirra",
       arte: "mirra", // render/mirra-arte.js       // claves de i18n: jefe.mirra.*
       vida: 12000, // ficha (de partida) ≈ 24 pasadas a tensión máxima; ×10 por D-202 (antes 1200)
@@ -368,7 +368,7 @@ export const CONFIG = {
     },
     // El Farolero dirige tres pruebas por vuelta. El ensayo enseña la misma secuencia que el duelo.
     farolero: {
-      monedas: 1, // los jefes de esta ruta entregan una moneda al vencer
+      monedas: 1, // recompensa por vencer al Farolero
       textos: "farolero",
       arte: "farolero",
       vida: 6000, // seis aciertos; escala de puntos D-202

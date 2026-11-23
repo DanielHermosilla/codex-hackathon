@@ -19,7 +19,9 @@ test("el italiano da vida una sola vez y respeta a los jugadores caídos", () =>
   assert.equal(tienda.comprar("italiano", [sael, odo]), false);
   assert.equal(sael.hp, 400);
   assert.equal(tienda.vendido("italiano"), false);
-  tienda.acreditar(2);
+  tienda.acreditar(24);
+  assert.equal(tienda.comprar("italiano", [sael, odo]), false);
+  tienda.acreditar(2); // Compra a 25 y conserva la moneda que sobra.
   odo.hp = 0;
   odo.alive = false;
   assert.ok(tienda.comprar("italiano", [sael, odo]));
@@ -34,10 +36,14 @@ test("el italiano da vida una sola vez y respeta a los jugadores caídos", () =>
 
 test("las mejoras de esquiva y protección se aplican solo a esa partida", () => {
   const tienda = crearTienda(CONFIG);
-  tienda.acreditar(1);
-  tienda.acreditar(1);
-  assert.ok(tienda.comprar("mote", []));
+  tienda.acreditar(22);
+  assert.equal(tienda.comprar("sopaipilla", []), false);
+  tienda.acreditar(1); // Con 23 monedas solo alcanza para la sopaipilla.
+  assert.equal(tienda.comprar("mote", []), false);
   assert.ok(tienda.comprar("sopaipilla", []));
+  assert.equal(tienda.saldo, 0);
+  tienda.acreditar(25);
+  assert.ok(tienda.comprar("mote", []));
   assert.equal(tienda.cfg.dash.cooldown, CONFIG.dash.cooldown * 0.8);
   const sael = createPlayer("sael", 0, 0, tienda.cfg);
   hurtPlayer(sael, 5, tienda.cfg);

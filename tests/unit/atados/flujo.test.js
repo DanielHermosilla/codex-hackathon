@@ -217,7 +217,7 @@ describe("revisión del flujo", () => {
     expect(p.estado).toBe("victoria");
   });
 
-  it("se compra en el puesto con una moneda por cada pelea ganada", () => {
+  it("se compra en el puesto con la recompensa de cada victoria", () => {
     const tienda = crearTienda(CONFIG);
     const fuenteEntrada = fuente();
     const p = crearPartida(tienda.cfg, { sample: fuenteEntrada.sample });
@@ -234,8 +234,8 @@ describe("revisión del flujo", () => {
     };
     expect(cobrarVictorias()).toBe(1);
     p.update(DT);
-    expect(cobrarVictorias()).toBe(0); // la lápida permanece a la vista sin devolver otra moneda
-    expect(tienda.saldo).toBe(1);
+    expect(cobrarVictorias()).toBe(0); // la lápida permanece a la vista sin repetir el abono
+    expect(tienda.saldo).toBe(25);
     expect(p.entrarPuesto()).toBe(true);
     expect(p.entrarPuesto()).toBe(false);
     expect(cobrarVictorias()).toBe(0); // continuar dos veces no repite la victoria
@@ -266,7 +266,7 @@ describe("revisión del flujo", () => {
     ponerVidaJefe(p.combate, 0);
     p.update(DT);
     expect(cobrarVictorias()).toBe(1); // esta victoria corresponde al nuevo combate
-    expect(tienda.saldo).toBe(1);
+    expect(tienda.saldo).toBe(25);
     expect(p.entrarPuesto()).toBe(true);
     expect(tienda.comprar("mote", p.world.players)).toBe(true);
     expect(tienda.saldo).toBe(0);

@@ -35,9 +35,10 @@ const vida = (c) => c.w.players.map((p) => p.hp);
 
 test("el combate final conserva la comida del Puesto 23 y la vida con la que llegó la pareja", () => {
   const tienda = crearTienda(CONFIG);
-  tienda.acreditar(3);
-  for (const producto of ["italiano", "mote", "sopaipilla"])
+  for (const producto of ["italiano", "mote", "sopaipilla"]) {
+    tienda.acreditar(tienda.cfg.tienda.precios[producto]);
     assert.ok(tienda.comprar(producto, []));
+  }
   const c = crearCombate(tienda.cfg, { jefe: "farolero" });
   heredarJugadores(c, [
     { hp: 900, alive: true },
