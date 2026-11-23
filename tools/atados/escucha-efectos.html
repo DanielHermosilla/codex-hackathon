@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Escucha de efectos · AtaDos</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --fondo: #15120e;
+        --panel: #221c15;
+        --borde: #5d4c36;
+        --texto: #f3e7d3;
+        --suave: #bcae96;
+        --brasa: #ffb85c;
+        --peligro: #ff7a5c;
+        font:
+          15px/1.45 system-ui,
+          sans-serif;
+        background: var(--fondo);
+        color: var(--texto);
+      }
+      body {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem 4rem;
+        background: var(--fondo);
+      }
+      h1,
+      h2 {
+        font-family: Georgia, serif;
+        font-weight: 500;
+        margin: 1.6rem 0 0.4rem;
+      }
+      h1 {
+        margin-top: 0;
+      }
+      p,
+      small,
+      label {
+        color: var(--suave);
+      }
+      #estado {
+        min-height: 1.5em;
+        color: var(--brasa);
+      }
+      .barra {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        align-items: center;
+        padding: 0.6rem 0;
+        background: var(--fondo);
+        border-bottom: 1px solid var(--borde);
+      }
+      .barra label {
+        display: flex;
+        gap: 0.4rem;
+        align-items: center;
+      }
+      ul {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 0.5rem;
+        padding: 0;
+        margin: 0.4rem 0;
+        list-style: none;
+      }
+      button {
+        width: 100%;
+        min-height: 2.8rem;
+        border: 1px solid var(--borde);
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.7rem;
+        background: var(--panel);
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+        font: inherit;
+      }
+      button:hover,
+      button:focus-visible {
+        border-color: var(--brasa);
+        outline: 2px solid var(--brasa);
+        outline-offset: 1px;
+      }
+      button.sonando {
+        border-color: var(--brasa);
+        background: #3a2a17;
+      }
+      button small {
+        display: block;
+        font-size: 0.8rem;
+      }
+      .barra button,
+      .acciones button {
+        width: auto;
+        min-height: 2.2rem;
+        text-align: center;
+      }
+      .acciones {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0.4rem 0;
+      }
+      .aviso {
+        color: var(--peligro);
+      }
+      input[type="text"] {
+        width: min(100%, 680px);
+        background: var(--panel);
+        color: var(--texto);
+        border: 1px solid var(--borde);
+        border-radius: 0.4rem;
+        padding: 0.35rem 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Escucha de efectos</h1>
+      <p>
+        Usa el mismo motor, las mismas reglas de eventos y los mismos perfiles
+        que el juego (<code>src/atados/audio/</code>). El audio arranca con el
+        primer clic. Los niveles ya incluyen los volúmenes de bus del juego.
+      </p>
+      <div class="barra">
+        <button id="detener" type="button">Detener todo</button>
+        <label
+          >Efectos
+          <input id="volEfectos" type="range" min="0" max="1" step="0.05"
+        /></label>
+        <label
+          >Música
+          <input id="volMusica" type="range" min="0" max="1" step="0.05"
+        /></label>
+        <label
+          >Telegrafía
+          <select id="dificultad">
+            <option value="normal">normal</option>
+            <option value="dificil">difícil</option>
+          </select></label
+        >
+      </div>
+      <p id="estado" role="status" aria-live="polite"></p>
+
+      <h2>Música de fondo</h2>
+      <p>
+        Pistas del juego según <code>CONFIG.audio.musica</code>, o cualquier
+        lista de archivos (ruta:ganancia, separados por comas). Suenan en bucle
+        por el bus de música del juego.
+      </p>
+      <div class="acciones" id="musicas"></div>
+      <div class="acciones">
+        <input
+          id="rutas"
+          type="text"
+          placeholder="/atados/audio/musica/mirra-fase2/tema.ogg:0.8"
+          aria-label="Rutas de música con ganancia"
+        />
+        <button id="cargarRutas" type="button">Sonar estas rutas</button>
+        <label
+          >o archivos
+          <input id="archivos" type="file" accept="audio/*" multiple
+        /></label>
+        <button id="pararMusica" type="button">Parar música</button>
+      </div>
+
+      <h2>Escenas con tiempos reales</h2>
+      <p>
+        Cada escena manda al audio los mismos eventos que el combate, en el
+        mismo orden y tiempo.
+      </p>
+      <ul id="escenas"></ul>
+
+      <div id="catalogo"></div>
+    </main>
+    <script type="module" src="./escucha-efectos.js"></script>
+  </body>
+</html>

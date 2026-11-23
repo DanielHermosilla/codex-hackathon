@@ -164,6 +164,7 @@ export function bajoSombra(luz, jugador, pilares) {
 function detonar(a, ctx, objetivo, origen, fraccion) {
   const { x, z } = objetivo;
   a.explosion = { x, z, t: 0, origen };
+  ctx.emitir?.("arena_golpe", { golpe: "explosion", x, z });
   const coberturas = ctx.w.pillars.filter((p) => p !== objetivo);
   const distancia2 = (/** @type {Circulo} */ p) =>
     (p.x - x) ** 2 + (p.z - z) ** 2;
@@ -283,7 +284,10 @@ export function avanzarArenaMirra(a, ctx, dt) {
       o.x = p.x;
       o.z = p.z;
     }
+    const tAntes = o.t;
     o.t += dt;
+    if (tAntes < finCaida && o.t >= finCaida)
+      ctx.emitir?.("arena_golpe", { golpe: "orbe", x: o.x, z: o.z });
     o.y =
       0.24 +
       2.46 *
@@ -309,6 +313,7 @@ export function avanzarArenaMirra(a, ctx, dt) {
     luz.t += dt;
     if (!luz.impacto && luz.t >= IMPACTO_LUZ - 1e-8) {
       luz.impacto = true;
+      ctx.emitir?.("arena_golpe", { golpe: "luz", x: luz.x, z: luz.z });
       players.forEach((p, i) => {
         if (!bajoSombra(luz, p, ctx.w.pillars))
           ctx.golpear(

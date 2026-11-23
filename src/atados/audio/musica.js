@@ -1,11 +1,14 @@
-// Música adaptativa por capas [D-060]: un grupo de capas por zona (pasillo calmo; el jefe suma capas y
-// cambia por fase/intensidad), con crossfade entre zonas. Cada capa es un stem con licencia o, si falta,
-// un placeholder generado por código (sintes.js), apagable. Si la carpeta de la zona trae una pista
-// completa (no stems), esa pista reemplaza a todas las capas. Descubrimiento de archivos: pistas.js.
+// Música adaptativa por etapas [D-060]: cada zona cambia con crossfade y puede usar un tema completo o capas.
+// Si falta una pista, las capas de respaldo generan música por código (sintes.js); pistas.js descubre archivos.
 // Temas de una vez (D-134): fanfarria de victoria y tema de derrota.
 import { mezclaCapas, gananciaCompleta } from "./reglas.js";
 import { crearSinte, crearTemaSinte } from "./sintes.js";
-import { PISTAS, resolverZona, resolverTema } from "./pistas.js";
+import {
+  PISTAS,
+  decodificarPista,
+  resolverZona,
+  resolverTema,
+} from "./pistas.js";
 
 const COMPLETA = "_completa";
 
@@ -38,8 +41,14 @@ export function crearMusica(
   const temas = []; // { id, nodo, fin }
   /** @type {Map<string, Promise<AudioBuffer | null>>} */
   const buffers = new Map(); // url → Promise<AudioBuffer|null>
-  /** @type {{ zona: string | null, estado: string, fase: number, intensidad: number }} */
-  const st = { zona: null, estado: "nada", fase: 1, intensidad: 0 };
+  /** @type {{ zona: string | null, zonaBase: string | null, estado: string, fase: number, intensidad: number }} */
+  const st = {
+    zona: null,
+    zonaBase: null,
+    estado: "nada",
+    fase: 1,
+    intensidad: 0,
+  };
   /** @type {{ id: string | null, t: number }} */
   let ultimoTema = { id: null, t: -1e9 };
 
@@ -63,11 +72,18 @@ export function crearMusica(
       const src = ctx.createBufferSource();
       src.buffer = buf;
       src.loop = true;
+      const adelanto = Math.max(
+        0,
+        Math.min(M.zonas[g.zona].offsetS ?? 0, buf.duration - 0.01),
+      );
+      const largoBucle = Math.max(0.01, buf.duration - adelanto);
+      src.loopStart = adelanto;
+      src.loopEnd = buf.duration;
       src.connect(capa.gain);
       const ahora = ctx.currentTime;
       src.start(
         Math.max(ahora, g.t0),
-        Math.max(0, ahora - g.t0) % buf.duration,
+        adelanto + (Math.max(0, ahora - g.t0) % largoBucle),
       ); // alineado al reloj del grupo
       capa.stem = src;
     });
@@ -193,7 +209,14 @@ export function crearMusica(
   function ponerEstado({ zona, estado, fase } = {}) {
     if (estado != null) st.estado = estado;
     if (fase != null) st.fase = fase;
-    if (zona !== undefined) ponerZona(zona);
+    if (zona !== undefined) st.zonaBase = zona;
+    // La zona real sigue la fase; `zonaBase` conserva la identidad del jefe para el siguiente cambio.
+    const zonasPorFase = /** @type {Record<string, Record<number, string>>} */ (
+      M.zonaPorFase ?? {}
+    );
+    const porFase = st.zonaBase ? zonasPorFase[st.zonaBase]?.[st.fase] : null;
+    const zonaActiva = porFase ?? st.zonaBase;
+    if (zonaActiva !== st.zona) ponerZona(zonaActiva);
     const fin =
       st.estado === "victoria" ||
       st.estado === "derrota" ||
@@ -360,9 +383,7 @@ export function crearMusica(
 /** @param {AudioContext} ctx @param {string} url @returns {Promise<AudioBuffer | null>} */
 async function cargarBuffer(ctx, url) {
   try {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return await ctx.decodeAudioData(await r.arrayBuffer());
+    return await decodificarPista(ctx, url);
   } catch (e) {
     console.warn(
       "[audio] no se pudo cargar",

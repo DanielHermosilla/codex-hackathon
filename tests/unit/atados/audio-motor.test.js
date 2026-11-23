@@ -5,7 +5,7 @@ import { CONFIG } from "../../../src/atados/core/config.js";
 import { crearMotor } from "../../../src/atados/audio/motor.js";
 import { crearMusica } from "../../../src/atados/audio/musica.js";
 import { conectarAudio } from "../../../src/atados/audio/index.js";
-import { planSilencio } from "../../../src/atados/audio/reglas.js";
+import { planSilencio, planSonido } from "../../../src/atados/audio/reglas.js";
 import {
   crearCombate,
   pasoCombate,
@@ -137,12 +137,14 @@ describe("motor", () => {
     const { m } = nuevoMotor();
     await m.desbloquear();
     const h = m.sonar("avisoHoz", { duracion: 0.7 });
-    expect(h.src.buffer.duration).toBeCloseTo(0.7, 2);
+    const plan = planSonido(CONFIG.audio.sfx.avisoHoz, 0.7);
+    expect(plan.cuerpo).toBeCloseTo(0.7, 2); // las capas acaban con la telegrafía
+    expect(h.src.buffer.duration).toBeCloseTo(plan.largo, 2); // más la cola breve de la sala
   });
 });
 
 describe("música", () => {
-  it("cambia capas por estado y fase; crossfade entre zonas sin fugas", async () => {
+  it("cambia a la música de fase 2 y conserva el crossfade entre zonas", async () => {
     const { m, ctx } = nuevoMotor();
     await m.desbloquear();
     const mu = crearMusica(m, CONFIG, { indice: {} });
@@ -156,8 +158,9 @@ describe("música", () => {
     mu.ponerEstado({ zona: "trigal", estado: "pelea", fase: 1 });
     expect(mu.capas.fase2.objetivo).toBe(0);
     mu.ponerEstado({ fase: 2 });
-    expect(mu.capas.fase2.objetivo).toBeGreaterThan(0);
-    expect(mu.estado.saliendo).toBe(1);
+    expect(mu.estado.zona).toBe("trigalFase2");
+    expect(mu.capas.respaldo.objetivo).toBeGreaterThan(0);
+    expect(mu.estado.saliendo).toBe(2);
     for (let i = 0; i < 40; i++) {
       ctx().avanzar(0.1);
       mu.update();
@@ -170,7 +173,7 @@ describe("música", () => {
     await m.desbloquear();
     const buf = m.ctx.createBuffer(1, 8000 * 4, 8000);
     const okMu = crearMusica(m, CONFIG, {
-      indice: { mirra: { tema: "u" } },
+      indice: { "mirra-fase1": { tema: "u" } },
       cargar: async () => buf,
     });
     okMu.ponerEstado({ zona: "trigal", estado: "pelea" });
@@ -179,7 +182,7 @@ describe("música", () => {
     expect(okMu.capas._completa).toMatchObject({ fuente: "stem" });
     expect(okMu.capas._completa.objetivo).toBeGreaterThan(0);
     const malMu = crearMusica(m, CONFIG, {
-      indice: { mirra: { tema: "u" } },
+      indice: { "mirra-fase1": { tema: "u" } },
       cargar: async () => null,
     });
     malMu.ponerEstado({ zona: "trigal", estado: "pelea" });
@@ -193,7 +196,7 @@ describe("música", () => {
     await m.desbloquear();
     let fallar;
     const mu = crearMusica(m, CONFIG, {
-      indice: { victoria: { f: "u" } },
+      indice: { "victoria-dionisiaca": { tema: "u" } },
       cargar: () =>
         new Promise((ok) => {
           fallar = () => ok(null);
@@ -307,6 +310,131 @@ describe("audio conectado al combate real", () => {
       expect(avisos.length, id).toBeGreaterThan(0);
       expect(avisos.at(-1)).toMatchObject({ sono: true, bus: "blanco" });
     }
+  });
+  // Prepara una pelea con audio activo y sin peligros de arena salvo que la prueba los pida.
+  async function enPelea() {
+    const t = montar();
+    t.audio.api.desbloquear();
+    await esperar();
+    await esperar();
+    saltarPresentacion(t.c());
+    t.drenar();
+    t.c().proximoRito = Infinity;
+    return t;
+  }
+  // Avanza pasos fijos hasta que suene `id` (o hasta `max` pasos) y devuelve su registro.
+  const pasarHasta = (t, id, max = 600) => {
+    for (let i = 0; i < max; i++) {
+      const r = sfx(t.audio).find((x) => x.id === id);
+      if (r) return r;
+      t.paso();
+    }
+    return null;
+  };
+  // Lanza el rito `id` de la secuencia de Mirra en el próximo paso.
+  const lanzarRito = (t, id) => {
+    const c = t.c();
+    c.turnoArena = c.cfg.jefes.mirra.ritual.secuencia.findIndex(
+      (r) => (typeof r === "string" ? r : r.id) === id,
+    );
+    c.proximoRito = c.tPelea;
+  };
+
+  it("grano: el silbido arranca con el vuelo real y el impacto suena a la llegada", async () => {
+    const t = await enPelea();
+    forzarAtaque(t.c(), "grano");
+    const acc = t.c().jefe.accion;
+    const vuelo = Math.min(acc.def.bloques[0].vuelo, acc.T); // s de vuelo visual
+    const t0 = t.ctx().currentTime;
+    t.drenar();
+    const silbido = pasarHasta(t, "proyectilGrano");
+    expect(silbido).toMatchObject({ sono: true, bus: "blanco" });
+    expect(Math.abs(silbido.t - t0 - (acc.T - vuelo))).toBeLessThan(2 * DT);
+    const impacto = pasarHasta(t, "mirraGrano");
+    expect(impacto.sono).toBe(true);
+    expect(Math.abs(impacto.t - t0 - acc.T)).toBeLessThan(2 * DT);
+    t.audio.dispose();
+  });
+
+  it("cancelar el ataque corta su silbido y su aviso programados", async () => {
+    const t = await enPelea();
+    const ctx = t.ctx();
+    const antes = new Set(ctx.fuentes);
+    t.audio.api.evento({
+      tipo: "proyectil_vuelo",
+      ataque: "grano",
+      duracion: 0.6,
+    });
+    const silbido = [...ctx.fuentes].find((f) => !antes.has(f));
+    expect(silbido.paro ?? null).toBe(null);
+    t.audio.api.evento({
+      tipo: "accion_cancelada",
+      accion: "grano",
+      motivo: "forzado",
+    });
+    expect(silbido.paro).toBeGreaterThan(ctx.currentTime); // se apaga con un fundido breve
+    expect(silbido.paro).toBeLessThan(ctx.currentTime + 0.2);
+    // Y en el juego real: cortar el grano en pleno vuelo emite la cancelación tras el vuelo.
+    forzarAtaque(t.c(), "grano");
+    t.drenar();
+    pasarHasta(t, "proyectilGrano");
+    forzarAtaque(t.c(), "siega");
+    const tipos = t.c().eventos.map((e) => e.tipo);
+    expect(tipos).toContain("accion_cancelada");
+    t.drenar();
+    expect(pasarHasta(t, "mirraGrano", 120)).toBe(null); // el impacto cancelado nunca suena
+    t.audio.dispose();
+  });
+
+  it("orbe: aviso al aparecer y caída a los 4,85 s; sin orbe posible, no suena nada", async () => {
+    const t = await enPelea();
+    lanzarRito(t, "orbe");
+    const t0 = t.ctx().currentTime;
+    const aviso = pasarHasta(t, "avisoOrbe", 2);
+    expect(aviso).toMatchObject({ sono: true, bus: "blanco" });
+    const cae = pasarHasta(t, "orbeCae");
+    expect(Math.abs(cae.t - t0 - 4.85)).toBeLessThan(2 * DT);
+    t.audio.dispose();
+
+    const u = await enPelea();
+    u.c().arenaMirra.pilar = { id: "ocupado", x: 0, z: 0, r: 0 }; // ya hay un pilar: el orbe no aparece
+    lanzarRito(u, "orbe");
+    u.paso(60);
+    const ids = sfx(u.audio).map((r) => r.id);
+    expect(ids).not.toContain("avisoOrbe");
+    expect(ids).not.toContain("orbeCae");
+    u.audio.dispose();
+  });
+
+  it("luz y pisotón: aviso al aparecer y golpe en su instante", async () => {
+    for (const [rito, aviso, golpe, s] of [
+      ["luz", "avisoLuz", "luzImpacto", 2.5],
+      ["pisoton", "avisoPisoton", "pisotonGolpe", 3],
+    ]) {
+      const t = await enPelea();
+      lanzarRito(t, rito);
+      const t0 = t.ctx().currentTime;
+      expect(pasarHasta(t, aviso, 2), rito).toMatchObject({ sono: true });
+      const r = pasarHasta(t, golpe);
+      expect(Math.abs(r.t - t0 - s), rito).toBeLessThan(2 * DT);
+      t.audio.dispose();
+    }
+  });
+
+  it("braseros: escudo al pisar el color correcto y las descargas se oyen bloqueadas", async () => {
+    const t = await enPelea();
+    lanzarRito(t, "braseros");
+    expect(pasarHasta(t, "avisoBraseros", 2)).toMatchObject({ sono: true });
+    t.paso(90); // 1,5 s: la protección dura 3 s y las descargas tardan 4 s en llegar
+    const r = t.c().ritos;
+    const fuego = r.braseros[r.colorObjetivo];
+    const p = t.c().w.players[0];
+    p.x = p.px = fuego.x; // se para dentro del brasero del color de la salva
+    p.z = p.pz = fuego.z;
+    expect(pasarHasta(t, "braseroEscudo", 3)).toMatchObject({ sono: true });
+    expect(pasarHasta(t, "braseroBloqueo")).toMatchObject({ sono: true });
+    expect(sfx(t.audio).map((x) => x.id)).not.toContain("braseroDescarga");
+    t.audio.dispose();
   });
 
   it("golpe recibido, caída, revivir y dash se oyen leyendo el estado", async () => {

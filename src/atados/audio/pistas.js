@@ -20,6 +20,36 @@ const URLS = Object.fromEntries(
   ]),
 );
 
+/** @type {Map<string, Promise<ArrayBuffer | null>>} */
+const datosPrecargados = new Map(); // descarga las pistas una vez, antes de desbloquear el audio
+
+/** @param {string} url @returns {Promise<ArrayBuffer | null>} */
+function cargarDatosPista(url) {
+  if (!datosPrecargados.has(url))
+    datosPrecargados.set(
+      url,
+      fetch(url)
+        .then((respuesta) => {
+          if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
+          return respuesta.arrayBuffer();
+        })
+        .catch(() => null),
+    );
+  return /** @type {Promise<ArrayBuffer | null>} */ (datosPrecargados.get(url));
+}
+
+/** @param {string[]} urls */
+export function precargarPistas(urls) {
+  for (const url of new Set(urls)) void cargarDatosPista(url);
+}
+
+/** @param {AudioContext} ctx @param {string} url @returns {Promise<AudioBuffer | null>} */
+export async function decodificarPista(ctx, url) {
+  const datos = await cargarDatosPista(url);
+  if (!datos) return null;
+  return ctx.decodeAudioData(datos.slice(0)); // decodeAudioData puede transferir el ArrayBuffer recibido
+}
+
 /** @typedef {Record<string, Record<string, string>>} IndicePistas { carpeta: { nombre: url } } */
 
 // rutas: { '/public/atados/audio/musica/<carpeta>/<nombre>.<ext>': url } → { carpeta: { nombre: url } } (prefiere .ogg).

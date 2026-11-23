@@ -322,6 +322,9 @@ function pasoArena(c, dt) {
     const { secuencia, intervalo } = c.cfg.jefes.mirra.ritual;
     const id = secuencia[c.turnoArena % secuencia.length];
     const a = c.arenaMirra;
+    const orbeAntes = a.orbe;
+    const luzAntes = a.luz;
+    const ritoAntes = c.ritos.tipo;
     if (id === "acido") iniciarAcido(a, c.ctx);
     if (id === "orbe") iniciarOrbe(a, c.ctx);
     if (id === "luz") iniciarLuz(a, c.ctx);
@@ -330,13 +333,47 @@ function pasoArena(c, dt) {
       iniciarPisoton(c.ritos, c.w, [...a.charcos, ...a.huecos]);
     if (id === "braseros")
       iniciarBraseros(c.ritos, c.w, [...a.charcos, ...a.huecos]);
+    const iniciado =
+      (id === "orbe" && a.orbe !== orbeAntes) ||
+      (id === "luz" && a.luz !== luzAntes) ||
+      ((id === "pisoton" || id === "braseros") && c.ritos.tipo !== ritoAntes);
+    if (iniciado) emitir(c, "ritual_inicio", { rito: id, ...posRito(c, id) });
     c.turnoArena++;
     c.proximoRito = c.tPelea + intervalo;
   }
   const ocupado = especialEnCurso(c);
   avanzarArenaMirra(c.arenaMirra, c.ctx, dt);
-  avanzarRitos(c.ritos, c.w, dt, c.golpeRito);
+  avanzarRitosConSonido(c, dt);
   return ocupado;
+}
+
+/** @param {Combate} c @param {string} id @returns {{ x?: number, z?: number }} */
+function posRito(c, id) {
+  const a = c.arenaMirra;
+  if (id === "orbe" && a.orbe) return { x: a.orbe.x, z: a.orbe.z };
+  if (id === "luz" && a.luz) return { x: a.luz.x, z: a.luz.z };
+  if (id === "pisoton") return { x: c.ritos.x, z: c.ritos.z };
+  return {};
+}
+
+/** @param {Combate} c @param {number} dt */
+function avanzarRitosConSonido(c, dt) {
+  const r = c.ritos;
+  const tipoAntes = r.tipo;
+  const escudoAntes = r.escudo.color;
+  const tirosEnCamino =
+    tipoAntes === "braseros" && r.tiros.some((t) => t.activo);
+  avanzarRitos(r, c.w, dt, c.golpeRito);
+  if (tipoAntes === "pisoton" && !r.tipo)
+    emitir(c, "arena_golpe", { golpe: "pisoton", x: r.x, z: r.z });
+  if (tipoAntes !== "braseros") return;
+  if (escudoAntes < 0 && r.escudo.color >= 0)
+    emitir(c, "arena_escudo", { color: r.escudo.color });
+  if (tirosEnCamino && r.tiempo <= 1e-8) {
+    const bloqueado =
+      r.escudo.color === r.colorObjetivo && r.escudo.restante > 0;
+    emitir(c, "arena_golpe", { golpe: bloqueado ? "bloqueo" : "braseros" });
+  }
 }
 
 // Un paso fijo. Devuelve false si no simuló (hit-stop), igual que stepWorld.

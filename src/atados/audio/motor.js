@@ -9,7 +9,13 @@
 //                                          ← cadena ← (zumbido, eslabones, cortes)  (ganancia = silencios.cadenaGanancia)
 //                    ← vocesVol ← vocesDuck ← (voces: sin uso hasta que entren, D-117)
 /// <reference path="./zzfx.d.ts" />
-import { planSonido, busDeSonido, BUSES_SILENCIABLES } from "./reglas.js";
+import {
+  planSonido,
+  busDeSonido,
+  BUSES_SILENCIABLES,
+  duracionesConocidas,
+} from "./reglas.js";
+import { mezclarPlan } from "./sintesis-efectos.js";
 
 /** @typedef {ReturnType<typeof crearMotor>} Motor */
 /** @typedef {(args: number[]) => ArrayLike<number>} ConstruirSamples zzfx.buildSamples con nuestro contexto. */
@@ -17,7 +23,7 @@ import { planSonido, busDeSonido, BUSES_SILENCIABLES } from "./reglas.js";
 /** @typedef {{ src: AudioBufferSourceNode, g: GainNode, id: string, terminado: boolean, detener: (fadeS?: number) => void }} Voz Manejador de un efecto en marcha. */
 
 const MAX_VOCES = 48; // técnico: tope de fuentes simultáneas (los blancos siempre entran)
-const MAX_CACHE_AJUSTADOS = 48; // técnico: buffers de avisos estirados a una duración concreta
+const MAX_CACHE_AJUSTADOS = 96; // técnico: buffers de avisos estirados a una duración concreta
 const MAX_EN_ESPERA = 8; // técnico: avisos guardados mientras carga zzfx
 const MAX_ESPERA_S = 0.4; // técnico: un golpe sin duración que llega más tarde ya no se reproduce
 
@@ -179,16 +185,21 @@ export function crearMotor(
     return listo;
   }
 
-  // Genera los buffers fijos en trozos para no trabar un frame.
+  // Genera los buffers en trozos (uno por tarea) para no trabar un frame: primero los fijos y después los
+  // avisos estirados a las telegrafías conocidas (reglas.duracionesConocidas).
   function precalentar() {
-    const ids = Object.keys(A.sfx).filter(
-      (id) => !A.sfx[id].capas.some((c) => c.ajuste || c.desdeFin != null),
-    );
+    /** @type {[string, number | null][]} */
+    const tareas = Object.keys(A.sfx)
+      .filter(
+        (id) => !A.sfx[id].capas.some((c) => c.ajuste || c.desdeFin != null),
+      )
+      .map((id) => [id, null]);
+    tareas.push(...duracionesConocidas(cfg));
     const paso = () => {
       if (estado === "cerrado") return;
-      const id = ids.shift();
-      if (!id) return;
-      bufferDe(id, null);
+      const t = tareas.shift();
+      if (!t) return;
+      bufferDe(t[0], t[1]);
       programar(paso, 0);
     };
     programar(paso, 0);
@@ -213,22 +224,15 @@ export function crearMotor(
     const clave = d != null ? `${id}@${d}` : id;
     let b = mapa.get(clave);
     if (b) return b;
-    const plan = planSonido(def, d);
+    // Mezcla pura y compartida con la herramienta de escucha y las pruebas (sintesis-efectos.js).
+    const mezcla = mezclarPlan(
+      planSonido(def, d),
+      id,
+      ctx.sampleRate,
+      construir,
+    );
     const sr = ctx.sampleRate;
-    const n = Math.max(1, Math.ceil(plan.largo * sr) + 1);
-    const mezcla = new Float32Array(n);
-    for (const c of plan.capas) {
-      const s = construir(c.args);
-      const o = Math.round(c.offset * sr);
-      for (let i = 0, m = Math.min(s.length, n - o); i < m; i++)
-        mezcla[o + i] += s[i];
-    }
-    let pico = 0;
-    for (let i = 0; i < n; i++) {
-      const a = Math.abs(mezcla[i]);
-      if (a > pico) pico = a;
-    }
-    if (pico > 1) for (let i = 0; i < n; i++) mezcla[i] /= pico;
+    const n = mezcla.length;
     b = ctx.createBuffer(1, n, sr);
     b.getChannelData(0).set(mezcla);
     if (mapa === ajustados && ajustados.size >= MAX_CACHE_AJUSTADOS)
@@ -274,7 +278,8 @@ export function crearMotor(
     const src = ctx.createBufferSource();
     src.buffer = buf;
     src.loop = bucle;
-    src.playbackRate.value = tono;
+    // `tonoFijo`: motivos afinados con la música; no cambian de tono entre Sael y Odo.
+    src.playbackRate.value = A.sfx[id]?.tonoFijo ? 1 : tono;
     const g = ctx.createGain();
     g.gain.value = volumen;
     let p = null;

@@ -1,14 +1,15 @@
 // Reglas puras del audio (sin WebAudio ni DOM): mapeos, mezcla de capas, silencios y qué suena en cada evento.
 // D-060 capas por zona/fase · D-062 cadena · D-106 aviso propio por ataque · D-183 silencios · D-112 volúmenes.
+import { resolverVoz, duracionVoz, colaSala } from "./sintesis-efectos.js";
 
 // Tipos compartidos del audio (los demás módulos los importan con `import('./reglas.js').X`).
 /** @typedef {typeof import('../core/config.js').CONFIG} Config */
 /** @typedef {Record<string, any>} CapaZzfx Capa zzfx: claves en español de ORDEN_ZZFX más `retraso`, `desdeFin` y `ajuste`. */
-/** @typedef {{ categoria: string, bus?: string, capas: CapaZzfx[] }} DefSfx */
+/** @typedef {{ categoria: string, bus?: string, tonoFijo?: boolean, post?: import('./sintesis-efectos.js').Post, capas: CapaZzfx[] }} DefSfx */
 /** @typedef {{ rompeCon?: string | null, soloPrimeraVez?: boolean, habilitado: boolean, duracionMs: number | null, buses: string[], nivel?: number, fadeOutMs?: number, fadeInMs?: number }} MomentoSilencio */
 /** @typedef {{ sinte: string, ganancia: number, estados: string[], patron?: number[], cada?: number, acordes?: number[][], porFase?: number[], faseMin?: number, faseMax?: number, intensidadMin?: number, intensidadAncho?: number, alta?: boolean }} CapaMusica */
 /** @typedef {{ ganancia: number, estados: Record<string, number>, porFase?: number[] }} CompletaMusica */
-/** @typedef {{ carpeta: string, completa?: CompletaMusica, bpm: number, raiz: number, escala: number[], capas: Record<string, CapaMusica> }} ZonaMusica */
+/** @typedef {{ carpeta: string, completa?: CompletaMusica, offsetS?: number, bpm: number, raiz: number, escala: number[], capas: Record<string, CapaMusica> }} ZonaMusica */
 /** @typedef {{ carpeta: string, sinte: string | null, ganancia: number, retrasoS?: number }} TemaMusica */
 /** @typedef {Record<string, any>} Accion Acción de audio: `tipo` más sus campos (ver `accionesDeEvento`). */
 /** @typedef {Record<string, any>} PlanSilencio Resultado de `planSilencio` (`omitido` null si el silencio se ejecuta). */
@@ -17,6 +18,9 @@
  * @typedef {Config & { jefes: Record<string, any>, audio: Config['audio'] & {
  *   sfx: Record<string, DefSfx>,
  *   avisos: Record<string, string>,
+ *   proyectiles: Record<string, { sonido: string }>,
+ *   arena: { avisos: Record<string, string>, golpes: Record<string, string>, escudo: string },
+ *   enemigos: Record<string, string>,
  *   jefes: Record<string, any>,
  *   silencios: Config['audio']['silencios'] & { motivos: Record<string, string>, momentos: Record<string, MomentoSilencio> },
  *   musica: Config['audio']['musica'] & { zonaPorJefe: Record<string, string>, zonas: Record<string, ZonaMusica>, temas: Record<string, TemaMusica> },
@@ -118,25 +122,73 @@ export function duracionCapa(args) {
   return ataque + caida + sostener + soltar + eco;
 }
 
-// Plan de mezcla de un sonido de varias capas: [{args, offset}] y largo total (s).
+// Plan de mezcla de un sonido de varias capas: [{args | voz, offset}], `cuerpo` (s que suenan las capas)
+// y `largo` (cuerpo más la cola de la sala). Una capa con `voz` usa el sintetizador propio
+// (sintesis-efectos.js); sin `voz`, es una capa zzfx.
 /**
  * @param {DefSfx} def
  * @param {number | null} [duracion]
- * @returns {{ capas: { args: number[], offset: number }[], largo: number }}
+ * @returns {{ capas: { args: number[] | null, voz: Record<string, any> | null, offset: number }[], cuerpo: number, largo: number, post: import('./sintesis-efectos.js').Post | null }}
  */
 export function planSonido(def, duracion = null) {
-  /** @type {{ args: number[], offset: number }[]} */
+  /** @type {{ args: number[] | null, voz: Record<string, any> | null, offset: number }[]} */
   const capas = [];
-  let largo = 0;
+  let cuerpo = 0;
   for (const c of def.capas) {
-    const args = zzfxArgs(c, duracion);
-    let offset = c.retraso ?? 0;
+    let offset = c.retraso ?? 0; // s desde el inicio del sonido
     if (c.desdeFin != null && duracion != null)
-      offset = Math.max(0, duracion - c.desdeFin);
-    capas.push({ args, offset });
-    largo = Math.max(largo, offset + duracionCapa(args));
+      offset = Math.max(0, duracion - c.desdeFin); // cae `desdeFin` s antes del final del aviso
+    if (c.voz) {
+      const voz = resolverVoz(c, duracion); // completa defectos y estira la capa con `ajuste`
+      capas.push({ args: null, voz, offset });
+      cuerpo = Math.max(cuerpo, offset + duracionVoz(voz));
+    } else {
+      const args = zzfxArgs(c, duracion);
+      capas.push({ args, voz: null, offset });
+      cuerpo = Math.max(cuerpo, offset + duracionCapa(args));
+    }
   }
-  return { capas, largo };
+  const post = def.post ?? null;
+  return { capas, cuerpo, largo: cuerpo + colaSala(post?.sala), post };
+}
+
+// Avisos estirados que el juego va a pedir: [id, s] para cada telegrafía de jefe y enemigo (normal,
+// difícil y ×telegrafiaSolo), los segundos barridos (`repetirDe`) y el vuelo de los proyectiles.
+// El motor los genera al desbloquear para no sintetizar nada en mitad del combate.
+/** @param {Cfg} cfg @returns {[string, number][]} */
+export function duracionesConocidas(cfg) {
+  const A = cfg.audio;
+  const solo = cfg.jefes.comun?.telegrafiaSolo ?? 1;
+  /** @type {Map<string, [string, number]>} */
+  const lista = new Map();
+  /** @param {string | undefined} id @param {any} v */
+  const sumar = (id, v) => {
+    if (!id || !A.sfx[id] || v == null) return;
+    const valores = typeof v === "number" ? [v] : Object.values(v);
+    for (const base of /** @type {number[]} */ (valores))
+      for (const m of [1, solo]) {
+        const d = Math.round(base * m * 100) / 100; // misma redondeo que la caché del motor
+        lista.set(`${id}@${d}`, [id, d]);
+      }
+  };
+  for (const J of Object.values(cfg.jefes)) {
+    for (const [ataque, a] of Object.entries(J.ataques ?? {})) {
+      const aviso = avisoDe(A, a.sonido);
+      sumar(aviso, a.telegrafia);
+      for (const b of a.bloques ?? []) {
+        sumar(aviso, b.telegrafia);
+        if (b.entre != null) sumar(aviso, b.entre);
+        // El vuelo se anuncia en el primer paso fijo que lo alcanza: puede faltar hasta un paso (1/60 s).
+        if (b.vuelo != null)
+          sumar(A.proyectiles[ataque]?.sonido, [b.vuelo, b.vuelo - 0.01]);
+      }
+    }
+  }
+  for (const E of /** @type {Record<string, any>[]} */ (
+    Object.values(cfg.recorrido?.enemigos ?? {})
+  ))
+    sumar(A.enemigos["enemigo:telegrafia"], E?.ataque?.telegrafia); // `comun` no tiene ataque: se omite
+  return [...lista.values()];
 }
 
 // ─── Buses ───
@@ -320,7 +372,7 @@ export function planSilencio(cfg, motivo, vistos = new Set()) {
 }
 
 // ─── Eventos del combate → acciones de audio ───
-// Acciones: {tipo:'sfx', id, duracion?, retraso?, aviso?, ataque?, bucle?, repetir?} | {tipo:'silencio', motivo}
+// Acciones: {tipo:'sfx', id, duracion?, retraso?, aviso?, ataque?, bucle?, repetir?, pan?} | {tipo:'silencio', motivo}
 // | {tipo:'musica', zona?, estado?} | {tipo:'faseMusica', fase} | {tipo:'tema', id} | {tipo:'detener', ataque}
 // | {tipo:'romperSilencio'} | {tipo:'jefe', jefe}.
 // `tele(v)` resuelve un tiempo de la ficha ({normal, dificil} o número) con la dificultad y el modo solo
@@ -332,6 +384,16 @@ const avisoDe = (A, sonido) =>
   A.avisos[sonido] && A.sfx[A.avisos[sonido]]
     ? A.avisos[sonido]
     : A.avisoGenerico;
+
+// Acción de un sonido de arena, con pan si el evento trae la posición `x` (m). Nada si no existe.
+/** @param {Cfg} cfg @param {string | undefined} id @param {Record<string, any>} e @returns {Accion[]} */
+function sfxArena(cfg, id, e) {
+  if (!id || !cfg.audio.sfx[id]) return [];
+  /** @type {Accion} */
+  const a = { tipo: "sfx", id };
+  if (typeof e.x === "number") a.pan = panDe(cfg, e.x);
+  return [a];
+}
 
 /**
  * @param {Cfg} cfg
@@ -363,6 +425,14 @@ export function accionesDeEvento(cfg, e, jefeId, tele = teleNormal) {
           fase: 1,
         },
       ];
+    case "flujo:estado": {
+      const porEstado =
+        /** @type {Record<string, { zona?: string, estado?: string }>} */ (
+          A.musica.estadoPorFlujo
+        );
+      const M = porEstado?.[e.estado];
+      return M ? [{ tipo: "musica", ...M }] : [];
+    }
     case "silencio":
       return [{ tipo: "silencio", motivo: e.motivo }];
     case "silencio:fin":
@@ -393,6 +463,7 @@ export function accionesDeEvento(cfg, e, jefeId, tele = teleNormal) {
     case "farol_acierto":
       return [{ tipo: "sfx", id: "destello" }];
     case "telegrafia_inicio": {
+      /** @type {Accion[]} */
       const out = [
         {
           tipo: "sfx",
@@ -406,6 +477,27 @@ export function accionesDeEvento(cfg, e, jefeId, tele = teleNormal) {
       if (A.silencios.cancelable) out.push({ tipo: "romperSilencio" });
       return out;
     }
+    case "proyectil_vuelo": {
+      // Silbido mientras vuelan los proyectiles: dura lo que falta hasta el impacto y queda atado al
+      // ataque, así `accion_cancelada` lo corta si el ataque se interrumpe en el aire.
+      const sonido = A.proyectiles[/** @type {string} */ (e.ataque)]?.sonido;
+      return sonido && A.sfx[sonido]
+        ? [
+            {
+              tipo: "sfx",
+              id: sonido,
+              duracion: e.duracion ?? null,
+              ataque: e.ataque,
+            },
+          ]
+        : [];
+    }
+    case "ritual_inicio": // aparece un peligro de arena (solo se emite si llegó a colocarse)
+      return sfxArena(cfg, A.arena.avisos[/** @type {string} */ (e.rito)], e);
+    case "arena_golpe": // desenlace de un peligro: cae el orbe, estalla el pilar, cae la luz, pisotón, descarga
+      return sfxArena(cfg, A.arena.golpes[/** @type {string} */ (e.golpe)], e);
+    case "arena_escudo": // la pareja pisó un brasero y quedó protegida
+      return sfxArena(cfg, A.arena.escudo, e);
     case "ataque_activo": {
       if (!J) return [];
       const g = J.golpes[e.ataque] ?? { sonido: J.golpeGenerico };

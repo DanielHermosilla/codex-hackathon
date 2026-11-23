@@ -143,8 +143,8 @@ export function conectarAudio({
         if (fasePendiente == null) break;
         logico.fase = fasePendiente;
         fasePendiente = null;
-        musica?.ponerEstado({ fase: logico.fase });
         if (a.golpe) sonar("faseGolpe");
+        musica?.ponerEstado({ fase: logico.fase });
         break;
       case "sfx": {
         const h = sonar(a.id, {
@@ -152,6 +152,7 @@ export function conectarAudio({
           tono: a.tono ?? 1,
           retraso: a.retraso ?? 0,
           bucle: !!a.bucle,
+          pan: a.pan ?? 0, // posición estéreo (-1 izquierda, 1 derecha) si la acción la trae
         });
         guardar(a.ataque, h);
         break;
@@ -209,7 +210,12 @@ export function conectarAudio({
     const sfxEnemigo =
       A.enemigos?.[/** @type {keyof typeof A.enemigos} */ (e.tipo)];
     if (sfxEnemigo) {
-      if (motor.estado === "activo") sonar(sfxEnemigo);
+      // El aviso se estira a la telegrafía del enemigo (`duracion` s) y suena en su lado de la pantalla.
+      if (motor.estado === "activo")
+        sonar(sfxEnemigo, {
+          duracion: typeof e.duracion === "number" ? e.duracion : null,
+          pan: typeof e.x === "number" ? panDe(cfg, e.x) : 0,
+        });
       return;
     }
     const c = getCombate?.();
@@ -482,6 +488,14 @@ export function conectarAudio({
     evento: (e) => onEv(e),
     /** @param {string} id @param {import('./motor.js').OpcionesSonido} [o] */
     sonar: (id, o) => sonar(id, o),
+    // Herramienta de escucha (tools/atados/escucha-efectos.html): mismo motor y buses que el juego.
+    get motor() {
+      return motor;
+    },
+    /** @param {string} id Jefe cuyos golpes usan las reglas (sin tocar la música). */
+    jefe: (id) => ejecutar({ tipo: "jefe", jefe: id }),
+    /** @param {number} x Intensidad 0–1 de la música (sin combate, nadie más la cambia). */
+    intensidad: (x) => musica?.ponerIntensidad(Math.max(0, Math.min(1, x))),
   };
 
   return { update, dispose, api, evento: onEv };

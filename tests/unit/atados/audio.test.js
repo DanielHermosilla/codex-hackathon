@@ -18,6 +18,7 @@ import {
   esBlanco,
   accionesDeEvento,
   accionRompe,
+  duracionesConocidas,
 } from "../../../src/atados/audio/reglas.js";
 import {
   indexarPistas,
@@ -45,12 +46,15 @@ describe("zzfx", () => {
       ["avisoInhalacion", 0.8],
     ]) {
       const p = planSonido(A.sfx[id], dur);
-      expect(p.largo).toBeCloseTo(dur, 2);
+      expect(p.cuerpo).toBeCloseTo(dur, 2);
+      expect(p.largo).toBeGreaterThanOrEqual(p.cuerpo);
     }
   });
   it("las capas desdeFin caen antes del final del aviso", () => {
-    const p = planSonido(A.sfx.avisoTripas, 1.4);
-    expect(p.capas[1].offset).toBeCloseTo(1.0, 5);
+    const def = A.sfx.avisoMandibulas;
+    const k = def.capas.findIndex((c) => c.desdeFin != null);
+    const p = planSonido(def, 1.0);
+    expect(p.capas[k].offset).toBeCloseTo(1.0 - def.capas[k].desdeFin, 5);
   });
 });
 
@@ -166,15 +170,14 @@ describe("música por capas (D-060)", () => {
 
 describe("pistas con licencia (carpetas en public/audio/musica)", () => {
   const rutas = {
-    "/public/audio/musica/mirra/mirra-tema.ogg": "u1",
-    "/public/audio/musica/mirra/mirra-tema.mp3": "u1mp3",
-    "/public/audio/musica/victoria/fanfarria.ogg": "u2",
-    "/public/audio/musica/pasillo-mirra/base.mp3": "u3",
-    "/public/audio/musica/pasillo-mirra/folk.ogg": "u4",
+    "/public/atados/audio/musica/mirra-fase1/tema.ogg": "u1",
+    "/public/atados/audio/musica/mirra-fase1/tema.mp3": "u1mp3",
+    "/public/atados/audio/musica/victoria-dionisiaca/tema.mp3": "u2",
+    "/public/atados/audio/musica/recorrido-sagrado/tema.ogg": "u3",
   };
   const idx = indexarPistas(rutas);
   it("prefiere .ogg y agrupa por carpeta", () => {
-    expect(idx.mirra["mirra-tema"]).toBe("u1");
+    expect(idx["mirra-fase1"].tema).toBe("u1");
   });
   it("archivo con nombre de capa = stem; otro nombre = pista completa", () => {
     expect(resolverZona(CONFIG, "trigal", idx)).toEqual({
@@ -182,8 +185,8 @@ describe("pistas con licencia (carpetas en public/audio/musica)", () => {
       completa: "u1",
     });
     expect(resolverZona(CONFIG, "pasillo", idx)).toEqual({
-      capas: { base: "u3", folk: "u4" },
-      completa: null,
+      capas: {},
+      completa: "u3",
     });
   });
   it("lo que falta cae al placeholder (null)", () => {
@@ -321,6 +324,13 @@ describe("avisos y buses (D-106)", () => {
         ...Object.values(J.golpes).map((g) => g.sonido),
       );
     }
+    refs.push(
+      ...Object.values(A.arena.avisos),
+      ...Object.values(A.arena.golpes),
+      A.arena.escudo,
+      ...Object.values(A.proyectiles).map((p) => p.sonido),
+      ...Object.values(A.enemigos),
+    );
     for (const id of refs) expect(A.sfx[id], id).toBeTruthy();
     for (const { j, id } of ataques)
       expect(A.jefes[j].golpes[id], id).toBeTruthy();
@@ -354,6 +364,38 @@ describe("avisos y buses (D-106)", () => {
     );
     expect(gen[0].id).toBe(A.avisoGenerico);
   });
+  it("el silbido del proyectil queda atado a su vuelo", () => {
+    expect(
+      accionesDeEvento(
+        CONFIG,
+        { tipo: "proyectil_vuelo", ataque: "grano", duracion: 0.6 },
+        "mirra",
+      ),
+    ).toEqual([
+      { tipo: "sfx", id: "proyectilGrano", duracion: 0.6, ataque: "grano" },
+    ]);
+  });
+  it("los ritos mapean sus avisos, golpes y escudo a sus efectos", () => {
+    for (const rito of ["orbe", "luz", "pisoton", "braseros"])
+      expect(
+        accionesDeEvento(CONFIG, { tipo: "ritual_inicio", rito }, "mirra")[0]
+          .id,
+      ).toBe(A.arena.avisos[rito]);
+    for (const golpe of Object.keys(A.arena.golpes))
+      expect(
+        accionesDeEvento(CONFIG, { tipo: "arena_golpe", golpe }, "mirra")[0].id,
+      ).toBe(A.arena.golpes[golpe]);
+    expect(
+      accionesDeEvento(CONFIG, { tipo: "arena_escudo", color: 1 }, "mirra")[0]
+        .id,
+    ).toBe(A.arena.escudo);
+  });
+  it("prepara de antemano las duraciones conocidas de avisos y proyectiles", () => {
+    const claves = new Set(
+      duracionesConocidas(CONFIG).map(([id, d]) => `${id}@${d}`),
+    );
+    expect(claves.has("proyectilGrano@0.6")).toBe(true);
+  });
   it("siega doble: el segundo barrido se vuelve a avisar antes de golpear (con la dificultad del combate)", () => {
     const tele = (v) => (typeof v === "number" ? v : v.dificil);
     const acc = accionesDeEvento(
@@ -372,13 +414,18 @@ describe("avisos y buses (D-106)", () => {
     expect(acc[1].duracion).toBeCloseTo(b.entre.dificil);
     expect(acc[2].retraso).toBeCloseTo(b.activo + b.entre.dificil);
   });
-  it("Grano suena en la caída de las semillas, cuando la zona se activa", () => {
+  it("Grano suena al impactar tras el vuelo visual", () => {
     const g = accionesDeEvento(
       CONFIG,
       { tipo: "ataque_activo", ataque: "grano" },
       "mirra",
     );
-    expect(g).toEqual([{ tipo: "sfx", id: "mirraGrano", ataque: "grano" }]);
+    expect(g[0]).toMatchObject({
+      tipo: "sfx",
+      id: "mirraGrano",
+      ataque: "grano",
+    });
+    expect(g[0].retraso ?? 0).toBe(0);
     expect(planSonido(A.sfx.mirraGrano).capas[0].offset).toBe(0); // la primera semilla golpea de inmediato
   });
   it("Enjambre suena en bucle mientras exista la nube", () => {

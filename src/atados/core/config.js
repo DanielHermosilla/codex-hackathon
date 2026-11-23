@@ -2,6 +2,7 @@
 // El recorrido de inicio (lobby, pasillo, tutorial) vive en su propio archivo para que gameplay y arte lo
 // editen sin pisarse con el resto; se une abajo como `CONFIG.recorrido`.
 import { RECORRIDO } from "./config-recorrido.js";
+import { EFECTOS_SONIDO } from "../audio/efectos.js";
 
 export const CONFIG = {
   sim: { fixedDt: 1 / 60, maxFrameDt: 1 / 20, maxStepsPerFrame: 4 },
@@ -562,10 +563,17 @@ export const CONFIG = {
       activa: true,
       placeholders: true,
       crossfadeS: 2.5, // entre zonas
-      capaS: 1.2, // al sumar o quitar una capa
+      capaS: 2, // al sumar o quitar una capa
       finS: 0.6, // capas fuera al terminar el combate
       adelantoS: 0.25, // técnico: ventana de programación de notas
-      zonaPorJefe: { mirra: "trigal", muneco: "pasillo", farolero: "farolero" }, // la práctica suena con el folk del pasillo
+      zonaPorJefe: { mirra: "trigal", muneco: "pasillo", farolero: "farolero" },
+      zonaPorFase: { trigal: { 2: "trigalFase2" } },
+      estadoPorFlujo: {
+        caida: { zona: "pasillo", estado: "caida" },
+        recorrido: { zona: "pasillo", estado: "pasillo" },
+        arco: { zona: "pasillo", estado: "nada" },
+        jefe: { zona: "trigal", estado: "presentacion" },
+      },
       intensidad: {
         porVidaJefe: 0.45,
         porAtaque: 0.25,
@@ -577,8 +585,11 @@ export const CONFIG = {
       },
       zonas: {
         pasillo: {
-          carpeta: "pasillo-mirra",
-          completa: { ganancia: 0.8, estados: { pasillo: 1 } },
+          carpeta: "recorrido-sagrado",
+          completa: {
+            ganancia: 0.8,
+            estados: { menu: 1, caida: 1, pasillo: 1 },
+          },
           bpm: 72,
           raiz: 146.83,
           escala: [0, 2, 3, 5, 7, 9, 10], // re dórico: folk antiguo
@@ -594,7 +605,7 @@ export const CONFIG = {
           },
         },
         trigal: {
-          carpeta: "mirra",
+          carpeta: "mirra-fase1",
           completa: {
             ganancia: 0.8,
             estados: { presentacion: 0.55, pelea: 1 },
@@ -643,6 +654,24 @@ export const CONFIG = {
             },
           },
         },
+        trigalFase2: {
+          carpeta: "mirra-fase2",
+          offsetS: 45,
+          completa: {
+            ganancia: 0.8,
+            estados: { presentacion: 0.55, pelea: 1 },
+          },
+          bpm: 84,
+          raiz: 146.83,
+          escala: [0, 2, 3, 5, 7, 8, 10],
+          capas: {
+            respaldo: {
+              sinte: "tension",
+              ganancia: 0.3,
+              estados: ["presentacion", "pelea"],
+            },
+          },
+        },
         // Banda sonora sintetizada: pedal grave, latido y tensión desde la Penumbra.
         farolero: {
           carpeta: "farolero",
@@ -674,10 +703,10 @@ export const CONFIG = {
       // D-134/D-182: pistas dedicadas (primer archivo de su carpeta). Placeholder si falta.
       temas: {
         victoria: {
-          carpeta: "victoria",
+          carpeta: "victoria-dionisiaca",
           sinte: "fanfarria",
           ganancia: 0.6,
-          retrasoS: 0.7,
+          retrasoS: 2,
         },
         derrota: {
           carpeta: "derrota",
@@ -705,9 +734,9 @@ export const CONFIG = {
     // Enemigos del pasillo (D-209): aún no tienen sonidos propios; reutilizan los del combate. Evento → id de sfx.
     // PROVISIONAL hasta que el diseño de audio les dé voz. Quitar una clave = ese evento no suena.
     enemigos: {
-      "enemigo:telegrafia": "avisoGenerico", // aviso de ataque (peligro: misma categoría que los del jefe)
+      "enemigo:telegrafia": "enemigoAviso", // aviso estirado a su telegrafía
       "enemigo:herido": "corte", // fin de un corte de la cadena
-      "enemigo:muere": "corteFinal", // el corte que lo derriba
+      "enemigo:muere": "enemigoMuere", // corte breve al derribarlo
     },
     jefes: {
       // El muñeco no ataca: solo se queja al cortarlo y al caer.
@@ -741,666 +770,26 @@ export const CONFIG = {
       },
     },
 
-    // Efectos zzfx. Claves = parámetros de zzfx (orden en src/atados/audio/reglas.js ORDEN_ZZFX; `zzfxArgs` da el
-    // array que se pega en el diseñador de ZzFX). Un sonido es una lista de capas mezcladas (`retraso` en s;
-    // `desdeFin`: s antes del final del aviso). `ajuste: 'sostener' | 'ataque'` estira la capa a la telegrafía.
-    // categoria ∈ silencios.blancos → bus blanco (nunca se calla).
-    sfx: {
-      eslabon1: {
-        categoria: "cadena",
-        capas: [
-          {
-            volumen: 0.22,
-            frecuencia: 1900,
-            soltar: 0.06,
-            modulacion: 310,
-            filtro: 900,
-          },
-        ],
+    // Configuración de efectos y perfiles aislados del resto del juego.
+    proyectiles: { grano: { sonido: "proyectilGrano" } },
+    arena: {
+      avisos: {
+        orbe: "avisoOrbe",
+        luz: "avisoLuz",
+        pisoton: "avisoPisoton",
+        braseros: "avisoBraseros",
       },
-      eslabon2: {
-        categoria: "cadena",
-        capas: [
-          {
-            volumen: 0.2,
-            frecuencia: 2300,
-            soltar: 0.05,
-            modulacion: 270,
-            filtro: 900,
-          },
-        ],
+      golpes: {
+        orbe: "orbeCae",
+        explosion: "orbeExplota",
+        luz: "luzImpacto",
+        pisoton: "pisotonGolpe",
+        braseros: "braseroDescarga",
+        bloqueo: "braseroBloqueo",
       },
-      eslabon3: {
-        categoria: "cadena",
-        capas: [
-          {
-            volumen: 0.2,
-            frecuencia: 1600,
-            soltar: 0.07,
-            modulacion: 410,
-            filtro: 900,
-          },
-        ],
-      },
-      cadenaTensa: {
-        categoria: "cadena",
-        capas: [
-          {
-            volumen: 0.45,
-            frecuencia: 700,
-            sostener: 0.02,
-            soltar: 0.2,
-            forma: 2,
-            modulacion: 150,
-            ruido: 0.3,
-            desliz: 2,
-            filtro: 400,
-            caida: 0.03,
-            volSostener: 0.6,
-          },
-          { volumen: 0.25, frecuencia: 1320, soltar: 0.35, modulacion: 95 },
-        ],
-      },
-      corte: {
-        categoria: "cadena",
-        capas: [
-          {
-            volumen: 0.55,
-            frecuencia: 1400,
-            sostener: 0.03,
-            soltar: 0.12,
-            forma: 2,
-            modulacion: 220,
-            desliz: -4,
-            ruido: 0.5,
-            filtro: 600,
-          },
-          {
-            volumen: 0.35,
-            frecuencia: 220,
-            soltar: 0.1,
-            forma: 4,
-            filtro: -3000,
-          },
-        ],
-      },
-      corteFuerte: {
-        categoria: "cadena",
-        capas: [
-          {
-            volumen: 0.9,
-            frecuencia: 90,
-            sostener: 0.04,
-            soltar: 0.4,
-            forma: 1,
-            desliz: -0.4,
-            ruido: 0.6,
-            caida: 0.04,
-            volSostener: 0.6,
-          },
-          { volumen: 0.45, frecuencia: 1300, soltar: 0.5, modulacion: 180 },
-          {
-            volumen: 0.3,
-            frecuencia: 400,
-            soltar: 0.08,
-            forma: 4,
-            filtro: 800,
-          },
-        ],
-      },
-      corteFinal: {
-        categoria: "cadena",
-        capas: [
-          {
-            volumen: 1,
-            frecuencia: 70,
-            sostener: 0.08,
-            soltar: 0.9,
-            forma: 1,
-            desliz: -0.15,
-            ruido: 0.8,
-            caida: 0.06,
-            volSostener: 0.7,
-          },
-          { volumen: 0.5, frecuencia: 1046.5, soltar: 1.2, modulacion: 140 },
-          { volumen: 0.35, frecuencia: 1568, soltar: 1.4, retraso: 0.05 },
-          {
-            volumen: 0.35,
-            frecuencia: 500,
-            soltar: 0.12,
-            forma: 4,
-            filtro: 700,
-          },
-        ],
-      },
-      dash: {
-        categoria: "jugador",
-        capas: [
-          {
-            volumen: 0.38,
-            frecuencia: 900,
-            ataque: 0.02,
-            sostener: 0.05,
-            soltar: 0.12,
-            forma: 4,
-            desliz: -6,
-            filtro: -2500,
-          },
-        ],
-      },
-      ancla: {
-        categoria: "jugador",
-        capas: [
-          {
-            volumen: 0.75,
-            frecuencia: 120,
-            sostener: 0.05,
-            soltar: 0.35,
-            forma: 1,
-            modulacion: 47,
-            caida: 0.05,
-            volSostener: 0.5,
-            desliz: -0.3,
-            ruido: 0.2,
-          },
-          { volumen: 0.22, frecuencia: 880, soltar: 0.4, modulacion: 133 },
-        ],
-      },
-      anclaSuelta: {
-        categoria: "jugador",
-        capas: [
-          {
-            volumen: 0.25,
-            frecuencia: 600,
-            soltar: 0.08,
-            forma: 1,
-            modulacion: 90,
-            desliz: 1,
-          },
-        ],
-      },
-      golpeRecibido: {
-        categoria: "golpeRecibido",
-        capas: [
-          {
-            volumen: 0.85,
-            frecuencia: 160,
-            sostener: 0.03,
-            soltar: 0.18,
-            forma: 2,
-            desliz: -1.2,
-            ruido: 1.2,
-            caida: 0.03,
-            volSostener: 0.6,
-            filtro: -1800,
-          },
-          { volumen: 0.3, frecuencia: 1200, soltar: 0.06, forma: 4 },
-        ],
-      },
-      muerteJugador: {
-        categoria: "jugador",
-        capas: [
-          {
-            volumen: 0.6,
-            frecuencia: 330,
-            sostener: 0.3,
-            soltar: 0.7,
-            forma: 1,
-            desliz: -0.25,
-            volSostener: 0.7,
-            caida: 0.1,
-          },
-          {
-            volumen: 0.7,
-            frecuencia: 70,
-            sostener: 0.05,
-            soltar: 0.5,
-            forma: 0,
-            desliz: -0.05,
-            ruido: 0.3,
-          },
-        ],
-      },
-      revivir: {
-        categoria: "jugador",
-        capas: [
-          { volumen: 0.35, frecuencia: 523.25, soltar: 0.5 },
-          { volumen: 0.33, frecuencia: 659.25, soltar: 0.5, retraso: 0.08 },
-          { volumen: 0.31, frecuencia: 783.99, soltar: 0.55, retraso: 0.16 },
-          { volumen: 0.3, frecuencia: 1046.5, soltar: 0.8, retraso: 0.24 },
-        ],
-      },
-      // Avisos de Mirra (docs/atados/diseno/jefes/mirra.md · Audio): hoz, dos afiladas, tripas + silbido, mandíbulas, zumbido, inhalación.
-      avisoHoz: {
-        categoria: "avisoAtaque",
-        capas: [
-          {
-            volumen: 0.55,
-            frecuencia: 900,
-            ataque: 0.05,
-            sostener: 0.8,
-            soltar: 0.08,
-            forma: 2,
-            modulacion: 170,
-            ruido: 2,
-            desliz: 1.5,
-            filtro: 1200,
-            repetir: 0.3,
-            ajuste: "sostener",
-          },
-        ],
-      },
-      avisoHozDoble: {
-        categoria: "avisoAtaque",
-        capas: [
-          {
-            volumen: 0.55,
-            frecuencia: 1100,
-            ataque: 0.04,
-            sostener: 0.8,
-            soltar: 0.08,
-            forma: 2,
-            modulacion: 210,
-            ruido: 2,
-            desliz: 2.5,
-            filtro: 1500,
-            repetir: 0.15,
-            ajuste: "sostener",
-          },
-          {
-            volumen: 0.3,
-            frecuencia: 520,
-            ataque: 0.04,
-            sostener: 0.8,
-            soltar: 0.08,
-            forma: 2,
-            modulacion: 120,
-            ruido: 1.5,
-            desliz: 1.5,
-            filtro: 800,
-            repetir: 0.3,
-            ajuste: "sostener",
-          },
-        ],
-      },
-      avisoTripas: {
-        categoria: "avisoAtaque",
-        capas: [
-          {
-            volumen: 0.75,
-            frecuencia: 70,
-            ataque: 0.1,
-            sostener: 1,
-            soltar: 0.1,
-            forma: 2,
-            ruido: 3,
-            modulacion: 9,
-            filtro: -450,
-            ajuste: "sostener",
-          },
-          {
-            volumen: 0.3,
-            frecuencia: 2000,
-            ataque: 0.05,
-            sostener: 0.2,
-            soltar: 0.15,
-            desliz: -3,
-            desdeFin: 0.4,
-          },
-        ],
-      },
-      avisoMandibulas: {
-        categoria: "avisoAtaque",
-        capas: [
-          {
-            volumen: 0.75,
-            frecuencia: 500,
-            sostener: 0.8,
-            soltar: 0.05,
-            forma: 4,
-            tremolo: 1,
-            repetir: 0.11,
-            desliz: -8,
-            filtro: 300,
-            ajuste: "sostener",
-          },
-          {
-            volumen: 0.85,
-            frecuencia: 260,
-            soltar: 0.09,
-            forma: 4,
-            filtro: 200,
-            desdeFin: 0.1,
-          },
-        ],
-      },
-      avisoZumbido: {
-        categoria: "avisoAtaque",
-        capas: [
-          {
-            volumen: 0.5,
-            frecuencia: 180,
-            ataque: 1.3,
-            soltar: 0.05,
-            forma: 2,
-            modulacion: 31,
-            ruido: 0.4,
-            tremolo: 0.3,
-            repetir: 0.025,
-            filtro: -1500,
-            deslizDelta: 0.002,
-            ajuste: "ataque",
-          },
-        ],
-      },
-      avisoInhalacion: {
-        categoria: "avisoAtaque",
-        capas: [
-          {
-            volumen: 0.6,
-            frecuencia: 200,
-            ataque: 1.1,
-            soltar: 0.1,
-            forma: 4,
-            desliz: 0.6,
-            filtro: -900,
-            ajuste: "ataque",
-          },
-          {
-            volumen: 0.45,
-            frecuencia: 55,
-            ataque: 1.1,
-            soltar: 0.1,
-            forma: 1,
-            ajuste: "ataque",
-          },
-        ],
-      },
-      // Tres señales cortas: un brillo ascendente, dos ecos graves y una campanada.
-      avisoPrisma: {
-        categoria: "avisoAtaque",
-        capas: [
-          { volumen: 0.32, frecuencia: 440, ataque: 0.02, soltar: 0.19 },
-          { volumen: 0.27, frecuencia: 880, retraso: 0.11, soltar: 0.26 },
-        ],
-      },
-      avisoEcos: {
-        categoria: "avisoAtaque",
-        capas: [
-          { volumen: 0.38, frecuencia: 175, ataque: 0.03, soltar: 0.2 },
-          { volumen: 0.26, frecuencia: 155, retraso: 0.25, soltar: 0.23 },
-        ],
-      },
-      avisoCampanas: {
-        categoria: "avisoAtaque",
-        capas: [
-          { volumen: 0.4, frecuencia: 660, modulacion: 330, soltar: 0.47 },
-        ],
-      },
-      avisoGenerico: {
-        categoria: "avisoAtaque",
-        capas: [
-          {
-            volumen: 0.5,
-            frecuencia: 440,
-            ataque: 0.1,
-            sostener: 0.6,
-            soltar: 0.1,
-            forma: 1,
-            tremolo: 0.6,
-            repetir: 0.12,
-            ajuste: "sostener",
-          },
-        ],
-      },
-      // Golpes y momentos de Mirra.
-      mirraSiega: {
-        categoria: "jefe",
-        capas: [
-          {
-            volumen: 0.65,
-            frecuencia: 600,
-            sostener: 0.1,
-            soltar: 0.15,
-            forma: 4,
-            desliz: -5,
-            filtro: -3000,
-          },
-          { volumen: 0.25, frecuencia: 980, soltar: 0.3, modulacion: 160 },
-        ],
-      },
-      mirraGrano: {
-        categoria: "jefe",
-        capas: [0, 0.05, 0.11, 0.14, 0.2].map((retraso) => ({
-          volumen: 0.5,
-          frecuencia: 95,
-          soltar: 0.14,
-          forma: 4,
-          filtro: -900,
-          retraso,
-        })),
-      },
-      mirraHambre: {
-        categoria: "jefe",
-        capas: [
-          {
-            volumen: 0.6,
-            frecuencia: 60,
-            sostener: 0.22,
-            soltar: 0.15,
-            forma: 2,
-            ruido: 2,
-            filtro: -600,
-          },
-          {
-            volumen: 0.9,
-            frecuencia: 280,
-            soltar: 0.1,
-            forma: 4,
-            filtro: 250,
-            retraso: 0.2,
-          },
-        ],
-      },
-      mirraEnjambre: {
-        categoria: "jefe",
-        capas: [
-          {
-            volumen: 0.32,
-            frecuencia: 210,
-            sostener: 1,
-            forma: 2,
-            modulacion: 23,
-            tremolo: 0.4,
-            repetir: 0.03,
-            filtro: -1400,
-          },
-        ],
-      },
-      mirraBanquete: {
-        categoria: "jefe",
-        capas: [
-          {
-            volumen: 1,
-            frecuencia: 75,
-            sostener: 0.05,
-            soltar: 0.35,
-            forma: 1,
-            desliz: -0.3,
-            ruido: 1,
-            caida: 0.04,
-            volSostener: 0.6,
-          },
-          {
-            volumen: 0.8,
-            frecuencia: 300,
-            soltar: 0.12,
-            forma: 4,
-            filtro: 220,
-            retraso: 0.02,
-          },
-        ],
-      },
-      mirraDolor: {
-        categoria: "jefe",
-        capas: [
-          {
-            volumen: 0.65,
-            frecuencia: 140,
-            ataque: 0.05,
-            sostener: 0.3,
-            soltar: 0.4,
-            forma: 2,
-            desliz: -0.3,
-            modulacion: 6,
-            ruido: 0.8,
-            filtro: -1200,
-          },
-          {
-            volumen: 0.25,
-            frecuencia: 3000,
-            sostener: 0.2,
-            soltar: 0.3,
-            forma: 4,
-            filtro: 2000,
-          },
-        ],
-      },
-      mirraTransicion: {
-        categoria: "jefe",
-        capas: [
-          {
-            volumen: 0.7,
-            frecuencia: 50,
-            ataque: 0.2,
-            sostener: 0.9,
-            soltar: 0.5,
-            forma: 2,
-            ruido: 2.5,
-            filtro: -400,
-          },
-          {
-            volumen: 0.6,
-            frecuencia: 240,
-            soltar: 0.25,
-            forma: 4,
-            filtro: 300,
-            retraso: 0.3,
-          },
-          {
-            volumen: 0.6,
-            frecuencia: 200,
-            soltar: 0.3,
-            forma: 4,
-            filtro: 260,
-            retraso: 0.8,
-          },
-        ],
-      },
-      mirraMuerte: {
-        categoria: "jefe",
-        capas: [
-          {
-            volumen: 0.85,
-            frecuencia: 180,
-            ataque: 0.05,
-            sostener: 0.8,
-            soltar: 1.4,
-            forma: 2,
-            desliz: -0.12,
-            modulacion: 4,
-            ruido: 1,
-            filtro: -1500,
-          },
-          {
-            volumen: 0.4,
-            frecuencia: 400,
-            sostener: 0.6,
-            soltar: 0.8,
-            forma: 4,
-            filtro: 500,
-            retraso: 0.4,
-          },
-        ],
-      },
-      destello: {
-        categoria: "jefe",
-        capas: [
-          {
-            volumen: 0.3,
-            frecuencia: 1046.5,
-            ataque: 0.2,
-            sostener: 0.5,
-            soltar: 0.8,
-            tremolo: 0.3,
-            repetir: 0.07,
-          },
-          {
-            volumen: 0.25,
-            frecuencia: 1318.5,
-            ataque: 0.25,
-            sostener: 0.45,
-            soltar: 0.8,
-          },
-          {
-            volumen: 0.22,
-            frecuencia: 1568,
-            ataque: 0.3,
-            sostener: 0.4,
-            soltar: 0.9,
-          },
-        ],
-      },
-      presentacionGolpe: {
-        categoria: "ui",
-        capas: [
-          {
-            volumen: 1,
-            frecuencia: 58,
-            sostener: 0.1,
-            soltar: 1.2,
-            desliz: -0.04,
-            caida: 0.05,
-            volSostener: 0.7,
-          },
-          {
-            volumen: 0.35,
-            frecuencia: 300,
-            soltar: 0.2,
-            forma: 4,
-            filtro: -1200,
-          },
-        ],
-      },
-      peleaInicio: {
-        categoria: "ui",
-        capas: [
-          { volumen: 0.8, frecuencia: 82, soltar: 0.5, desliz: -0.1 },
-          {
-            volumen: 0.25,
-            frecuencia: 900,
-            soltar: 0.1,
-            forma: 4,
-            filtro: 600,
-          },
-        ],
-      },
-      faseGolpe: {
-        categoria: "ui",
-        capas: [
-          {
-            volumen: 0.9,
-            frecuencia: 65,
-            sostener: 0.06,
-            soltar: 0.7,
-            desliz: -0.06,
-            caida: 0.04,
-            volSostener: 0.7,
-          },
-          { volumen: 0.3, frecuencia: 740, soltar: 0.6, modulacion: 110 },
-        ],
-      },
+      escudo: "braseroEscudo",
     },
+    sfx: EFECTOS_SONIDO,
   },
   // D-032, D-123, D-151. Remapeable: cambiar códigos de KeyboardEvent.code / índices de la Gamepad API.
   controls: {

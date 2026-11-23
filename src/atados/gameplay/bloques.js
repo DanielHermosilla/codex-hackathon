@@ -505,8 +505,20 @@ export const BLOQUES = {
       // Vuelan durante el final del aviso y llegan justo al golpe (t = -1: aún en la boca).
       const T = b.inicioAviso + b.telegrafia;
       const k = (t - (T - b.vuelo)) / b.vuelo;
+      let enVuelo = 0; // proyectiles de este bloque que existen (sin ninguno, no hay nada que oír)
       for (const p of ctx.proyectiles.items)
-        if (p.activo && p.dueno === b) p.t = k < 0 ? -1 : Math.min(1, k);
+        if (p.activo && p.dueno === b) {
+          p.t = k < 0 ? -1 : Math.min(1, k);
+          enVuelo++;
+        }
+      // Primer paso del vuelo: aviso para el audio (el silbido dura `b.vuelo` s y acaba en el impacto).
+      if (k >= 0 && !b.enVuelo && enVuelo > 0) {
+        b.enVuelo = true;
+        ctx.emitir("proyectil_vuelo", {
+          ataque: b.accion.id,
+          duracion: Math.max(0, T - t), // s que faltan hasta el impacto
+        });
+      }
     },
     activar(b, ctx) {
       liberarDe(ctx.proyectiles, b);

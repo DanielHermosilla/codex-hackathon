@@ -19,6 +19,7 @@ import { crearAnillosHud } from "./render/hud-anillos.js";
 import { crearHud } from "./ui/hud.js";
 import { coloresHud, etiquetaTecla, hexCss } from "./ui/hud-logica.js";
 import { conectarAudio } from "./audio/index.js";
+import { PISTAS, precargarPistas } from "./audio/pistas.js";
 import { setIdioma, t } from "./i18n/index.js";
 import {
   avisoRitoActual,
@@ -293,6 +294,27 @@ async function arrancar() {
       oyentes.push(f);
     },
   });
+  const carpetasMusica = [
+    CONFIG.audio.musica.zonas.pasillo.carpeta,
+    CONFIG.audio.musica.zonas.trigal.carpeta,
+    CONFIG.audio.musica.zonas.trigalFase2.carpeta,
+    CONFIG.audio.musica.temas.victoria.carpeta,
+  ];
+  if (CONFIG.audio.musica.activa)
+    precargarPistas(
+      [...new Set(carpetasMusica)].flatMap((carpeta) =>
+        Object.values(PISTAS[carpeta] ?? {}),
+      ),
+    );
+  let musicaMenuIniciada = false;
+  function iniciarMusicaMenu() {
+    if (pantalla !== "menu" || musicaMenuIniciada) return;
+    musicaMenuIniciada = true;
+    void audio.api.desbloquear();
+    audio.evento({ tipo: "zona_entra", zona: "pasillo", estado: "menu" });
+  }
+  window.addEventListener("pointerdown", iniciarMusicaMenu, { passive: true });
+  window.addEventListener("keydown", iniciarMusicaMenu);
 
   /** HUD de la partida: tutorial y tarjetas en el recorrido, capas del jefe con combate. */
   function montarHud() {
@@ -615,7 +637,12 @@ async function arrancar() {
     activar(vistaRecorrido);
     montarHud();
     // Música del pasillo (contrato de audio/index.js): el recorrido no tiene combate que la arranque.
-    audio.evento({ tipo: "zona_entra", zona: "pasillo", t: 0 });
+    audio.evento({
+      tipo: "zona_entra",
+      zona: "pasillo",
+      estado: "caida",
+      t: 0,
+    });
     texto(announce, t("mundo.caida"));
     mostrar("playing");
   }
@@ -723,7 +750,8 @@ async function arrancar() {
   async function alMenu() {
     tienda = crearTienda(cfg); // desde portada el saldo y los productos vuelven a su estado inicial
     reemplazarPartida();
-    audio.evento({ tipo: "zona_entra", zona: "pasillo", estado: "nada" }); // termina la música y los ataques anteriores
+    musicaMenuIniciada = false;
+    audio.evento({ tipo: "zona_entra", zona: "pasillo", estado: "menu" });
     if (!vistaRecorrido) mostrar("cargando");
     const v = await montarRecorrido();
     if (!v) return;
