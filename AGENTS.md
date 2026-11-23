@@ -6,10 +6,10 @@
 - Escribe JavaScript con nombres claros, funciones pequeñas y manejo explícito de errores. Asume que el equipo empieza desde cero. Añade comentarios en español junto a casi cada línea con lógica: explica la sintaxis nueva, qué valor cambiar, sus unidades y cómo se verá el cambio. Mantén los comentarios al día.
 - Mantén la lógica del juego comprobable y, cuando sea práctico, separada del renderizado. Prefiere transiciones deterministas, controla el tiempo y el azar en las pruebas, y evita asignaciones innecesarias y regresiones de rendimiento en bucles críticos. Respeta la versión del motor acordada.
 - Prueba el comportamiento nuevo y las regresiones relevantes. Usa `python3 scripts/validate.py` y distingue resultados exitosos, fallidos y sin configurar. Conserva evidencia y comunica las pruebas manuales pendientes.
-- Antes de editar, inspecciona estado, rama, worktrees y base. Trabaja desde `develop` en `feature/<nombre>` o `fix/<nombre>`. `main` queda para versiones jugables. Coordina escenas, recursos y otros archivos compartidos con su responsable.
+- Antes de editar, inspecciona estado, rama, worktrees y base. Trabaja desde `main` en `feature/<nombre>` o `fix/<nombre>`. Coordina escenas, recursos y otros archivos compartidos con su responsable.
 - Conserva cambios ajenos y archivos fuera de alcance. Pide autorización para operaciones destructivas y aprobación específica antes de cada commit, push o publicación de un PR. Nunca fuerces un push ni incluyas credenciales. Usa GitHub como autoridad sobre protecciones remotas.
 - Aplica [`$humanizer`](.agents/skills/humanizer/SKILL.md) al título y al cuerpo de cada commit, incluidos los de squash y merge.
-- Abre PR de trabajo hacia `develop`. Un PR hacia `main` requiere una decisión de lanzamiento. Ejecuta una integración solo con aprobación explícita para el PR y SHA revisados. Prohibidos el merge automático y los atajos a las reglas.
+- Abre PR de trabajo hacia `main`. Ejecuta una integración solo con aprobación explícita para el PR y SHA revisados. Prohibidos el merge automático y los atajos a las reglas.
 - Usa `$new-feature`, `$code-review` y `$merge-feature` para los flujos del equipo. Usa especialistas cuando aporten evidencia adicional y mantén en el agente principal las operaciones de publicación e integración.
 - Si está disponible `fm respond`, guarda las salidas extensas y sus códigos en archivos temporales y pide a `fm` extraer la evidencia necesaria. Usa directamente los resultados deterministas y consulta los originales para verificar datos o errores.
 

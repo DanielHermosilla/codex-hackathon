@@ -47,7 +47,6 @@ class RepositoryTest(unittest.TestCase):
         (self.repo / ".gitignore").write_text("__pycache__/\n", encoding="utf-8")
         self.git("add", ".")
         self.git("commit", "-qm", "Base del fixture")
-        self.git("branch", "develop")
 
     def run_command(self, *args, cwd=None, stdin=None, check=False):
         return subprocess.run(args, cwd=cwd or self.repo, env=self.env, input=stdin,
@@ -77,7 +76,7 @@ class RepositoryTest(unittest.TestCase):
         return None
 
     def feature(self, *, commit_change=False):
-        self.git("switch", "-qc", "feature/pausa", "develop")
+        self.git("switch", "-qc", "feature/pausa", "main")
         (self.nested / "nota.txt").write_text("pausa\n", encoding="utf-8")
         if commit_change:
             self.git("add", "carpeta anidada/nota.txt", "checks.toml")
@@ -97,22 +96,19 @@ class RepositoryTest(unittest.TestCase):
 
     def preflight(self, *args):
         return self.run_command(sys.executable, str(self.repo / "scripts/feature-status.py"),
-                                "develop", *args, cwd=self.nested)
+                                "main", *args, cwd=self.nested)
 
-    def test_blocks_protected_branches_from_nested_directory(self):
-        for branch in ("main", "develop"):
-            with self.subTest(branch=branch):
-                self.git("switch", "-q", branch)
-                self.assertIn("main o develop", self.hook("git commit -m pausa"))
-                self.assertIsNotNone(self.hook("git merge feature/pausa"))
-                self.assertIsNotNone(self.hook("git branch -m nuevo-nombre"))
-                self.assertIsNone(self.hook("git status --short"))
+    def test_blocks_main_from_nested_directory(self):
+        self.assertIn("en main", self.hook("git commit -m pausa"))
+        self.assertIsNotNone(self.hook("git merge feature/pausa"))
+        self.assertIsNotNone(self.hook("git branch -m nuevo-nombre"))
+        self.assertIsNone(self.hook("git status --short"))
         self.assertIsNotNone(self.hook(f"git -C {shlex.quote(str(self.repo))} commit -m prueba"))
         self.assertIsNotNone(self.hook("git commit -m prueba", workdir=self.repo))
         self.assertIsNotNone(self.hook("git branch -f main HEAD"))
-        self.assertIsNotNone(self.hook("git switch -C main develop"))
-        self.assertIsNotNone(self.hook("git checkout -B develop main"))
-        self.assertIsNotNone(self.hook("git worktree add -B develop otro main"))
+        self.assertIsNotNone(self.hook("git switch -C main HEAD"))
+        self.assertIsNotNone(self.hook("git checkout -B main HEAD"))
+        self.assertIsNotNone(self.hook("git worktree add -B main otro HEAD"))
 
     def test_allows_feature_and_denies_risky_pushes(self):
         self.feature()
@@ -121,11 +117,11 @@ class RepositoryTest(unittest.TestCase):
         self.assertIsNone(self.hook("echo 'git push --force origin main'"))
         for command in (
             "git push", "git push origin HEAD", "git push origin main",
-            "git push origin feature/pausa:refs/heads/develop",
+            "git push origin feature/pausa:refs/heads/main",
             "git push --force-with-lease origin feature/pausa",
-            "git push origin +feature/pausa", "git push origin :develop",
+            "git push origin +feature/pausa", "git push origin :main",
             "git status && git push --mirror origin",
-            "git status\ngit push origin develop",
+            "git status\ngit push origin main",
         ):
             with self.subTest(command=command):
                 self.assertIsNotNone(self.hook(command), command)
@@ -169,7 +165,7 @@ class RepositoryTest(unittest.TestCase):
     def test_target_advance_blocks_integration(self):
         self.set_checks()
         self.feature(commit_change=True)
-        self.git("switch", "-q", "develop")
+        self.git("switch", "-q", "main")
         self.git("commit", "--allow-empty", "-qm", "La base avanzó")
         self.git("switch", "-q", "feature/pausa")
         result = self.preflight("--strict")
@@ -183,10 +179,10 @@ class RepositoryTest(unittest.TestCase):
         worktree = self.repo / "worktree de revisión"
         self.git("worktree", "add", "-q", "--detach", str(worktree), head)
         self.addCleanup(self.git, "worktree", "remove", str(worktree))
-        other = self.git("rev-parse", "develop")
+        other = self.git("rev-parse", "main")
         for expected_head, status in ((head, 0), (other, 1)):
             result = self.run_command(sys.executable, str(worktree / "scripts/feature-status.py"),
-                                      "develop", "--strict", "--detached-head", expected_head,
+                                      "main", "--strict", "--detached-head", expected_head,
                                       cwd=worktree)
             self.assertEqual(result.returncode, status, result.stderr)
 

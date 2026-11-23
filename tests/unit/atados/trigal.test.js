@@ -1,17 +1,21 @@
 // Pradera de la cima (render/trigal.js): el trigo de fuera se apoya en la malla del suelo que se dibuja (no
 // flota junto al risco ni crece en la roca) y el fondo del valle conserva sus parcelas. Corre en node: solo
 // geometría y colores, sin WebGL.
+import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import * as THREE from "three";
 import { expect } from "./_expect.js";
 import { CONFIG } from "../../../src/atados/core/config.js";
 import {
+  crearTrigal,
   alturaCimaDe,
   alturaMallaDe,
   sembrarFuera,
   geoValle,
   pintarValle,
 } from "../../../src/atados/render/trigal.js";
+
+import { crearCombate } from "../../../src/atados/gameplay/combate.js";
 
 const T = CONFIG.render.trigal;
 const C = T.cima;
@@ -120,4 +124,56 @@ describe("fondo del valle: parcelas y bruma", () => {
       expect(col.getZ(f + 2)).toBeCloseTo(col.getZ(f), 5);
     }
   });
+});
+
+it("cuatro de los ocho pilares de Mirra llevan el grabado y cada uno se lo lleva al desaparecer", (t) => {
+  // En Node no hay imágenes del DOM. La escena y las matrices sí son las del juego.
+  t.mock.method(
+    THREE.TextureLoader.prototype,
+    "load",
+    () => new THREE.Texture(),
+  );
+  const modelo = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.72, 0.72, 1.6, 8).translate(0, 0.8, 0),
+    new THREE.MeshBasicMaterial(),
+  );
+  for (const jefe of ["mirra", "muneco"]) {
+    const c = crearCombate(CONFIG, { jefe });
+    const scene = new THREE.Scene();
+    const trigal = crearTrigal({
+      scene,
+      cfg: CONFIG,
+      keep: (o) => o,
+      modelos: { espantapajaros: { scene: modelo } },
+      world0: c.w,
+      jefe0: c.jefe,
+    });
+    trigal.sync(c.w, c, 1 / 60, 0);
+    const tallas = scene.getObjectsByProperty("name", "talla-codex");
+    assert.equal(tallas.length, jefe === "mirra" ? c.w.pillars.length / 2 : 0);
+    if (jefe === "mirra") {
+      for (const id of [4, 5, 6, 7]) {
+        const pilar = c.w.pillars.find((p) => p.id === id);
+        const talla =
+          /** @type {THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>} */ (
+            tallas.find(
+              (m) =>
+                m.visible &&
+                m.matrix.elements[12] === pilar.x &&
+                m.matrix.elements[14] === pilar.z,
+            )
+          );
+        assert.ok(talla, `Falta el grabado del pilar ${id}`);
+        assert.equal(talla.material.transparent, true); // El fondo conserva la paja.
+        assert.ok(talla.geometry.attributes.position.count > 0); // La proyección toca el poste.
+        c.w.pillars = c.w.pillars.filter((p) => p !== pilar);
+        trigal.sync(c.w, c, 0.45, 0.45); // A medio vuelo el grabado sigue al pilar.
+        assert.equal(talla.visible, true);
+        assert.notEqual(talla.matrix.elements[12], pilar.x);
+        trigal.sync(c.w, c, 0.45, 0.9);
+        assert.equal(talla.visible, false);
+      }
+    }
+    trigal.dispose();
+  }
 });

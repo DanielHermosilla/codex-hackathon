@@ -30,7 +30,6 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("base", help="Referencia o SHA de la rama destino que se revisará.")
     parser.add_argument("--strict", action="store_true", help="Exige estado limpio y validación completa.")
-    parser.add_argument("--release", action="store_true", help="Inspecciona develop para un PR de lanzamiento.")
     parser.add_argument("--detached-head", metavar="SHA",
                         help="Permite un worktree con HEAD separado en el SHA exacto del PR.")
     args = parser.parse_args()
@@ -41,9 +40,7 @@ def main():
         if args.detached_head:
             if branch or args.detached_head != head:
                 raise ValueError("Se requiere HEAD separado en el SHA exacto del PR.")
-        elif (args.release and branch != "develop") or (
-            not args.release and not branch.startswith(("feature/", "fix/"))
-        ):
+        elif not branch.startswith(("feature/", "fix/")):
             raise ValueError(f"Rama de origen incorrecta: {branch or 'HEAD separado'}.")
         if args.strict and dirty:
             raise ValueError("Hay cambios locales. Se requiere un checkout limpio del SHA del PR.")
