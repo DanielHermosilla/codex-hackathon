@@ -329,6 +329,8 @@ test("la pausa y el cambio de foco sueltan los controles", async ({ page }) => {
 test("sin barras al jugar: el canvas mide lo mismo que la ventana", async ({
   page,
 }, info) => {
+  // En CI las tres capturas se dibujan con WebGL por software.
+  test.setTimeout(90000);
   const errores = escucharErrores(page);
   /** Mide el canvas, la ventana y el scroll de la página. */
   const medir = () =>
@@ -352,6 +354,7 @@ test("sin barras al jugar: el canvas mide lo mismo que la ventana", async ({
   };
 
   await abrir(page);
+  await pasos(page, 1); // congela el fondo 3D mientras se miden las barras y se capturan las pantallas
   // Menú: las barras se ven sobre el canvas, que ya ocupa toda la ventana.
   await expect(page.locator(".mast")).toBeVisible();
   await expect(page.locator(".lower")).toBeVisible();
@@ -361,6 +364,7 @@ test("sin barras al jugar: el canvas mide lo mismo que la ventana", async ({
   // Jugando: sin barras y el canvas no cambia de tamaño; la pausa sigue en el HUD.
   await page.locator("#play").click();
   await page.waitForFunction(() => window.__game.pantalla === "playing");
+  await pasos(page, 40); // captura siempre el mismo instante de la caída
   await expect(page.locator(".mast")).toBeHidden();
   await expect(page.locator(".lower")).toBeHidden();
   await esperarPantallaCompleta();
