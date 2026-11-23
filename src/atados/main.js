@@ -154,7 +154,8 @@ async function arrancar() {
   const carta = crearCarta(
     elemento("tienda"),
     () => tienda,
-    (id) => puedeComprar() && tienda.comprar(id, partida.world.players),
+    (id) =>
+      tiendaAlAlcance() !== null && tienda.comprar(id, partida.world.players),
     () => {
       input.clear();
       aplicarVolumen();
@@ -162,16 +163,16 @@ async function arrancar() {
     },
   );
 
-  function puedeComprar() {
-    return (
-      pantalla === "playing" &&
-      partida.estado === "puesto" &&
-      juntoAlCarro(
-        partida.world.players,
-        tienda.cfg.tienda.carro,
-        tienda.cfg.tienda.alcance,
-      )
-    );
+  // Solo la práctica y el muelle tienen ventanilla. Comprobamos la distancia al pulsar P o comprar.
+  function tiendaAlAlcance() {
+    if (pantalla !== "playing") return null;
+    const sala = partida.estado === "puesto" ? vistaPuesto : vistaRecorrido;
+    if (partida.estado !== "puesto" && partida.estado !== "recorrido")
+      return null;
+    return sala &&
+      juntoAlCarro(partida.world.players, sala.carro, tienda.cfg.tienda.alcance)
+      ? sala
+      : null;
   }
 
   canvas.addEventListener("keydown", (e) => {
@@ -181,7 +182,7 @@ async function arrancar() {
       e.ctrlKey ||
       e.altKey ||
       e.metaKey ||
-      !puedeComprar()
+      !tiendaAlAlcance()
     )
       return;
     e.preventDefault();
@@ -714,14 +715,15 @@ async function arrancar() {
     hud?.update(dt);
     if (pantalla === "playing") pintarIndicacion();
     vista.render();
-    if (puedeComprar() && vistaPuesto) {
-      const carro = tienda.cfg.tienda.carro;
+    const salaTienda = tiendaAlAlcance();
+    if (salaTienda) {
+      const carro = salaTienda.carro;
       const techo =
-        vistaPuesto.alturaSuelo(carro.x, carro.z) +
+        salaTienda.alturaSuelo(carro.x, carro.z) +
         2.75 * tienda.cfg.render.puesto.escala;
-      vistaPuesto.toScreen(carro.x, techo, carro.z, puntoAviso);
+      salaTienda.toScreen(carro.x, techo, carro.z, puntoAviso);
       carta.situarAviso(puntoAviso);
-      if (letrero.hidden) mural.show(); // entrar al alcance muestra el diálogo una sola vez
+      if (letrero.hidden) mural.show(partida.estado === "recorrido"); // conserva el tutorial visible en el templo
     } else {
       carta.ocultarAviso();
       if (!letrero.hidden) mural.hide();
@@ -840,7 +842,11 @@ async function arrancar() {
         return vista?.info ?? null;
       },
       get tienda() {
-        return { saldo: tienda.saldo, carro: { ...tienda.cfg.tienda.carro } };
+        const carro =
+          partida.estado === "recorrido"
+            ? tienda.cfg.tienda.carroPractica
+            : tienda.cfg.tienda.carro;
+        return { saldo: tienda.saldo, carro: { ...carro } };
       },
       audio: audio.api,
       /** Detiene el bucle real y avanza `n` pasos fijos (pruebas reproducibles). */

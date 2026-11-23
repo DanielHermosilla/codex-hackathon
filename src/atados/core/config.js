@@ -12,6 +12,7 @@ export const CONFIG = {
 
   tienda: {
     precios: { italiano: 1, mote: 1, sopaipilla: 1 }, // monedas por producto, compartidas por la pareja
+    carroPractica: { x: 10.5, z: -7.5 }, // m: hueco del muro del claro, a la derecha de la escalinata
     carro: { x: 4, z: -26 }, // m: ventanilla en el lateral del pasillo posterior a Mirra
     vidaItaliano: 250, // puntos por jugador en la escala ×10 (antes 25)
     alcance: 3.8, // Metros desde el centro hasta donde se puede pedir por la ventanilla.

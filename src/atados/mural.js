@@ -1,6 +1,6 @@
 import { muralText as es } from "./i18n/es.js";
 import { muralText as en } from "./i18n/en.js";
-import { getIdioma } from "./i18n/index.js";
+import { getIdioma, t } from "./i18n/index.js";
 import "./mural.css";
 
 /**
@@ -30,8 +30,15 @@ export function createMural(element) {
       </div>
     </div>`;
 
+  const titulo = /** @type {HTMLElement} */ (
+    element.querySelector(".mural-heading span")
+  );
   return {
-    show() {
+    show(practica = false) {
+      // En el templo el cartel deja libre el tutorial y usa el nombre del carro sin la zona del trigal.
+      element.classList.toggle("en-practica", practica);
+      titulo.textContent = practica ? t("tienda.titulo") : text.stall;
+      element.setAttribute("aria-label", titulo.textContent);
       // Ocultar o mostrar conserva el mismo diálogo y la posición del teclado.
       element.hidden = false;
     },
@@ -42,7 +49,7 @@ export function createMural(element) {
       // Al desmontar el juego se libera también el contenido de este cartel.
       element.hidden = true;
       element.replaceChildren();
-      element.classList.remove("atados-mural");
+      element.classList.remove("atados-mural", "en-practica");
       element.removeAttribute("aria-label");
     },
   };

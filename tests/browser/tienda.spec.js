@@ -23,7 +23,7 @@ async function caminarHasta(page, destino) {
   }, destino);
 }
 
-test("la moneda de Mirra permite comprar en el carro del siguiente pasillo", async ({
+test("la pareja visita el carro en la práctica y compra después de vencer a Mirra", async ({
   page,
 }, info) => {
   test.setTimeout(120000);
@@ -44,6 +44,38 @@ test("la moneda de Mirra permite comprar en el carro del siguiente pasillo", asy
   await page.keyboard.press("p");
   await expect(aviso).toBeHidden();
   await expect(carta).toBeHidden();
+
+  // En la práctica se llega a pie desde el punto de caída. La pareja todavía no tiene monedas.
+  await page.evaluate(() => window.__game.step(100));
+  await caminarHasta(page, { x: 8.5, z: -6 });
+  await expect(aviso).toBeVisible();
+  const mural = page.locator("#mural");
+  await expect(mural).toHaveAttribute("aria-label", "Carro de completos");
+  const tarjeta = page.locator(".hud .tarjeta");
+  await expect(tarjeta).toBeVisible();
+  const dialogo = await mural.boundingBox();
+  expect(dialogo.y + dialogo.height).toBeLessThan(
+    (await tarjeta.boundingBox()).y,
+  );
+  await page.screenshot({ path: info.outputPath("carro-practica.png") });
+  await page.keyboard.press("p");
+  await expect(carta).toBeVisible();
+  await expect(carta.locator(".carta-saldo")).toHaveText("0 monedas");
+  await expect(carta.getByRole("button", { name: /Comprar/ })).toHaveCount(3);
+  for (const boton of await carta
+    .getByRole("button", { name: /Comprar/ })
+    .all())
+    await expect(boton).toBeDisabled();
+  const tiempoPractica = await page.evaluate(() => window.__game.state.time);
+  await page.evaluate(() => window.__game.step(60));
+  expect(await page.evaluate(() => window.__game.state.time)).toBe(
+    tiempoPractica,
+  );
+  await page.keyboard.press("Escape");
+  await expect(carta).toBeHidden();
+  await expect(page.locator("#arena")).toBeFocused();
+  await caminarHasta(page, { x: 0, z: 3 });
+  await expect(aviso).toBeHidden();
 
   // Solo se acorta el combate: la recompensa y el paso a la tienda usan los botones y eventos de partida.
   await page.evaluate(async () => {
@@ -68,7 +100,10 @@ test("la moneda de Mirra permite comprar en el carro del siguiente pasillo", asy
   await caminarHasta(page, { x: 2, z: -25 });
   await expect(aviso).toBeVisible();
   await expect(aviso).toContainText("P");
-  const mural = page.locator("#mural");
+  await expect(mural).toHaveAttribute(
+    "aria-label",
+    "Carro de completos · El Trigal",
+  );
   await expect(mural).toContainText("31 minutos");
   await expect(mural).toContainText("quiero un puro completo");
   await page.screenshot({ path: info.outputPath("aviso.png") });

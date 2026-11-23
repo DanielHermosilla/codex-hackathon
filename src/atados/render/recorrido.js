@@ -20,6 +20,7 @@ import { crearVfx } from "./vfx.js";
 import { configurarRenderer, reducidoSistema } from "./renderer-config.js";
 import { crearTemplo } from "./templo.js";
 import { crearSalidaTrigal } from "./salida-trigal.js";
+import { crearPuesto } from "./puesto.js";
 import { crearAlturaSuelo } from "./altura.js";
 import { crearEnemigosArte } from "./enemigos-arte.js";
 import {
@@ -138,6 +139,18 @@ export async function crearRenderRecorrido({
   const camera = camara.camera;
   const templo = puesto ? null : crearTemplo({ scene, cfg, keep, alturaSuelo });
   const salida = puesto ? crearSalidaTrigal({ scene, cfg, keep }) : null;
+  // La carta y su aviso usan la posición del furgón que se ve en esta sala.
+  const carro = puesto ? cfg.tienda.carro : cfg.tienda.carroPractica;
+  // El muelle ya trae su furgón. En la práctica la ventanilla mira al centro del claro.
+  const furgonPractica = puesto
+    ? null
+    : crearPuesto({
+        scene,
+        cfg,
+        keep,
+        posicion: carro,
+        mirarA: RC.lobby.centro,
+      });
   // Capa de los jugadores: se oculta entera en el menú (D-214: aún no han caído).
   const capaJugadores = new THREE.Scene();
   scene.add(capaJugadores);
@@ -343,7 +356,6 @@ export async function crearRenderRecorrido({
     // cima, encuadra también el arco (D-211). En el lobby (s ≈ 0) no cambia nada.
     proyectarRuta(ruta, mx, mz, proyPareja);
     if (puesto) {
-      const carro = cfg.tienda.carro;
       puntos.push(carro.x, carro.z, 2); // desde la entrada se ve el completo gigante en el techo
     } else if (proyPareja.s > 0.5 && r.fase !== "caida") {
       puntoRuta(ruta, proyPareja.s + T.camara.adelante, 0, ptTmp);
@@ -383,6 +395,7 @@ export async function crearRenderRecorrido({
   const info = { calls: 0, triangles: 0, escena: 0 };
   return {
     camera,
+    carro,
     alturaSuelo,
     /** @param {number} wd @param {number} ht */
     resize(wd, ht) {
@@ -430,6 +443,7 @@ export async function crearRenderRecorrido({
       for (const e of exts) e.dispose?.();
       templo?.dispose();
       salida?.dispose();
+      furgonPractica?.dispose();
       personajes.dispose();
       cadena.dispose();
       enemigos?.dispose();
