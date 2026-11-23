@@ -336,7 +336,7 @@ test("Mirra: ataque con telegrafía y segunda fase", async ({ page }, info) => {
   expect(errores).toEqual([]);
 });
 
-test("Mirra repite los cuatro turnos de arena y vuelve a mostrar el aviso de ácido", async ({
+test("Mirra muestra el ácido al inicio y la gota en la segunda vuelta de ritos", async ({
   page,
 }, info) => {
   test.setTimeout(120000);
@@ -355,21 +355,34 @@ test("Mirra repite los cuatro turnos de arena y vuelve a mostrar el aviso de ác
     ["luz", "Luz divina"],
     ["pisoton", "Pisotón"],
     ["braseros", "brasero rojo"],
-    ["acido", "Ácido"],
+    ["gota", "Gota · quédense dentro del círculo hasta que caiga."],
   ];
   for (const [turno, [id, aviso]] of turnos.entries()) {
+    if (turno > 0) {
+      // Una pausa de impacto puede retrasar el turno aunque avancemos 480 pasos.
+      // Acércate a los ocho segundos y busca la señal en tramos de 15 cuadros.
+      await page.keyboard.press("KeyV");
+      await page.evaluate((siguiente) => {
+        const objetivo = document.querySelector("#objective");
+        window.__game.step(420);
+        for (
+          let i = 0;
+          i < 16 && !objetivo?.textContent?.includes(siguiente);
+          i++
+        )
+          window.__game.step(15);
+      }, aviso);
+    }
     await expect(page.locator("#objective")).toContainText(aviso);
+    if (id === "gota") await pasos(page, 70); // Captura la caída con el círculo aún visible.
     await page.screenshot({ path: info.outputPath(`${turno + 1}-${id}.png`) });
     if (id === "braseros") {
       const rito = await leer(page, () => window.__game.combate.rito);
       expect(rito.braseros.map((f) => f.color)).toEqual([0, 1, 2]);
     }
-    if (turno < turnos.length - 1) {
-      // Mantiene abierta la pelea para fotografiar el siguiente rito aun si un personaje cayó.
-      await page.keyboard.press("KeyV");
-      await pasos(page, 480); // ocho segundos entre señales en la rotación de Mirra
-    }
   }
+  await pasos(page, 140); // La gota aterriza y el aviso de refugio se retira.
+  await expect(page.locator("#objective")).not.toContainText("Gota");
   expect(errores).toEqual([]);
 });
 

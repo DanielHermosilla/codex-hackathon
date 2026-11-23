@@ -3,12 +3,14 @@ import assert from "node:assert/strict";
 import { CONFIG } from "../../../src/atados/core/config.js";
 import {
   crearRitos,
+  GOTA,
+  iniciarGota,
   iniciarPisoton,
   iniciarBraseros,
   avanzarRitos,
 } from "../../../src/atados/gameplay/ritos.js";
 
-function caso(iniciar) {
+function caso(iniciar, peligros) {
   const mundo = {
     arenaRadius: 16,
     players: [
@@ -21,11 +23,11 @@ function caso(iniciar) {
   };
   const r = crearRitos(),
     golpes = [];
-  iniciar(r, mundo);
+  iniciar(r, mundo, peligros);
   const paso = (n) => {
     for (let i = 0; i < n; i++) {
       avanzarRitos(r, mundo, 1 / 60, (id, dano) => {
-        assert.equal(dano, iniciar === iniciarPisoton ? 300 : 260);
+        assert.equal(dano, iniciar === iniciarBraseros ? 260 : 300);
         golpes.push(id);
       });
       for (const p of mundo.players) {
@@ -55,6 +57,42 @@ test("pisotón pide que ambos estén dentro y juntos en el momento del impacto",
   paso(181);
   assert.deepEqual(golpes, [0, 1]);
 });
+
+test("la gota marca suelo libre de ácido y conserva el círculo hasta caer", () => {
+  const charco = { x: 0, z: 5, r: 1.5 }; // Sobre el punto medio inicial de la pareja.
+  const { mundo, r, golpes, paso } = caso(iniciarGota, [charco]);
+  const { x, z } = r;
+  assert.ok(Math.hypot(x - charco.x, z - charco.z) > GOTA.radio + charco.r);
+  mundo.players.forEach((p) => Object.assign(p, { x, z }));
+  paso(60);
+  assert.equal(r.tipo, "gota");
+  assert.deepEqual([r.x, r.z], [x, z]);
+  paso(120);
+  assert.equal(r.tipo, "");
+  assert.deepEqual(golpes, []);
+});
+
+test("al caer, la gota solo golpea una vez a quien quedó fuera del borde", () => {
+  const { mundo, r, golpes, paso } = caso(iniciarGota);
+  const [dentro, fuera] = mundo.players;
+  dentro.x = r.x - GOTA.radio; // Sobre el borde, lejos de su compañero.
+  fuera.x = r.x + GOTA.radio + 0.01;
+  paso(179);
+  assert.deepEqual(golpes, []);
+  paso(1);
+  assert.deepEqual(golpes, [1]);
+  paso(60);
+  assert.deepEqual(golpes, [1]);
+});
+
+test("un superviviente evita la gota al permanecer dentro del círculo", () => {
+  const { mundo, r, golpes, paso } = caso(iniciarGota);
+  Object.assign(mundo.players[0], { x: r.x, z: r.z });
+  Object.assign(mundo.players[1], { alive: false, x: r.x + GOTA.radio + 1 });
+  paso(180);
+  assert.deepEqual(golpes, []);
+});
+
 test("los dos proyectiles impactan a los cuatro segundos y el brasero aparece sin activarse", () => {
   const { mundo, r, golpes, paso } = caso(iniciarBraseros);
   for (const fuego of r.braseros) {

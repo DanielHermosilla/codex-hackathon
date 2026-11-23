@@ -81,6 +81,7 @@ export default {
   "brasero.color.2": "dorado",
   "brasero.escudo": "Escudo {color} · {tiempo} s",
   "indicacion.luz": "Luz divina · busca la sombra detrás de un obstáculo.",
+  "indicacion.gota": "Gota · quédense dentro del círculo hasta que caiga.",
   "indicacion.pisotonSolo": "Pisotón · entra al círculo marcado.",
   "indicacion.pisoton": "Pisotón · entren juntos al círculo marcado.",
   "indicacion.braseros":

@@ -13,6 +13,7 @@ import {
 } from "./arena-mirra.js";
 import {
   crearRitos,
+  iniciarGota,
   iniciarPisoton,
   iniciarBraseros,
   avanzarRitos,
@@ -320,7 +321,8 @@ function pasoArena(c, dt) {
     const a = c.arenaMirra;
     if (id === "acido") iniciarAcido(a, c.ctx);
     if (id === "luz") iniciarLuz(a, c.ctx);
-    // Las franjas seguras y los braseros evitan el suelo que aún puede dañar.
+    // Los refugios y los braseros evitan el suelo que aún puede dañar.
+    if (id === "gota") iniciarGota(c.ritos, c.w, a.charcos);
     if (id === "pisoton") iniciarPisoton(c.ritos, c.w, a.charcos);
     if (id === "braseros") iniciarBraseros(c.ritos, c.w, a.charcos);
     c.turnoArena++;

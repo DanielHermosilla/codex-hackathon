@@ -163,7 +163,7 @@ export const CONFIG = {
       monedas: 25, // recompensa por vencer a Mirra, suficiente para elegir un producto
       textos: "mirra",
       arte: "mirra", // render/mirra-arte.js       // claves de i18n: jefe.mirra.*
-      vida: 12000, // ficha (de partida) ≈ 24 pasadas a tensión máxima; ×10 por D-202 (antes 1200)
+      vida: 7200, // PV: 60 % de los 12 000 anteriores; unas 15 pasadas a tensión máxima.
       radio: 1.8, // m: ~4× el jugador, fijo (D-085, D-154)
       altura: 3.2,
       velocidad: 3.0, // m/s al acercarse. PROVISIONAL
@@ -175,12 +175,23 @@ export const CONFIG = {
           explosion: 520,
           luz: 320,
           acido: 180,
+          gota: 300, // PV que pierde cada personaje alcanzado fuera del refugio.
           pisoton: 300,
           braseros: 260,
         }, // puntos en la escala ×10 de D-202
         inicio: 4,
         intervalo: 8,
-        secuencia: ["acido", "luz", "pisoton", "braseros"],
+        // La gota y el ácido alternan al inicio de cada vuelta de cuatro ritos.
+        secuencia: [
+          "acido",
+          "luz",
+          "pisoton",
+          "braseros",
+          "gota",
+          "luz",
+          "pisoton",
+          "braseros",
+        ],
       },
       acido: {
         punteria: 4.5, // segundos durante los que la mira sigue al jugador marcado

@@ -80,6 +80,7 @@ export default {
   "brasero.color.2": "gold",
   "brasero.escudo": "Shared shield ({color}) · {tiempo} s",
   "indicacion.luz": "Divine light · take cover in the shadow of an obstacle.",
+  "indicacion.gota": "Falling drop · stay inside the circle until it lands.",
   "indicacion.pisotonSolo": "Stomp · stand inside the marked circle.",
   "indicacion.pisoton": "Stomp · stand together inside the marked circle.",
   "indicacion.braseros":

@@ -101,7 +101,7 @@ Cada ataque da un rol a cada jugador [D-164]. "Objetivo" = a quien apunta; "otro
 - Semilla de referencia: `?seed=1` (propuesta). Cada fase arranca de estado reproducible: posición de Mirra, pilares y RNG.
 - Smoke: forzar cada ataque desde `window.__game`, capturar cada telegrafía en normal y difícil, forzar transición al 50 %, forzar muerte.
 - Criterios de "justo": 2–4 intentos en normal [D-109]; ningún daño sin aviso; ningún patrón sin salida para los dos con la cadena puesta; nunca dos ataques activos a la vez en fase 1.
-- Duración 2–3 min [D-141]. Vida (de partida): 12 000 (≈ 24 pasadas a tensión máxima de ~500) [D-202].
+- Duración objetivo 2–3 min [D-141]. Vida de partida: 7.200 PV (60 % de los 12.000 de [D-202], unas 15 pasadas a tensión máxima de ~500).
 - Vida de cada jugador (de partida): 1000 [D-020, D-202]. Se revive con vida llena [D-167].
 
 ## ❓ Huecos abiertos
