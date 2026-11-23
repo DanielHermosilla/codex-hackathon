@@ -7,6 +7,8 @@ export default {
   "mirra.victoria": "Mirra has been defeated",
   "menu.lore":
     "Sael and Odo put out the Eternal Ember. Now their only weapon against the gods is the chain that binds them.",
+  "menu.cargaFallida": "The temple could not load",
+  "menu.reintentar": "Try again",
   "mundo.templo": "The Celestial Temple",
   "jefe.farolero.nombre": "The Lamplighter",
   "jefe.farolero.antiguo": "the Guardian of Hestera",

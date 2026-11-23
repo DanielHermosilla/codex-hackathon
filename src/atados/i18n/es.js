@@ -6,6 +6,8 @@ export default {
   "mirra.victoria": "Mirra ha sido derrotada",
   "menu.lore":
     "Sael y Odo apagaron la Brasa Eterna. Ahora, su única arma contra los dioses es la cadena que los une.",
+  "menu.cargaFallida": "No se pudo cargar el templo",
+  "menu.reintentar": "Reintentar",
   "mundo.templo": "El Templo Celestial",
   "jefe.farolero.nombre": "El Farolero",
   "jefe.farolero.antiguo": "el Guardián de Hestera",
