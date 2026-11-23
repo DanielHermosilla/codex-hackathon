@@ -1,5 +1,8 @@
-# Cada etapa acepta un arreglo de comandos. Cada comando es un arreglo de
-# argumentos, con el ejecutable primero. Rutas relativas a la raíz del repo.
-# Añade las etapas al elegir el motor. Mientras falten, --strict devuelve 2.
-# Etapas: format, lint, static, test, build, integration.
+# Cada etapa contiene comandos con sus argumentos. Se ejecutan desde la raíz.
 [checks]
+format = [["npm", "run", "format:check"]]
+lint = [["npm", "run", "lint"]]
+static = [["npm", "run", "typecheck"]]
+test = [["npm", "test"]]
+build = [["npm", "run", "build"]]
+integration = [["npm", "run", "test:browser"]]

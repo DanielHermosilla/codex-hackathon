@@ -1,0 +1,61 @@
+:root {
+  color-scheme: dark;
+  font-family: system-ui, sans-serif;
+  color: #edf5fc;
+  background: #0b1320;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  box-sizing: border-box;
+  width: min(100%, 64rem);
+  margin-inline: auto;
+  padding: clamp(1rem, 4vw, 3rem);
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 4.5vw, 3rem);
+}
+
+p {
+  color: #c8d6e4;
+  line-height: 1.6;
+}
+
+kbd {
+  margin-inline-end: 0.2em;
+  padding: 0.1em 0.35em;
+  border: 1px solid #6b8094;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+}
+
+canvas:not([hidden]) {
+  /* El CSS define el espacio visible. Three.js ajusta la resolución al dibujar. */
+  display: block;
+  width: 100%;
+  height: clamp(15rem, 58vh, 36rem);
+  border-radius: 1rem;
+  background: #101a28;
+}
+
+button:not([hidden]) {
+  margin-block-start: 1rem;
+  padding: 0.65rem 1rem;
+  border: 0;
+  border-radius: 0.45rem;
+  color: #241604;
+  background: #ffb35c;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 3px solid #ffb35c;
+  outline-offset: 4px;
+}
