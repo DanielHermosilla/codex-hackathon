@@ -7,6 +7,7 @@
 // nubes. Todo eso es decorado fuera del claro: los pilares de gameplay no cambian. En la fase 2 el trigo queda segado en franjas y las vetas de la
 // corrupción se extienden por el suelo (D-084). Decorado con ruido determinista (no es gameplay).
 import * as THREE from "three";
+import { DecalGeometry } from "three/addons/geometries/DecalGeometry.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { hornearEstatico, recolorear } from "./modelos.js";
 import { mezclarHex } from "./paleta.js";
@@ -161,6 +162,57 @@ export function pintarValle(geo, cA, cB, cN, cTmp) {
     }
   }
   ca.needsUpdate = true;
+}
+
+/** Material compartido por las tallas de Mirra.
+ * @param {import('./tipos.js').Keep} keep */
+function crearMaterialTalla(keep) {
+  const relieve = keep(
+    new THREE.TextureLoader().load(
+      `${import.meta.env?.BASE_URL ?? "/"}atados/talla-codex.png`,
+    ),
+  );
+  relieve.colorSpace = THREE.SRGBColorSpace; // El mapa aporta el sombreado del surco.
+  // El mismo trazo oscuro baja la altura del material en el fondo del surco.
+  return keep(
+    new THREE.MeshStandardMaterial({
+      map: relieve,
+      bumpMap: relieve,
+      bumpScale: 0.016,
+      roughness: 0.95,
+      transparent: true, // El alfa deja ver el pilar incluso en el interior del contorno.
+      depthWrite: false,
+      polygonOffset: true, // Se dibuja sobre la misma superficie que la paja.
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    }),
+  );
+}
+
+/** Proyecta el logo entre las cuerdas sobre la cara que mira hacia la cámara.
+ * @param {THREE.Mesh} poste @param {number} giro @param {THREE.MeshStandardMaterial} material
+ * @param {import('./tipos.js').Keep} keep */
+function crearTallaCodex(poste, giro, material, keep) {
+  const sector = Math.PI / 4; // Ocho caras. Sus centros caen a medio sector de cada arista.
+  const cara = (Math.floor(-giro / sector) + 0.5) * sector;
+  const centro = new THREE.Vector3(
+    0.66 * Math.sin(cara),
+    0.85,
+    0.66 * Math.cos(cara),
+  );
+  const geo = keep(
+    new DecalGeometry(
+      poste,
+      centro,
+      new THREE.Euler(-0.077, cara, 0, "YXZ"),
+      new THREE.Vector3(0.36, 0.35, 0.15),
+    ),
+  );
+  const talla = new THREE.Mesh(geo, material);
+  talla.name = "talla-codex";
+  talla.receiveShadow = true;
+  talla.matrixAutoUpdate = false; // Usa directamente la transformación del espantapájaros.
+  return talla;
 }
 
 /**
@@ -643,6 +695,7 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
     r: P.r,
     s: 1,
     comido: 0,
+    talla: /** @type {THREE.Mesh | null} */ (null),
     giro: Math.atan2(P.x, P.z) + Math.PI,
   }));
   const esp = new THREE.InstancedMesh(espGeo, espMat, pilares.length);
@@ -651,6 +704,17 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
   esp.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   esp.frustumCulled = false;
   scene.add(esp);
+
+  // Los pilares 4 a 7 alternan con los otros cuatro al dar la vuelta al claro.
+  const materialTalla =
+    jefe0.def.arte === "mirra" ? crearMaterialTalla(keep) : null;
+  if (materialTalla) {
+    for (const p of pilares) {
+      if (![4, 5, 6, 7].includes(p.id)) continue;
+      p.talla = crearTallaCodex(esp, p.giro, materialTalla, keep);
+      scene.add(p.talla);
+    }
+  }
 
   // ─── Vetas de la corrupción en el suelo (D-084): tiras ordenadas por distancia, se revelan con drawRange ───
   const vetaMat = keep(
@@ -803,6 +867,7 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
       mezclarHex(mezclarHex(p.vegetacion, p.madera, 0.55), p.niebla, 0.6),
     );
     maderaLejosMat.color.setHex(mezclarHex(p.madera, p.niebla, 0.6));
+    materialTalla?.color.setHex(p.madera); // Solo el trazo toma el café de la paleta de la fase.
     recolorear(
       espGeo,
       (/** @type {string} */ n) =>
@@ -931,6 +996,12 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
       d.scale.setScalar(Math.max(1e-3, P.s));
       d.updateMatrix();
       esp.setMatrixAt(k, d.matrix);
+      const talla = P.talla;
+      if (talla) {
+        talla.matrix.copy(d.matrix); // El grabado acompaña al poste incluso cuando Mirra lo devora.
+        talla.matrixWorldNeedsUpdate = true;
+        talla.visible = P.s > 0;
+      }
     }
     esp.instanceMatrix.needsUpdate = true;
   }

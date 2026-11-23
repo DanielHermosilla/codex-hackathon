@@ -7,7 +7,7 @@ import shlex
 import subprocess
 import sys
 
-PROTECTED = {"main", "develop", "refs/heads/main", "refs/heads/develop"}
+PROTECTED = {"main", "refs/heads/main"}
 RECREATE_FLAGS = {"switch": {"-C", "--force-create"}, "checkout": {"-B"}, "worktree": {"-B"}}
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -58,7 +58,7 @@ def push_risk(args):
            for ref in positional[1:]):
         return "Publicación forzada, masiva o de borrado bloqueada."
     if any(ref.rsplit(":", 1)[-1] in PROTECTED for ref in positional[1:]):
-        return "Publica los cambios de main y develop mediante un PR en GitHub."
+        return "Publica los cambios de main mediante un PR en GitHub."
     if any(not ref.rsplit(":", 1)[-1].removeprefix("refs/heads/").startswith(("feature/", "fix/"))
            or (":" in ref and not ref.split(":", 1)[1].startswith("refs/heads/"))
            for ref in positional[1:]):
@@ -102,7 +102,7 @@ def denial(cwd, operation, args):
     if result.returncode != 0:
         return "No se pudo confirmar una rama activa. Abre una rama de trabajo antes de continuar."
     if result.stdout.strip() in PROTECTED:
-        return "Operación bloqueada en main o develop. Para trabajar, usa feature/ o fix/."
+        return "Operación bloqueada en main. Para trabajar, usa feature/ o fix/."
     return None
 
 

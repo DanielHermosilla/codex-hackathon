@@ -33,7 +33,7 @@
 ## Flujo de equipo
 - **obra/superpowers** (Codex y Claude): using-git-worktrees, writing-plans, executing-plans, dispatching-parallel-agents, requesting/receiving-code-review, verification-before-completion, systematic-debugging, TDD. ⚠ sobre-planifica en 10 h; usar selectivo.
 - Claude plugins oficiales: `feature-dev`, `code-review`, `frontend-design` (HUD/menús).
-- Worktrees: no editar mismos archivos en paralelo; `git worktree add ../repo-x -b feature/x`; máx 3–4 sesiones paralelas (cuello = review humano). Encaja con harness de Dani (`feature/*` → `develop`, skills `new-feature`/`code-review`/`merge-feature`).
+- Worktrees: no editar mismos archivos en paralelo; `git worktree add ../repo-x -b feature/x`; máx 3–4 sesiones paralelas (cuello = review humano). Encaja con harness de Dani (`feature/*` → `main`, skills `new-feature`/`code-review`/`merge-feature`).
 
 ## Top 10 para preparar antes del lunes
 1. Config Codex + perfiles fast/deep; AGENTS.md del repo con `## Code Review Rules`.

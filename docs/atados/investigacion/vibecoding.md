@@ -33,7 +33,7 @@
 - Integrador único (humano o agente líder) mergea en orden de dependencia y corre suite tras cada merge; merge limpio puede romper semántica.
 - Máx 3–4 sesiones paralelas: el cuello es el review humano. Más agentes ≠ lineal en tokens.
 - Puntos típicos de colisión: archivo de config, entrypoint/índice, loop principal → dueño único.
-- Encaja con el harness de Dani (`feature/*` → `develop`, new-feature / code-review / merge-feature).
+- Encaja con el harness de Dani (`feature/*` → `main`, new-feature / code-review / merge-feature).
 
 ## Casos
 - Ganador Vibe Jam 2026 (capibaras delivery, Claude Code + Three.js, 2 semanas): 2–3 sesiones paralelas en zonas distintas; hizo que el agente le construyera un editor propio de niveles; ~188 commits [NV]; un gancho claro, no un sistema enorme.
