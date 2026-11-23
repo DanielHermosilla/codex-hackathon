@@ -55,7 +55,10 @@ test("los dos proyectiles impactan a los cuatro segundos y el brasero aparece si
   const { mundo, r, golpes, paso } = caso(iniciarBraseros);
   for (const fuego of r.braseros) {
     for (const p of mundo.players) {
-      assert.ok(Math.hypot(fuego.x - p.x, fuego.z - p.z) >= 4.5 + 1.15 + mundo.cfg.player.radius);
+      assert.ok(
+        Math.hypot(fuego.x - p.x, fuego.z - p.z) >=
+          4.5 + 1.15 + mundo.cfg.player.radius,
+      );
     }
   }
   paso(239);
@@ -138,8 +141,8 @@ test("si alguien cae durante el aviso, solo cuenta la posición del supervivient
     for (const dentro of [true, false]) {
       const { mundo, r, golpes, paso } = caso(iniciarPisoton);
       paso(179);
-      Object.assign(mundo.players[1 - vivo], {alive:false, x:r.x + 9});
-      Object.assign(mundo.players[vivo], {x:r.x + (dentro ? 0 : 3), z:r.z});
+      Object.assign(mundo.players[1 - vivo], { alive: false, x: r.x + 9 });
+      Object.assign(mundo.players[vivo], { x: r.x + (dentro ? 0 : 3), z: r.z });
       paso(1);
       assert.deepEqual(golpes, dentro ? [] : [vivo]);
     }

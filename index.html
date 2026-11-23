@@ -11,7 +11,8 @@
       if (location.protocol === "file:") {
         document.addEventListener("DOMContentLoaded", () => {
           const aviso = document.createElement("p");
-          aviso.textContent = "Para jugar, abre Jugar AtaDos.cmd en esta misma carpeta. Se abrirá el juego en tu navegador.";
+          aviso.textContent =
+            "Para jugar, abre Jugar AtaDos.cmd en esta misma carpeta. Se abrirá el juego en tu navegador.";
           document.body.replaceChildren(aviso);
         });
       }

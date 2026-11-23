@@ -31,9 +31,10 @@ export function crearRitos() {
 function marca(w, huecos, esBrasero) {
   const [a, b] = w.players;
   const superviviente = a.alive ? a : b;
-  const centro = !esBrasero && (!a.alive || !b.alive)
-    ? superviviente
-    : { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
+  const centro =
+    !esBrasero && (!a.alive || !b.alive)
+      ? superviviente
+      : { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
   const radio = esBrasero ? BRASEROS.radio : PISOTON.radio;
   const solidos = [...w.pillars, w.dummy, ...huecos];
   for (let distancia = 0; distancia < 2 * w.arenaRadius; distancia += 1) {
@@ -47,7 +48,9 @@ function marca(w, huecos, esBrasero) {
       if (
         esBrasero &&
         w.players.some(
-          (p) => Math.hypot(x - p.x, z - p.z) <= radio + w.cfg.player.radius + BRASEROS.margenAparicion,
+          (p) =>
+            Math.hypot(x - p.x, z - p.z) <=
+            radio + w.cfg.player.radius + BRASEROS.margenAparicion,
         )
       )
         continue;
@@ -142,7 +145,9 @@ export function avanzarRitos(r, w, dt, golpear) {
     if (r.tiempo > 1e-8) return;
     const [a, b] = w.players;
     const juntos =
-      (!a.alive || !b.alive || Math.hypot(a.x - b.x, a.z - b.z) <= PISOTON.separacion) &&
+      (!a.alive ||
+        !b.alive ||
+        Math.hypot(a.x - b.x, a.z - b.z) <= PISOTON.separacion) &&
       w.players.every(
         (p) => !p.alive || Math.hypot(p.x - r.x, p.z - r.z) <= PISOTON.radio,
       );

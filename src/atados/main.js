@@ -372,14 +372,20 @@ async function arrancar() {
       clave = "indicacion." + accion.id;
     if (c.estado === "pelea" && c.tPelea < c.finAviso)
       clave = "indicacion." + c.avisoRito;
-    if (clave === "indicacion.pisoton" && c.w.players.some(p => !p.alive))
+    if (clave === "indicacion.pisoton" && c.w.players.some((p) => !p.alive))
       clave = "indicacion.pisotonSolo";
     if (c.estado === "pelea" && c.ritos.tipo === "braseros") {
-      texto(objetivo, t("indicacion.braseros", {
-        color: t("brasero.color." + c.ritos.colorObjetivo),
-      }));
+      texto(
+        objetivo,
+        t("indicacion.braseros", {
+          color: t("brasero.color." + c.ritos.colorObjetivo),
+        }),
+      );
     } else {
-      texto(objetivo, t(clave === "indicacion.braseros" ? "indicacion.mirra" : clave));
+      texto(
+        objetivo,
+        t(clave === "indicacion.braseros" ? "indicacion.mirra" : clave),
+      );
     }
   }
 

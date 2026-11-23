@@ -606,8 +606,11 @@ export function snapshotCombate(c) {
     rito: {
       tipo: c.ritos.tipo,
       colorObjetivo: c.ritos.colorObjetivo,
-      braseros: c.ritos.tipo === "braseros" ? c.ritos.braseros.map(f => ({...f})) : [],
-      escudo: {...c.ritos.escudo},
+      braseros:
+        c.ritos.tipo === "braseros"
+          ? c.ritos.braseros.map((f) => ({ ...f }))
+          : [],
+      escudo: { ...c.ritos.escudo },
     },
     zonas: c.zonas.items
       .filter((z) => z.activo)
