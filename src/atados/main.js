@@ -2,7 +2,7 @@
 // Flujo (core/flujo.js, D-204 a D-214):
 //   menú con el lobby detrás → «Jugar» → caída al valle → lobby y pasillo de subida → arco de la cima
 //   → fundido a negro → la pradera se abre en silencio → presentación de Mirra (cinemática solo la 1.ª vez)
-//   → combate (si ambos caen, vuelta a la portada) → lápida → tramo seguro con el carro de completos.
+//   → combate → lápida → carro de completos → Farolero. Caer ambos en un combate lleva a la portada.
 // El recorrido y el puesto usan render/recorrido.js; la pradera del jefe usa render/slice.js. La del
 // jefe se monta al cruzar el arco (evento `jefe:preparar`) mientras la pantalla funde a negro; al estar lista se
 // avisa a la partida (`jefeListo`). El recorrido se libera al entrar al combate. Audio, entrada y HUD duran toda la
@@ -32,7 +32,12 @@ import {
 import { crearTienda, juntoAlCarro } from "./gameplay/tienda.js";
 import { crearCarta, textoMonedas } from "./ui/tienda.js";
 import { createMural } from "./mural.js";
-import { cargarPreferencias } from "./core/preferencias.js";
+import {
+  acciones,
+  cargarPreferencias,
+  jugadores,
+  teclasDe,
+} from "./core/preferencias.js";
 import { prepararAjustes } from "./ui/ajustes.js";
 import "./ui.css";
 
@@ -43,6 +48,9 @@ import "./ui.css";
 /** @typedef {import('./gameplay/tipos.js').Evento} Evento */
 
 const params = new URLSearchParams(window.location.search);
+const solicitado = params.get("jefe");
+const jefeDirecto =
+  solicitado === "mirra" || solicitado === "farolero" ? solicitado : null;
 const MAX_EVENTOS = 80; // eventos recientes que guardamos para las pruebas
 
 /** Busca un elemento de la página o explica cuál falta. @param {string} id */
@@ -80,6 +88,33 @@ async function arrancar() {
   const volver = elemento("menu");
   const play = /** @type {HTMLButtonElement} */ (elemento("play"));
   const objetivo = elemento("objective");
+  const farolHud = elemento("farol-hud");
+  const farolEstado = elemento("farol-estado");
+  const farolTiempo = elemento("farol-tiempo");
+  const farolVuelta = elemento("farol-vuelta");
+  const farolInstruccion = elemento("farol-instruccion");
+  const farolReloj = elemento("farol-reloj");
+  const farolPlazo = /** @type {HTMLProgressElement} */ (
+    elemento("farol-plazo")
+  );
+  const farolAjustes = elemento("farol-ajustes");
+  const farolBrillo = /** @type {HTMLSelectElement} */ (
+    elemento("farol-brillo")
+  );
+  const farolAviso = /** @type {HTMLInputElement} */ (elemento("farol-aviso"));
+  // El render lee el brillo en cada dibujo. El sonido se consulta al anunciar un ataque.
+  farolPlazo.setAttribute("aria-label", t("farol.plazo"));
+  for (const gesto of ["prisma", "ecos", "campanas"])
+    texto(elemento("farol-guia-" + gesto), t("farol.guia." + gesto));
+  texto(elemento("farol-controles"), t("farol.controles"));
+  texto(elemento("farol-brillo-etiqueta"), t("farol.brillo"));
+  texto(elemento("farol-brillo-8"), t("farol.brillo.bajo"));
+  texto(elemento("farol-brillo-16"), t("farol.brillo.medio"));
+  texto(elemento("farol-brillo-25"), t("farol.brillo.alto"));
+  texto(elemento("farol-aviso-etiqueta"), t("farol.sonido"));
+  const irAlFarolero = elemento("enfrentar-farolero");
+  let atajoFarolero = true;
+  irAlFarolero.setAttribute("aria-label", t("farol.enfrentar"));
   const irAlPuesto = elemento("continuar-puesto");
   const letrero = elemento("mural");
   const mural = createMural(letrero); // diálogo del carro de completos junto a la ventanilla
@@ -137,6 +172,7 @@ async function arrancar() {
       solo,
       dificil,
       seed,
+      jefe: jefeDirecto ?? tienda.cfg.recorrido.pasillo.jefe,
       sample: (s) => ({ inputs: input.sample(s), debug: input.debug }),
     });
   /** @type {Partida} */
@@ -239,6 +275,7 @@ async function arrancar() {
   const audio = conectarAudio({
     cfg: CONFIG,
     getCombate: () => partida.combate ?? combateRecorrido,
+    avisosFarolero: () => farolAviso.checked,
     onEvento: (/** @type {(e: Evento) => void} */ f) => {
       oyentes.push(f);
     },
@@ -344,6 +381,7 @@ async function arrancar() {
       cfg: tienda.cfg,
       getWorld: () => (partida.combate ?? previo).w,
       getCombate: () => partida.combate ?? previo,
+      brilloFarolero: () => Number(farolBrillo.value),
       params,
       extras: [crearAnillosHud()],
     });
@@ -378,7 +416,10 @@ async function arrancar() {
       });
     } else if (e.tipo === "jefe:entra") {
       hud?.cinematica.seguirPresentacion(); // se arman al entrar de verdad, una vez pasado el arco
-      texto(announce, "Mirra la Hambrienta, antes la que Alimentaba.");
+      texto(
+        announce,
+        e.jefe === "farolero" ? t("farol.intro") : t("jefe.mirra.nombre"),
+      );
     }
   }
   oyentes.push((e) => hud?.alEvento(e), alEventoFlujo);
@@ -402,7 +443,19 @@ async function arrancar() {
     elemento("mode-solo").setAttribute("aria-pressed", String(solo));
     elemento("mode-coop").setAttribute("aria-pressed", String(!solo));
     const teclado = preferencias.teclado;
-    for (const jugador of /** @type {const} */ (["sael", "odo"])) {
+    // Si alguien usa F para jugar, esa tecla conserva su función al llegar al carro.
+    atajoFarolero = !jugadores.some((jugador) =>
+      acciones.some((accion) =>
+        teclasDe(teclado, jugador, accion).includes("KeyF"),
+      ),
+    );
+    if (atajoFarolero) irAlFarolero.setAttribute("aria-keyshortcuts", "F");
+    else irAlFarolero.removeAttribute("aria-keyshortcuts");
+    texto(
+      irAlFarolero,
+      t("farol.enfrentar") + (atajoFarolero ? " · F / Y / △" : " · Y / △"),
+    );
+    for (const jugador of jugadores) {
       const m = teclado[jugador];
       texto(
         elemento(jugador + "-mover"),
@@ -431,7 +484,7 @@ async function arrancar() {
     partida.estado === "puesto"
       ? "Carro de completos"
       : partida.combate
-        ? "Mirra la Hambrienta"
+        ? t("jefe." + partida.combate.id + ".nombre")
         : "El Templo Ancla";
 
   /** Cambia de pantalla y ordena qué se ve. @param {Pantalla} siguiente @param {string} [fraseDerrota] */
@@ -445,7 +498,10 @@ async function arrancar() {
     carta.ocultarAviso();
     mural.hide();
     if (!jugando) carta.cerrar();
-    irAlPuesto.hidden = siguiente !== "result";
+    const esFinal = partida.combate?.id === "farolero";
+    irAlPuesto.hidden = siguiente !== "result" || esFinal;
+    irAlFarolero.hidden = !jugando || partida.estado !== "puesto";
+    farolAjustes.hidden = !esFinal && !(menu && jefeDirecto === "farolero");
     hudPagina.hidden = !jugando;
     velo.hidden = jugando;
     if (hud) hud.visible = jugando || siguiente === "paused";
@@ -466,12 +522,20 @@ async function arrancar() {
       return;
     }
     if (menu) {
-      texto(caption, "El Templo Ancla");
+      texto(
+        caption,
+        jefeDirecto ? t("jefe." + jefeDirecto + ".nombre") : "El Templo Ancla",
+      );
       title.innerHTML = "Ata<span>Dos</span>";
       texto(
         intro,
         "Sael y Odo robaron la Brasa. Ahora, su única arma contra los dioses es la cadena que los une.",
       );
+      if (jefeDirecto) {
+        const prefijo = jefeDirecto === "farolero" ? "farol" : "mirra";
+        texto(intro, t(prefijo + ".intro"));
+        texto(play, t(prefijo + ".jugar"));
+      }
       play.focus({ preventScroll: true });
       return;
     }
@@ -489,20 +553,24 @@ async function arrancar() {
       title.focus({ preventScroll: true });
       return;
     }
+    const premio =
+      recompensa > 0
+        ? " " + t("tienda.recompensa", { cantidad: textoMonedas(recompensa) })
+        : "";
     if (siguiente === "paused") {
       texto(title, "En pausa");
       texto(intro, "");
       texto(primary, "Continuar");
+    } else if (esFinal) {
+      texto(title, t("farol.victoria"));
+      texto(intro, t("farol.recompensa") + premio);
+      texto(primary, t("farol.repetir"));
     } else {
       texto(title, "Mirra ha caído");
-      const premio =
-        recompensa > 0
-          ? " " + t("tienda.recompensa", { cantidad: textoMonedas(recompensa) })
-          : "";
       texto(intro, "La Brasa de Mirra vuelve a encender un eslabón." + premio);
       texto(primary, "Volver a jugar");
     }
-    (siguiente === "result" ? irAlPuesto : primary).focus({
+    (siguiente === "result" && !esFinal ? irAlPuesto : primary).focus({
       preventScroll: true,
     });
   }
@@ -512,11 +580,45 @@ async function arrancar() {
     void audio.api.desbloquear(); // el navegador solo deja sonar tras un gesto
     if (!vistaRecorrido) return; // aún carga el lobby (solo pasa al arrancar)
     reemplazarPartida();
+    if (jefeDirecto) {
+      montarHud();
+      void abrirCombate(jefeDirecto, false);
+      return;
+    }
     activar(vistaRecorrido);
     montarHud();
     // Música del pasillo (contrato de audio/index.js): el recorrido no tiene combate que la arranque.
     audio.evento({ tipo: "zona_entra", zona: "pasillo", t: 0 });
     texto(announce, "Sael y Odo caen al valle, al pie del Templo Ancla.");
+    mostrar("playing");
+  }
+
+  /** Entra desde el acceso directo o desde el puesto, una vez preparada la escena correcta.
+   * @param {string} jefe @param {boolean} desdePuesto */
+  async function abrirCombate(jefe, desdePuesto) {
+    if (
+      desdePuesto &&
+      (pantalla !== "playing" || partida.estado !== "puesto" || carta.abierta)
+    )
+      return;
+    const actual = partida;
+    mostrar("cargando");
+    try {
+      await prepararJefe(jefe);
+    } catch {
+      if (actual !== partida) return;
+      mostrar(desdePuesto ? "paused" : "menu");
+      texto(intro, t("combate.cargaFallida"));
+      return;
+    }
+    if (actual !== partida) return;
+    if (desdePuesto) partida.entrarFarolero();
+    else partida.saltarAlJefe();
+    finT = 0;
+    repartir();
+    revisarEscena();
+    vistaPuesto?.dispose();
+    vistaPuesto = null;
     mostrar("playing");
   }
 
@@ -602,6 +704,7 @@ async function arrancar() {
 
   play.onclick = () => empezar();
   primary.onclick = accionPrincipal;
+  irAlFarolero.onclick = () => void abrirCombate("farolero", true);
   irAlPuesto.onclick = () => void continuarAlPuesto();
   elemento("pause").onclick = pausar;
   volver.onclick = () => void alMenu();
@@ -634,7 +737,16 @@ async function arrancar() {
       event.altKey
     )
       return;
-    if (event.code === "Escape" && !event.repeat) {
+    if (
+      event.code === "KeyF" &&
+      atajoFarolero &&
+      !event.repeat &&
+      partida.estado === "puesto" &&
+      pantalla === "playing"
+    ) {
+      event.preventDefault();
+      void abrirCombate("farolero", true);
+    } else if (event.code === "Escape" && !event.repeat) {
       if (pantalla === "playing") pausar();
       else if (pantalla === "paused") mostrar("playing");
     }
@@ -644,8 +756,22 @@ async function arrancar() {
 
   // Start en cualquier mando pausa o continúa (flanco: mantenerlo no repite).
   let startAntes = false;
+  let finalAntes = false;
   function leerStart() {
     const pads = leerMandos();
+    const final = pads.some((p) => !!p?.buttons[3]?.pressed); // Y o triángulo continúa desde la tienda
+    const entrar = final && !finalAntes;
+    finalAntes = final;
+    if (
+      entrar &&
+      partida.estado === "puesto" &&
+      pantalla === "playing" &&
+      !carta.abierta &&
+      !controls.open
+    ) {
+      void abrirCombate("farolero", true);
+      return;
+    }
     const start = pads.some((p) => !!p?.buttons[9]?.pressed);
     const flanco = start && !startAntes;
     startAntes = start;
@@ -656,14 +782,16 @@ async function arrancar() {
       // Start en el segundo mando significa que hay dos personas: el juego arranca en cooperativo.
       if (pads[1]?.buttons[9]?.pressed) modo(false);
       empezar();
-    } else if (pantalla === "result") void continuarAlPuesto();
-    else if (pantalla === "derrota") void alMenu();
+    } else if (pantalla === "result") {
+      if (partida.combate?.id === "farolero") accionPrincipal();
+      else void continuarAlPuesto();
+    } else if (pantalla === "derrota") void alMenu();
   }
 
   /** Texto de la esquina: qué hacer ahora contra el jefe. En el recorrido hablan las tarjetas (D-206). */
   function pintarIndicacion() {
     const c = partida.combate;
-    const visible = c?.estado === "pelea";
+    const visible = c?.estado === "pelea" && c.id !== "farolero";
     objetivo.hidden = !visible; // tampoco queda el fondo vacío durante la caída o la presentación
     if (!visible || !c) return;
     const accion = c.jefe.accion;
@@ -674,6 +802,25 @@ async function arrancar() {
       clave = "indicacion." + c.avisoRito;
     if (clave === "indicacion.pisoton" && c.w.players.some((p) => !p.alive))
       clave = "indicacion.pisotonSolo";
+    const arena = c.arenaMirra;
+    if (c.id === "mirra" && c.estado === "pelea") {
+      const acido = arena.acido;
+      if (acido) {
+        const nombre = t(acido.objetivo === 0 ? "jugador.sael" : "jugador.odo");
+        const accion =
+          acido.etapa === "vuelo"
+            ? "vuelo"
+            : acido.cubreBarril
+              ? "mantener"
+              : "apuntar";
+        texto(objetivo, t("acido." + accion, { nombre }));
+        return;
+      }
+      if (arena.resultadoAcido || arena.barril) {
+        texto(objetivo, t("acido." + (arena.resultadoAcido?.tipo ?? "mecha")));
+        return;
+      }
+    }
     if (c.estado === "pelea" && c.ritos.tipo === "braseros") {
       texto(
         objetivo,
@@ -684,12 +831,58 @@ async function arrancar() {
     } else {
       texto(
         objetivo,
-        t(clave === "indicacion.braseros" ? "indicacion.mirra" : clave),
+        t(
+          clave === "indicacion.braseros" || clave === "indicacion.acido"
+            ? "indicacion.mirra"
+            : clave,
+        ),
       );
     }
   }
 
-  /** Revisa si Mirra cayó para pasar al resultado tras leer la lápida. @param {number} dt */
+  /** Anuncia cada instrucción una vez. El reloj queda fuera de la región hablada. */
+  function pintarFarol() {
+    const c = partida.combate;
+    const f = c?.farolero;
+    farolHud.hidden = c?.estado !== "pelea" || !f;
+    if (!c || !f || farolHud.hidden) return;
+    const practica = f.vuelta === 1;
+    const resuelto = f.etapa === "acierto" || f.etapa === "fallo";
+    if (farolHud.dataset.etapa !== f.etapa) farolHud.dataset.etapa = f.etapa;
+    texto(
+      farolVuelta,
+      t(practica ? "farol.practica" : "farol.vuelta", {
+        vuelta: f.vuelta,
+        aciertos: f.aciertos,
+        meta: CONFIG.jefes.farolero.pruebas.aciertosVictoria,
+      }),
+    );
+    texto(
+      farolEstado,
+      t("farol." + f.etapa, { gesto: t("farol.nombre." + f.tipo) }),
+    );
+    const soloEnPie = c.w.players.some((p) => !p.alive);
+    let clave = "farol.accion." + f.tipo;
+    if (resuelto)
+      clave =
+        f.etapa === "acierto"
+          ? "farol.logro." + f.tipo
+          : practica
+            ? f.tipo === "prisma" && soloEnPie
+              ? "farol.prismaSuperviviente"
+              : "farol.pista." + f.tipo
+            : "farol.error." + f.tipo;
+    else if (f.tipo === "prisma" && soloEnPie)
+      clave = "farol.prismaSuperviviente";
+    texto(farolInstruccion, t(clave, { campana: f.paso + 1 }));
+    farolReloj.hidden = resuelto;
+    if (resuelto) return;
+    farolPlazo.max = f.duracion;
+    farolPlazo.value = Math.max(0, f.restante);
+    texto(farolTiempo, t("farol.segundos", { tiempo: Math.ceil(f.restante) }));
+  }
+
+  /** Revisa si el jefe cayó para pasar al resultado tras leer la lápida. @param {number} dt */
   function revisarFin(dt) {
     if (partida.estado !== "victoria") return;
     finT += dt;
@@ -757,7 +950,11 @@ async function arrancar() {
       vistaJefe.cinematica = partida.combate ? partida.cinematica : true;
     vista.sync(dt);
     hud?.update(dt);
-    if (pantalla === "playing") pintarIndicacion();
+    if (pantalla === "playing") {
+      pintarIndicacion();
+      pintarFarol();
+      farolAjustes.hidden = partida.combate?.id !== "farolero";
+    }
     vista.render();
     const salaTienda = tiendaAlAlcance();
     if (salaTienda) {
@@ -930,7 +1127,7 @@ async function arrancar() {
       },
       /** Entra al jefe en el acto (con cinemática); espera a que la pradera cargue. */
       async saltarAlJefe() {
-        const jefe = CONFIG.recorrido.pasillo.jefe;
+        const jefe = jefeDirecto ?? CONFIG.recorrido.pasillo.jefe;
         await prepararJefe(jefe);
         partida.saltarAlJefe();
         repartir();

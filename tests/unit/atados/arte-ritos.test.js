@@ -2,6 +2,7 @@
 import { it } from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "three";
+import { CONFIG } from "../../../src/atados/core/config.js";
 import { crearArenaMirra } from "../../../src/atados/gameplay/arena-mirra.js";
 import { BRASEROS, crearRitos } from "../../../src/atados/gameplay/ritos.js";
 import { crearArenaMirraVisual } from "../../../src/atados/render/arena-mirra.js";
@@ -17,30 +18,40 @@ function visibles(scene) {
   return mallas;
 }
 
-it("el vacío tiene el radio del daño y la luz divina usa la cobertura real; al reintentar desaparecen", () => {
+it("el charco tiene el radio del daño y la luz divina usa la cobertura real; al reintentar desaparecen", (t) => {
+  // Las insignias usan canvas en el navegador. Aquí solo se comprueban las mallas y sus posiciones.
+  globalThis.document = { createElement: () => ({ getContext: () => null }) };
+  t.after(() => {
+    delete globalThis.document;
+  });
   const scene = new THREE.Scene();
   const vista = crearArenaMirraVisual({
     scene,
     keep,
     brillos: crearBrillos(keep),
+    alturaArco: CONFIG.jefes.mirra.acido.arco,
   });
   const w = {
     time: 6,
     arenaRadius: 21,
     pillars: [
       { id: "cobertura", x: 1, z: 2, r: 0.8 },
-      { id: "pilar-void", x: 3, z: 4, r: 0.72 },
+      { id: "barril-polvora", x: 3, z: 4, r: 0.72 },
     ],
   };
   const c = { estado: "pelea", arenaMirra: crearArenaMirra() };
-  c.arenaMirra.huecos.push({ x: 3, z: 5, r: 1.2 });
+  c.arenaMirra.barril = w.pillars[1];
+  c.arenaMirra.mecha = c.arenaMirra.mechaTotal = 1;
+  c.arenaMirra.charcos.push({ x: 3, z: 5, r: 1.2 });
   c.arenaMirra.luz = { x: -5, z: 7, t: 1, impacto: false };
   vista.sync(w, c, false);
   const terreno = visibles(scene).filter(
     (m) => m.geometry.type === "CircleGeometry",
   );
-  const pozo = terreno.find((m) => !m.material.transparent);
-  const luz = terreno.find((m) => m.material.transparent);
+  const pozo = terreno.find(
+    (m) => m.material.uniforms?.tiempo && !m.material.uniforms.foco,
+  );
+  const luz = terreno.find((m) => m.material.uniforms?.foco);
   const posicion = pozo.getWorldPosition(new THREE.Vector3());
   assert.deepEqual(
     [posicion.x, posicion.z, pozo.getWorldScale(new THREE.Vector3()).x],

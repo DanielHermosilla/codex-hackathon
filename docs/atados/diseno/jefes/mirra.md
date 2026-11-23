@@ -1,6 +1,6 @@
 # Jefe: Mirra la Hambrienta
 
-**Orden en la demo:** primera de dos de acuerdo con D-203. La versión jugable llega al carro de completos después de Mirra · **Duración objetivo:** 2–3 min [D-141] · **Qué enseña/prueba de la cadena:** la cuchilla tensa básica (uno ancla, el otro rodea), el corte contra una carga y el enredo en pilares. Lo enseña, no lo obliga [D-012, D-019, D-048, D-054, D-148] · **Decisiones:** D-012, D-018, D-025, D-043, D-047, D-048, D-054, D-055, D-057, D-058, D-078, D-084, D-085, D-086, D-088, D-091, D-092, D-093, D-098, D-106, D-128, D-141, D-147, D-148, D-150, D-152–D-156, D-160, D-163–D-165, D-169–D-172, D-174, D-176, D-180, D-183, D-184
+**Orden en la demo:** primera de dos de acuerdo con D-203. El carro de completos conecta la victoria de Mirra con la sala del Farolero · **Duración objetivo:** 2–3 min [D-141] · **Qué enseña/prueba de la cadena:** la cuchilla tensa básica (uno ancla, el otro rodea), el corte contra una carga y el enredo en pilares. Lo enseña, no lo obliga [D-012, D-019, D-048, D-054, D-148] · **Decisiones:** D-012, D-018, D-025, D-043, D-047, D-048, D-054, D-055, D-057, D-058, D-078, D-084, D-085, D-086, D-088, D-091, D-092, D-093, D-098, D-106, D-128, D-141, D-147, D-148, D-150, D-152–D-156, D-160, D-163–D-165, D-169–D-172, D-174, D-176, D-180, D-183, D-184
 
 > Convenciones de las fichas:
 > - **(de partida)** = número propuesto para afinar en playtest. No es decisión. La configuración de la demo está en `src/atados/core/config.js`.
@@ -24,8 +24,8 @@
 - Trigal seco con espantapájaros-pilar [D-088]. Pilares estáticos que pueden desaparecer durante la pelea [D-184].
 - Tamaño (propuesta): claro circular de ~6 L de diámetro. Lindes de piedra baja y cerca; no se cae de la arena.
 - Ocho espantapájaros a distintas distancias del centro, en grupos y claros asimétricos. Enredan la cadena [D-048]; la tensión se mide por tramo y funciona enrollada en ellos [D-147]: un pilar sirve de ancla fija.
-- Los especiales interrumpen el ataque básico en curso. Mirra vuelve a su repertorio al resolverse el especial. Cada hueco de vacío se encoge durante 12 s hasta cerrarse. El borde visible delimita la zona de daño.
-- El pilar explosivo destruye entre el 30 % y el 50 % de las coberturas restantes cuando esa fracción admite un número entero. Las coberturas más cercanas caen primero.
+- Los especiales interrumpen el ataque básico en curso. Mirra vuelve a su repertorio al resolverse el especial. El pozo de ácido se evapora desde el borde durante 12 s. Su tamaño en el suelo indica dónde sigue haciendo daño.
+- Mirra fija la mira sobre uno de los dos personajes. El marcado tiene 4,5 s para ponerse dentro del anillo del barril. Al escupir, Mirra fija el punto de impacto. El marcado puede apartarse durante el vuelo sin desviar el ácido. Si la salpicadura alcanza el barril, apaga la mecha y conserva los espantapájaros. Si falla, el barril explota y derriba primero las coberturas más cercanas, entre el 30 % y el 50 % cuando esa fracción admite un número entero.
 - Cada descarga tiene un color. El primer brasero que pisa cualquiera de los dos concede a ambos protección de ese color durante 3 s. El brillo de los personajes y la barra indican el color elegido y el tiempo restante. Los braseros aparecen con al menos 4,5 m libres entre su borde y cada jugador. Los proyectiles dirigidos tardan 4 s hasta el impacto, salvo que una cobertura los intercepte antes.
 - Trigal (propuesta): por debajo de la rodilla. Nunca tapa anillos ni avisos [D-051, D-089].
 - Iluminación: hora dorada, la base de los pasillos [D-086].

@@ -1,6 +1,6 @@
 # Hackatón Codex
 
-**AtaDos** es un boss rush cooperativo de Geek Labs para navegador de escritorio. Sael y Odo están unidos por una cadena, y la cadena es su única arma: corta cuando está tensa y la pasan a través del enemigo. La partida empieza al pie del Templo Ancla. Puedes practicar con el muñeco de paja o subir directamente por el pasillo. Las tarjetas enseñan los controles por el camino. Cruza el arco de la cima para enfrentar a Mirra la Hambrienta, que combina seis ataques en dos fases con el vacío, la luz divina, el pisotón y los braseros.
+**AtaDos** es un boss rush cooperativo de Geek Labs para navegador de escritorio. Sael y Odo están unidos por una cadena, y la cadena es su única arma: corta cuando está tensa y la pasan a través del enemigo. La partida empieza al pie del Templo Ancla. Puedes practicar con el muñeco de paja o subir directamente por el pasillo. Las tarjetas enseñan los controles por el camino. Cruza el arco de la cima para enfrentar a Mirra la Hambrienta, que combina seis ataques en dos fases con el ácido, la luz divina, el pisotón y los braseros.
 
 ## Jugar
 
@@ -18,6 +18,16 @@ Elige **Solo** para mover a Sael con WASD y a Odo con las flechas. Espacio hace 
 Durante la práctica, busca el carro de completos a la derecha de la escalinata. Acércate y pulsa **P** para ver la carta. Empiezas con cero monedas. Al vencer a Mirra recibes una moneda. Elige **Continuar al carro de completos** para visitar el furgón en el muelle. Cada producto cuesta una moneda y mejora a ambos personajes. **Esc** cierra la carta.
 
 El engranaje de la portada y de la pausa permite ajustar el volumen general y las teclas de ambos personajes. La [dirección de diseño](docs/atados/), los [créditos de recursos](CREDITS.md) y la [arquitectura](docs/architecture.md) acompañan al juego.
+
+## El ácido de Mirra
+
+Para practicar este ataque abre `/?jefe=mirra&seed=17`. Mirra marca a Sael o a Odo y enciende la mecha de un barril. Lleva al personaje marcado junto al barril y espera hasta que Mirra escupa. En cuanto salga el proyectil, aparta a la pareja. Si el ácido cae sobre el barril, apaga la mecha y conserva las coberturas. El charco que deja en el suelo daña mientras se evapora.
+
+## El Farolero
+
+Después de vencer a Mirra, pasa por el carro de completos y elige **Enfrentar al Farolero**. Tus compras se conservan durante el combate final. También puedes abrir `/?jefe=farolero&seed=17` desde la dirección del juego para practicar ese combate.
+
+El Farolero propone tres pruebas en el mismo orden. Primero, deja el prisma entre Sael y Odo y pasa la cadena por el cristal. Luego, sal de las huellas que deja el jefe bajo tus pies antes de que exploten. Por último, pisa las campanas **1, 2 y 3** con cualquiera de los dos. Cada acierto le quita vida al Farolero. La primera vuelta sirve para ensayar y puedes fallar sin recibir daño. Si tu compañero cae, toca el prisma directamente con el superviviente.
 
 ## Comprobar un cambio
 
