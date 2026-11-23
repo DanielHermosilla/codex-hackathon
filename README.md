@@ -1,8 +1,8 @@
 # Hackatón Codex
 
-El repositorio incluye una pista 3D para probar el flujo de desarrollo. Haz clic en la pista o selecciónala con Tab. Mueve el cubo con las flechas o WASD y usa **Volver al centro** para reiniciar su posición.
+**AtaDos** es un boss rush cooperativo de Geek Labs para navegador de escritorio. Sael y Odo están unidos por una cadena, y la cadena es su única arma: corta cuando está tensa y la pasan a través del enemigo. Empiezas practicando con un muñeco de paja y después enfrentas a Mirra la Hambrienta, que tiene seis ataques y dos fases.
 
-## Abrir la pista
+## Jugar
 
 Instala Git, Python 3.11 o posterior y Node.js 24 con npm. Si usas nvm, ejecuta `nvm install` y `nvm use` desde la raíz.
 
@@ -12,6 +12,10 @@ npm run dev
 ```
 
 Abre la dirección que imprima Vite, normalmente `http://localhost:5173`. Deja la terminal abierta mientras juegas. Pulsa Ctrl+C para cerrar el servidor. Usa un navegador de escritorio con WebGL 2 y teclado.
+
+Elige **Solo** para mover a Sael con WASD y a Odo con las flechas. Espacio hace esquivar a ambos. Enreda la cadena en un pilar para fijar un extremo y barrer desde ahí. En **Dos jugadores**, Sael esquiva con Espacio y Odo con Shift derecho. Mantén Shift izquierdo o Enter para anclar a Sael u Odo. La partida se pausa con Esc o al cambiar de ventana. El menú **Controles** también indica cómo jugar con mando.
+
+La [pista 3D de prueba](pista.html) sigue disponible desde **Controles**. La [dirección de diseño](docs/atados/), los [créditos de recursos](CREDITS.md) y la [arquitectura](docs/architecture.md) acompañan al juego.
 
 ## Comprobar un cambio
 

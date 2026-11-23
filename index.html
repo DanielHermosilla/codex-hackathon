@@ -1,32 +1,125 @@
 <!doctype html>
 <html lang="es">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Banco de pruebas 3D</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#191c19" />
+    <title>AtaDos · Geek Labs</title>
   </head>
   <body>
+    <header class="mast">
+      <div class="studio">
+        <i class="brand-mark" aria-hidden="true"></i> Geek Labs
+      </div>
+      <nav aria-label="Opciones del juego">
+        <button id="sound" type="button" aria-pressed="true">
+          <span class="audio-bars" aria-hidden="true"
+            ><i></i><i></i><i></i
+          ></span>
+          Sonido
+        </button>
+        <button id="guide" type="button">
+          Controles <span aria-hidden="true">⌨</span>
+        </button>
+      </nav>
+    </header>
     <main>
-      <header>
-        <h1>Banco de pruebas 3D</h1>
-        <p id="controles">
-          Haz clic en la pista o selecciónala con <kbd>Tab</kbd>. Usa las
-          flechas o <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> para mover
-          el cubo.
+      <section class="stage" aria-label="Arena de AtaDos" data-screen="menu">
+        <canvas
+          id="arena"
+          tabindex="0"
+          aria-label="Arena de juego. Sael se mueve con WASD y Odo con las flechas."
+          aria-describedby="moves"
+        ></canvas>
+        <div id="hud" hidden>
+          <button
+            id="pause"
+            aria-label="Pausar la partida"
+            title="Pausar (Esc)"
+          >
+            Ⅱ
+          </button>
+          <p id="objective"></p>
+        </div>
+        <div id="mural" hidden></div>
+        <div class="veil" id="overlay">
+          <div class="panel">
+            <div class="eyebrow" id="caption">El trigal de Mirra</div>
+            <h1 id="title">Ata<span>Dos</span></h1>
+            <p id="intro">
+              Sael y Odo robaron la Brasa. Ahora, su única arma contra los
+              dioses es la cadena que los une.
+            </p>
+            <div id="modes" role="group" aria-label="Modo de juego">
+              <button type="button" id="mode-solo" aria-pressed="true">
+                Solo
+              </button>
+              <button type="button" id="mode-coop" aria-pressed="false">
+                Dos jugadores
+              </button>
+            </div>
+            <div class="actions">
+              <button class="gold" id="play" type="button">
+                Jugar <b aria-hidden="true">→</b></button
+              ><button class="gold" id="primary" type="button" hidden></button>
+              <button id="restart" type="button" hidden>Reintentar</button
+              ><button id="menu" type="button" hidden>Volver al inicio</button>
+            </div>
+          </div>
+        </div>
+        <div id="problem" role="alert" hidden></div>
+      </section>
+      <div class="lower">
+        <div id="moves">
+          <p class="name sael"><i></i>Sael</p>
+          <span><kbd>W A S D</kbd> Mover</span
+          ><span><kbd>⇧ izq.</kbd> Anclar</span>
+        </div>
+        <div>
+          <p class="name odo"><i></i>Odo</p>
+          <span><kbd>↑ ← ↓ →</kbd> Mover</span
+          ><span><kbd>Enter</kbd> Anclar</span>
+        </div>
+        <div>
+          <p class="name">Esquivar</p>
+          <span id="dash-help"><kbd>Espacio</kbd> Ambos</span>
+        </div>
+        <button id="read-mural" type="button" hidden>Leer el cartel</button>
+      </div>
+      <dialog id="controls">
+        <form method="dialog">
+          <button aria-label="Cerrar controles">×</button>
+        </form>
+        <h2>Cómo jugar</h2>
+        <p>
+          Pasen a lados opuestos del objetivo. Al separarse, las runas de la
+          cadena se iluminan. Muévanla a través del objetivo para cortarlo.
         </p>
-      </header>
-      <!-- La pista recibe el teclado cuando tiene foco. -->
-      <canvas
-        id="pista"
-        tabindex="0"
-        aria-label="Pista 3D"
-        aria-describedby="controles"
-        hidden
-      ></canvas>
-      <p id="error" role="alert" hidden></p>
-      <button id="reiniciar" type="button" hidden>Volver al centro</button>
-      <noscript>Activa JavaScript para abrir la pista 3D.</noscript>
+        <p>
+          Mantén el ancla para que un jugador sirva de pivote. El otro puede
+          rodear al enemigo o esquivar su ataque.
+        </p>
+        <dl>
+          <dt>Solo</dt>
+          <dd>
+            WASD mueve a Sael y las flechas a Odo. Espacio hace que ambos
+            esquiven. Con mando, usa los dos sticks, los gatillos para anclar y
+            A para esquivar.
+          </dd>
+          <dt>Dos jugadores</dt>
+          <dd>
+            Sael esquiva con Espacio y se ancla con Shift izquierdo. Odo esquiva
+            con Shift derecho y se ancla con Enter. En dos mandos, cada jugador
+            usa el stick izquierdo, A y el gatillo derecho.
+          </dd>
+          <dt>Pausa</dt>
+          <dd>Esc en el teclado o Start en el mando.</dd>
+        </dl>
+        <a href="./pista.html">Abrir la pista de prueba 3D ↗</a>
+      </dialog>
+      <p class="sr" aria-live="polite" id="announce"></p>
+      <noscript>Activa JavaScript para jugar AtaDos.</noscript>
     </main>
-    <script type="module" src="/src/main.js"></script>
+    <script type="module" src="/src/atados/main.js"></script>
   </body>
 </html>

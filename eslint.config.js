@@ -10,11 +10,33 @@ export default [
       globals: {
         document: "readonly",
         window: "readonly",
+        navigator: "readonly",
         performance: "readonly",
         requestAnimationFrame: "readonly",
+        matchMedia: "readonly",
+        console: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+        fetch: "readonly",
+        Image: "readonly",
+        ResizeObserver: "readonly",
+        URLSearchParams: "readonly",
+        AudioContext: "readonly",
+        OfflineAudioContext: "readonly",
         HTMLCanvasElement: "readonly",
         HTMLButtonElement: "readonly",
         HTMLParagraphElement: "readonly",
+      },
+    },
+  },
+  {
+    // Las pruebas de lógica corren en Node.
+    files: ["tests/unit/**/*.js"],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        setTimeout: "readonly",
+        structuredClone: "readonly",
       },
     },
   },
