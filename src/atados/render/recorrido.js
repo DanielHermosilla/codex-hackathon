@@ -372,7 +372,7 @@ export async function crearRenderRecorrido({
       lz = camera.position.z - 10;
     sun.target.position.set(mx, base, mz);
     sun.position.copy(sun.target.position).addScaledVector(solDir, 60);
-    templo?.sync(lx, lz, r.s, dt);
+    templo?.sync(lx, lz, r.s, dt, reducir());
     vfx.sync(dt, tiempo, lx, lz + 4, base);
   }
 
