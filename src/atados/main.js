@@ -43,7 +43,7 @@ import {
 import { prepararAjustes } from "./ui/ajustes.js";
 import "./ui.css";
 
-/** @typedef {"menu" | "cargando" | "playing" | "paused" | "result" | "derrota" | "cinematica" | "fin-demo"} Pantalla */
+/** @typedef {"menu" | "error-menu" | "cargando" | "playing" | "paused" | "result" | "derrota" | "cinematica" | "fin-demo"} Pantalla */
 /** @typedef {ReturnType<typeof crearPartida>} Partida */
 /** @typedef {Awaited<ReturnType<typeof crearRenderRecorrido>>} VistaRecorrido */
 /** @typedef {Awaited<ReturnType<typeof crearRenderSlice>>} VistaJefe */
@@ -539,6 +539,7 @@ async function arrancar() {
     const esEpilogo = epilogoEnCurso();
     fundido.classList.toggle("fundido-epilogo", esEpilogo); // el plano y su cartel funden al mismo negro
     const menu = siguiente === "menu";
+    const errorMenu = siguiente === "error-menu"; // permite volver a solicitar el templo antes de abrir la portada
     carta.ocultarAviso();
     mural.hide();
     if (!jugando) carta.cerrar();
@@ -567,15 +568,26 @@ async function arrancar() {
       partida.estado === "puesto" ? "Reintentar a Mirra" : "Reintentar",
     );
     primary.classList.toggle("gold", siguiente !== "result");
-    volver.classList.toggle("gold", siguiente === "derrota");
+    volver.classList.toggle("gold", siguiente === "derrota" || errorMenu);
     volver.hidden = menu || jugando || enPlano || siguiente === "cargando";
     texto(
       volver,
-      siguiente === "fin-demo" ? t("epilogo.volver") : "Volver al inicio",
+      errorMenu
+        ? t("menu.reintentar")
+        : siguiente === "fin-demo"
+          ? t("epilogo.volver")
+          : "Volver al inicio",
     );
     aplicarVolumen();
     if (jugando || enPlano) {
       canvas.focus({ preventScroll: true });
+      return;
+    }
+    if (errorMenu) {
+      texto(caption, t("mundo.templo"));
+      texto(title, t("menu.cargaFallida"));
+      texto(intro, "");
+      volver.focus({ preventScroll: true }); // Enter confirma el reintento
       return;
     }
     if (siguiente === "fin-demo") {
@@ -776,7 +788,14 @@ async function arrancar() {
     reemplazarPartida();
     audio.evento({ tipo: "zona_entra", zona: "pasillo", estado: "nada" }); // termina la música y los ataques anteriores
     if (!vistaRecorrido) mostrar("cargando");
-    const v = await montarRecorrido();
+    const actual = partida;
+    let v;
+    try {
+      v = await montarRecorrido();
+    } catch {
+      if (partida === actual) mostrar("error-menu"); // la partida nueva espera congelada hasta que cargue su vista
+      return;
+    }
     if (!v) return;
     activar(v);
     montarHud();
@@ -966,7 +985,12 @@ async function arrancar() {
     } else if (pantalla === "result") {
       if (partida.combate?.id === "farolero") accionPrincipal();
       else volverAlMuelle();
-    } else if (pantalla === "derrota" || pantalla === "fin-demo") void alMenu();
+    } else if (
+      pantalla === "derrota" ||
+      pantalla === "fin-demo" ||
+      pantalla === "error-menu"
+    )
+      void alMenu();
   }
 
   /** Texto de la esquina: qué hacer ahora contra el jefe. En el recorrido hablan las tarjetas (D-206). */
