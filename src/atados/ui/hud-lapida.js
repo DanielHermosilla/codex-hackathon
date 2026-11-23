@@ -7,16 +7,16 @@ export const ESTILOS_LAPIDA = `
 .hud .lapida{position:absolute;transform:translate(-50%,-100%);min-width:250px;text-align:center;padding:14px 20px 12px;border-radius:4px;
   background:color-mix(in srgb,var(--fondo) 84%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--texto-suave) 40%,transparent);}
 .hud .lapida.con-carro{transform:none;min-width:0;width:min(36vw,340px);padding:8px 12px;}
-.hud .lapida .despedida{margin:4px 0;font:italic 16px/1.15 Georgia,serif;}
+.hud .lapida .despedida{margin:4px 0;font:italic 600 1.125rem/1.25 var(--lectura);}
 .hud .lapida .despedida:empty{display:none;}
 .hud .lapida.con-carro .cuadro{font-size:15px;}
 .hud .lapida.con-carro .tiempo{font-size:21px;}
-.hud .lapida .epitafio{font:700 17px/1.2 'Cinzel',Georgia,serif;letter-spacing:.08em;margin-bottom:2px;}
+.hud .lapida .epitafio{font:700 17px/1.2 var(--titulo);letter-spacing:.08em;margin-bottom:2px;}
 .hud .lapida .tiempo{font-size:30px;font-weight:600;line-height:1.1;margin:2px 0 6px;font-variant-numeric:lining-nums tabular-nums;}
 .hud .lapida .cuadro{display:grid;grid-template-columns:1fr auto auto;column-gap:18px;row-gap:1px;font-size:20px;line-height:1.35;text-align:right;
   font-variant-numeric:lining-nums tabular-nums;font-weight:600;border-top:1px solid color-mix(in srgb,var(--texto-suave) 45%,transparent);padding-top:6px;}
 .hud .lapida .cuadro .k{text-align:left;color:var(--texto-suave);font-weight:500;}
-.hud .lapida .cuadro .cab{font:700 13px/1.6 'Cinzel',Georgia,serif;letter-spacing:.1em;}
+.hud .lapida .cuadro .cab{font:700 13px/1.6 var(--titulo);letter-spacing:.1em;}
 .hud .lapida .sael{color:var(--sael);}.hud .lapida .odo{color:var(--odo);}
 .hud .lapida .sin-dano:empty{display:none;}
 .hud .lapida .sin-dano{margin-top:8px;font-style:italic;font-weight:600;font-size:19px;color:var(--destacado);}
