@@ -4,7 +4,7 @@
 // el muñeco de paja del lobby (D-208), los enemigos del pasillo (enemigos-arte.js), VFX, bloom y la cámara
 // con su perfil de recorrido. Caída al valle (D-205): bajan con aceleración y al aterrizar hay polvo y un
 // temblor corto. En el menú (D-214) la cámara encuadra el lobby con la escalinata subiendo detrás.
-// Al continuar tras Mirra, `puesto` monta el embarcadero con el furgón sobre suelo plano. Reutiliza pareja,
+// Al continuar tras Mirra, `puesto` monta el embarcadero sobre suelo plano. Reutiliza pareja,
 // cadena y cámara. Solo lee el estado y ofrece la misma interfaz que render/slice.js para el HUD.
 import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
@@ -20,7 +20,6 @@ import { crearVfx } from "./vfx.js";
 import { configurarRenderer, reducidoSistema } from "./renderer-config.js";
 import { crearTemplo } from "./templo.js";
 import { crearSalidaTrigal } from "./salida-trigal.js";
-import { crearPuesto } from "./puesto.js";
 import { crearAlturaSuelo } from "./altura.js";
 import { crearEnemigosArte } from "./enemigos-arte.js";
 import {
@@ -138,18 +137,7 @@ export async function crearRenderRecorrido({
   const camara = crearCamara({ cfg, reducir, perfil: RC.camara });
   const camera = camara.camera;
   const templo = puesto ? null : crearTemplo({ scene, cfg, keep, alturaSuelo });
-  // La carta y su aviso usan la posición del furgón que se ve en esta sala.
-  const carro = puesto ? cfg.tienda.carro : cfg.tienda.carroPractica;
-  // El muelle ya trae su furgón. En la práctica la ventanilla mira al centro del claro.
-  const furgon = puesto
-    ? crearSalidaTrigal({ scene, cfg, keep })
-    : crearPuesto({
-        scene,
-        cfg,
-        keep,
-        posicion: carro,
-        mirarA: RC.lobby.centro,
-      });
+  const muelle = puesto ? crearSalidaTrigal({ scene, cfg, keep }) : null;
   // Capa de los jugadores: se oculta entera en el menú (D-214: aún no han caído).
   const capaJugadores = new THREE.Scene();
   scene.add(capaJugadores);
@@ -343,7 +331,6 @@ export async function crearRenderRecorrido({
     cadena.sync(w, dtAnim);
     enemigos?.sync(r.enemigos, alturaSuelo, dtAnim, tiempo, fx);
     muneco?.sync(r.muneco, alturaSuelo, dtAnim, tiempo);
-    furgon.sync(dtAnim, w.players, !reducir()); // La carta y el saludo comparten el alcance.
     for (const e of exts) e.sync?.(w, dt);
 
     // Cámara: encuadra a la pareja (y lo que pidan los extras) sobre el suelo bajo ella.
@@ -355,9 +342,7 @@ export async function crearRenderRecorrido({
     // En el pasillo la cámara mira un poco por delante de la pareja (se ve lo que viene) y, cerca de la
     // cima, encuadra también el arco (D-211). En el lobby (s ≈ 0) no cambia nada.
     proyectarRuta(ruta, mx, mz, proyPareja);
-    if (puesto) {
-      puntos.push(carro.x, carro.z, 2); // desde la entrada se ve el completo gigante en el techo
-    } else if (proyPareja.s > 0.5 && r.fase !== "caida") {
+    if (!puesto && proyPareja.s > 0.5 && r.fase !== "caida") {
       puntoRuta(ruta, proyPareja.s + T.camara.adelante, 0, ptTmp);
       puntos.push(ptTmp.x, ptTmp.z, 1);
       if (umbralS - proyPareja.s < T.camara.arco && proyPareja.s < umbralS) {
@@ -395,7 +380,6 @@ export async function crearRenderRecorrido({
   const info = { calls: 0, triangles: 0, escena: 0 };
   return {
     camera,
-    carro,
     alturaSuelo,
     /** @param {number} wd @param {number} ht */
     resize(wd, ht) {
@@ -442,7 +426,7 @@ export async function crearRenderRecorrido({
     dispose() {
       for (const e of exts) e.dispose?.();
       templo?.dispose();
-      furgon.dispose();
+      muelle?.dispose();
       personajes.dispose();
       cadena.dispose();
       enemigos?.dispose();

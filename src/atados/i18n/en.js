@@ -2,7 +2,8 @@
 export default {
   "mundo.caida":
     "Sael and Odo fall into the valley at the foot of the Celestial Temple.",
-  "salida.atajo": "Go to the hot dog stand",
+  "salida.atajo": "Continue to the pier",
+  "salida.terminar": "Finish game",
   "mirra.victoria": "Mirra has been defeated",
   "menu.lore":
     "Sael and Odo put out the Eternal Ember. Now their only weapon against the gods is the chain that binds them.",
@@ -169,7 +170,7 @@ export default {
   "ajustes.navegacion":
     "Use WASD or the arrows to navigate menus. Confirm with Enter, Shift or Space. Hold R for one second to retry.",
   "ajustes.pausa":
-    "After defeating Mirra, approach the food cart and press P to open its menu. Esc or Start pauses the game.",
+    "After defeating a boss, approach the food cart and press P to open its menu. Esc or Start pauses the game.",
   "ajustes.cerrar": "Close settings",
   "ajustes.up": "Up",
   "ajustes.left": "Left",
@@ -198,19 +199,20 @@ export default {
 
   "tienda.abrir": "Shop",
   "tienda.pausa": "Game paused",
-  "tienda.titulo": "Completo cart",
-  "tienda.nota": "Each item serves Sael and Odo. Defeat bosses to earn coins.",
-  "tienda.moneda": "{cantidad} coin",
-  "tienda.monedas": "{cantidad} coins",
+  "tienda.titulo": "Bodoque’s completo cart",
+  "tienda.nota": "Each item serves Sael and Odo. Defeat bosses to earn pesos.",
+  "tienda.moneda": "{cantidad} peso",
+  "tienda.monedas": "{cantidad} pesos",
   "salida.arco":
-    "{victoria}. {premio}. Leave together through the northern arch ↑",
-  "salida.camino":
-    "The hot dog cart is on the right. Follow the pier to reach Ondar ↑",
+    "{victoria}. {premio}. Visit the cart in the center or cross the northern arch ↑",
+  "salida.final":
+    "{victoria}. {premio}. Visit the cart in the center or finish the game.",
+  "salida.camino": "Follow the pier to reach Ondar ↑",
   "salida.muelle": "The pier",
   "salida.destino": "Ondar the Drowned",
   "salida.finDemo":
     "You reached Ondar’s domain. This is the end of this version of the game.",
-  "salida.volver": "Return to the hot dog cart",
+  "salida.volver": "Return to the pier",
   "salida.repetir": "Fight Mirra again",
   "tienda.recompensa": "Reward: +{cantidad}",
   "tienda.cerrar": "Back to game",
@@ -229,7 +231,7 @@ export default {
 
 // Cartel del puesto: diálogo de Sael y Odo junto a la radio.
 export const muralText = {
-  stall: "Completo cart · El Trigal",
+  stall: "Bodoque’s completo cart",
   radio: "Radio · 31 minutos",
   sael: "Did you steal the completo italiano cart too?",
   odo: "I only wanted one completo. The chain got caught!",

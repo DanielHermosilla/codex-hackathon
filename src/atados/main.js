@@ -2,7 +2,7 @@
 // Flujo (core/flujo.js, D-204 a D-214):
 //   menú con el lobby detrás → «Jugar» → caída al valle → lobby y pasillo de subida → arco de la cima
 //   → fundido a negro → la pradera se abre en silencio → presentación de Mirra (cinemática solo la 1.ª vez)
-//   → Mirra → arco norte → carro de completos → Ondar a pie o combate opcional con el Farolero.
+//   → Mirra → carro de completos → arco norte → muelle → Ondar a pie o combate opcional con el Farolero.
 // El recorrido y el puesto usan render/recorrido.js; la pradera del jefe usa render/slice.js. La del
 // jefe se monta al cruzar el arco (evento `jefe:preparar`) mientras la pantalla funde a negro; al estar lista se
 // avisa a la partida (`jefeListo`). El recorrido se libera al entrar al combate. Audio, entrada y HUD duran toda la
@@ -120,7 +120,6 @@ async function arrancar() {
   irAlFarolero.setAttribute("aria-label", t("farol.enfrentar"));
   const irAlPuesto = elemento("continuar-puesto");
   const atajoPuesto = elemento("atajo-puesto"); // permite continuar sin caminar hasta el arco
-  texto(atajoPuesto, t("salida.atajo"));
   const letrero = elemento("mural");
   const mural = createMural(letrero); // diálogo del carro de completos junto a la ventanilla
   const announce = elemento("announce");
@@ -219,15 +218,22 @@ async function arrancar() {
     },
   );
 
-  // Solo la práctica y el muelle tienen ventanilla. Comprobamos la distancia al pulsar P o comprar.
+  // La misma ventanilla atiende a la pareja al terminar cualquiera de las dos peleas.
   function tiendaAlAlcance() {
-    if (pantalla !== "playing") return null;
-    const sala = partida.estado === "puesto" ? vistaPuesto : vistaRecorrido;
-    if (partida.estado !== "puesto" && partida.estado !== "recorrido")
+    if (
+      pantalla !== "playing" ||
+      partida.estado !== "victoria" ||
+      !vistaJefe?.puestoListo ||
+      vista !== vistaJefe
+    )
       return null;
-    return sala &&
-      juntoAlCarro(partida.world.players, sala.carro, tienda.cfg.tienda.alcance)
-      ? sala
+    // Una sola distancia en metros controla el aviso, la tecla P y cada compra.
+    return juntoAlCarro(
+      partida.world.players,
+      vistaJefe.carro,
+      tienda.cfg.tienda.alcance,
+    )
+      ? vistaJefe
       : null;
   }
 
@@ -326,7 +332,7 @@ async function arrancar() {
     if (existente) return existente;
     const id = montaje;
     const v = await crearRenderRecorrido({
-      puesto, // el tramo posterior utiliza la ubicación del carro de la economía
+      puesto, // el tramo posterior dibuja el muelle sin enemigos
       renderer,
       cfg: tienda.cfg,
       getWorld: () => partida.world,
@@ -393,6 +399,9 @@ async function arrancar() {
       cfg: tienda.cfg,
       getWorld: () => (partida.combate ?? previo).w,
       getCombate: () => partida.combate ?? previo,
+      // El reloj fijo también se detiene al pausar o abrir la carta.
+      tiempoVictoria: () =>
+        partida.estado === "victoria" ? partida.tEstado : 0,
       brilloFarolero: () => Number(farolBrillo.value),
       params,
       extras: [crearAnillosHud()],
@@ -494,7 +503,7 @@ async function arrancar() {
   /** Nombre del lugar para los textos del menú y la pausa. */
   const lugar = () =>
     partida.estado === "puesto"
-      ? "Carro de completos"
+      ? t("salida.muelle")
       : partida.combate
         ? t("jefe." + partida.combate.id + ".nombre")
         : t("mundo.templo");
@@ -515,7 +524,7 @@ async function arrancar() {
     if (!jugando) carta.cerrar();
     const esFinal = partida.combate?.id === "farolero";
     irAlPuesto.hidden = siguiente !== "result" || esFinal;
-    atajoPuesto.hidden = !jugando || partida.estado !== "victoria" || esFinal;
+    atajoPuesto.hidden = !jugando || !partida.salidaVictoriaLista;
     irAlFarolero.hidden = !jugando || !puestoListo();
     farolAjustes.hidden = !esFinal && !(menu && jefeDirecto === "farolero");
     if (siguiente === "result" && !esFinal)
@@ -700,7 +709,7 @@ async function arrancar() {
       const sala = await montarRecorrido(true);
       if (!sala || partida !== actual) return;
       activar(sala);
-      vistaJefe?.dispose(); // el carro usa sus propios recursos, la pradera ya no se dibuja
+      vistaJefe?.dispose(); // la pradera y el carro dejan de dibujarse al entrar al muelle
       vistaJefe = null;
       aperturaDesde = -1;
       texto(announce, t("salida.camino"));
@@ -711,7 +720,7 @@ async function arrancar() {
       mostrar("paused");
       texto(
         intro,
-        "No se pudo cargar el puesto. Pulsa Continuar para volver a intentarlo.",
+        "No se pudo cargar el muelle. Pulsa Continuar para volver a intentarlo.",
       );
     }
   }
@@ -749,16 +758,23 @@ async function arrancar() {
   play.onclick = () => empezar();
   primary.onclick = accionPrincipal;
   irAlFarolero.onclick = () => void abrirCombate("farolero", true);
-  function volverAlCarro() {
+  function volverAlMuelle() {
     partida.volverAlPuesto(); // vuelve de la llegada a Ondar con las compras de esta partida
     mostrar("playing");
   }
-  irAlPuesto.onclick = volverAlCarro;
-  atajoPuesto.onclick = () => {
-    if (pantalla !== "playing" || !partida.entrarPuesto()) return;
-    repartir(); // emite el mismo cambio de zona que atravesar el arco norte a pie
-    revisarEscena();
-  };
+  irAlPuesto.onclick = volverAlMuelle;
+  // El jugador puede marcharse aunque conserve los 25 pesos o ya haya comprado.
+  function salirDeVictoria() {
+    if (pantalla !== "playing" || !partida.salidaVictoriaLista || carta.abierta)
+      return;
+    if (partida.combate?.id === "farolero") {
+      mostrar("result"); // la pareja decide cuándo terminar su visita a Bodoque
+    } else if (partida.entrarPuesto()) {
+      repartir(); // mismo cambio de zona que al atravesar el arco norte a pie
+      revisarEscena();
+    }
+  }
+  atajoPuesto.onclick = salirDeVictoria;
   elemento("pause").onclick = pausar;
   volver.onclick = () => void alMenu();
   elemento("restart").onclick = reiniciar;
@@ -876,12 +892,14 @@ async function arrancar() {
     finalAntes = final;
     if (
       entrar &&
-      partida.estado === "puesto" &&
+      (partida.estado === "puesto" || partida.estado === "victoria") &&
       pantalla === "playing" &&
       !carta.abierta &&
       !controls.open
     ) {
-      void abrirCombate("farolero", true);
+      // Y o triángulo permite continuar la ruta también desde la arena final.
+      if (partida.estado === "victoria") salirDeVictoria();
+      else void abrirCombate("farolero", true);
       return;
     }
     const start = pads.some((p) => !!p?.buttons[9]?.pressed);
@@ -896,30 +914,31 @@ async function arrancar() {
       empezar();
     } else if (pantalla === "result") {
       if (partida.combate?.id === "farolero") accionPrincipal();
-      else volverAlCarro();
+      else volverAlMuelle();
     } else if (pantalla === "derrota") void alMenu();
   }
 
   /** Texto de la esquina: qué hacer ahora contra el jefe. En el recorrido hablan las tarjetas (D-206). */
   function pintarIndicacion() {
-    atajoPuesto.hidden =
-      partida.estado !== "victoria" || partida.combate?.id === "farolero";
-    if (
-      (partida.estado === "victoria" && partida.combate?.id !== "farolero") ||
-      partida.estado === "puesto"
-    ) {
+    atajoPuesto.hidden = !partida.salidaVictoriaLista;
+    if (partida.estado === "victoria") {
+      const final = partida.combate?.id === "farolero";
+      texto(atajoPuesto, t(final ? "salida.terminar" : "salida.atajo"));
       objetivo.hidden = false;
       texto(
         objetivo,
-        partida.estado === "puesto"
-          ? t("salida.camino")
-          : t("salida.arco", {
-              victoria: t("mirra.victoria"),
-              premio: t("tienda.recompensa", {
-                cantidad: textoMonedas(recompensa),
-              }),
-            }),
+        t(final ? "salida.final" : "salida.arco", {
+          victoria: t(final ? "farol.victoria" : "mirra.victoria"),
+          premio: t("tienda.recompensa", {
+            cantidad: textoMonedas(recompensa),
+          }),
+        }),
       );
+      return;
+    }
+    if (partida.estado === "puesto") {
+      objetivo.hidden = false;
+      texto(objetivo, t("salida.camino"));
       return;
     }
     const c = partida.combate;
@@ -1036,14 +1055,6 @@ async function arrancar() {
    */
   function revisarEscena() {
     const est = partida.estado;
-    if (
-      est === "victoria" &&
-      partida.combate?.id === "farolero" &&
-      partida.tEstado >= CONFIG.ui.finJefe
-    ) {
-      mostrar("result"); // el Farolero cierra su ruta después de que la pareja lea su lápida
-      return;
-    }
     if (est === "puesto") {
       if (!vistaPuesto) void continuarAlPuesto(); // al cruzar el arco el flujo ya conservó los PV
       return;
@@ -1128,12 +1139,10 @@ async function arrancar() {
     const salaTienda = tiendaAlAlcance();
     if (salaTienda) {
       const carro = salaTienda.carro;
-      const techo =
-        salaTienda.alturaSuelo(carro.x, carro.z) +
-        2.75 * tienda.cfg.render.puesto.escala;
+      const techo = 2.75 * tienda.cfg.render.puesto.escala; // m sobre el suelo plano de la arena
       salaTienda.toScreen(carro.x, techo, carro.z, puntoAviso);
       carta.situarAviso(puntoAviso);
-      if (letrero.hidden) mural.show(partida.estado === "recorrido"); // conserva el tutorial visible en el templo
+      if (letrero.hidden) mural.show(); // el diálogo del carro acompaña al vendedor
     } else {
       carta.ocultarAviso();
       if (!letrero.hidden) mural.hide();
@@ -1253,10 +1262,10 @@ async function arrancar() {
       },
       get tienda() {
         const carro =
-          partida.estado === "recorrido"
-            ? tienda.cfg.tienda.carroPractica
-            : tienda.cfg.tienda.carro;
-        return { saldo: tienda.saldo, carro: { ...carro } };
+          partida.estado === "victoria" && vistaJefe?.puestoListo
+            ? { ...vistaJefe.carro }
+            : null;
+        return { saldo: tienda.saldo, carro };
       },
       audio: audio.api,
       /** Detiene el bucle real y avanza `n` pasos fijos (pruebas reproducibles). */

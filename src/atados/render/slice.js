@@ -27,6 +27,7 @@ import { crearRitosMirra } from "./ritos-mirra.js";
 import { crearMuneco } from "./muneco-arte.js";
 import { crearArteFarolero } from "./farolero.js";
 import { crearBrillos } from "./brillos.js";
+import { crearVistaVictoria } from "./victoria.js";
 import { crearVfx } from "./vfx.js";
 import { configurarRenderer, reducidoSistema } from "./renderer-config.js";
 
@@ -50,6 +51,7 @@ const MODELOS_DE = {
  *   getCombate: () => import('./tipos.js').Combate,
  *   params?: URLSearchParams,
  *   brilloFarolero?: () => number,
+ *   tiempoVictoria?: () => number,
  *   extras?: ((ctx: any) => any)[],
  * }} args
  */
@@ -60,6 +62,7 @@ export async function crearRenderSlice({
   getCombate,
   params,
   brilloFarolero = () => 0.16,
+  tiempoVictoria = () => 0,
   extras = [],
 }) {
   const modelos = await cargarModelos(
@@ -180,6 +183,9 @@ export async function crearRenderSlice({
   const ritosMirra = conMirra
     ? crearRitosMirra({ scene, keep, brillos, def })
     : null;
+  // El muñeco de práctica carece de premio y tampoco necesita cargar el carro.
+  const victoria =
+    def.monedas > 0 ? crearVistaVictoria({ scene, cfg, keep }) : null;
   const vfx = crearVfx({ scene, cfg, keep });
   const exts = extras
     .map((f) =>
@@ -426,6 +432,7 @@ export async function crearRenderSlice({
         flashes,
       );
     ritosMirra?.sync(c, w, dtAnim, vfx, colores, reducido, flashes);
+    victoria?.sync(c, tiempoVictoria(), dtAnim, Boolean(reducido));
     vfx.sync(dt, tiempo, camera.position.x, camera.position.z - 6);
     for (const e of exts) e.sync?.(w, dt);
 
@@ -433,6 +440,7 @@ export async function crearRenderSlice({
     puntos.length = 0;
     if (c.jefe.vivo) puntos.push(c.jefe.x, c.jefe.z, c.jefe.r);
     else if (c.lapida) puntos.push(c.lapida.x, c.lapida.z, 1.5);
+    victoria?.foco(puntos);
     if (c.estado === "pelea" && c.farolero)
       for (const marca of c.farolero.marcas)
         puntos.push(marca.x, marca.z, marca.r);
@@ -463,6 +471,10 @@ export async function crearRenderSlice({
   const info = { calls: 0, triangles: 0, escena: 0 };
   return {
     camera,
+    carro: cfg.tienda.carroVictoria,
+    get puestoListo() {
+      return victoria?.puestoListo ?? false;
+    },
     /** @param {number} wd @param {number} ht */
     resize(wd, ht) {
       camara.resize(wd, ht);
@@ -489,7 +501,14 @@ export async function crearRenderSlice({
       return info.calls;
     },
     get info() {
-      return { ...info };
+      const carro = victoria?.carro;
+      return {
+        ...info,
+        carroVictoria: carro?.visible
+          ? { x: carro.position.x, z: carro.position.z }
+          : null,
+        monedasVisibles: victoria?.monedasVisibles ?? 0,
+      };
     },
     // Vista de prueba de los estados de la cadena (gameplay no los usa con Mirra: D-193).
     setEfectoCadena: (/** @type {string | null | undefined} */ e) =>
@@ -526,6 +545,7 @@ export async function crearRenderSlice({
       arteJefe.dispose();
       ataquesMirra?.dispose();
       ritosMirra?.dispose();
+      victoria?.dispose();
       vfx.dispose();
       for (const o of keepList) o.dispose?.();
       for (const g of Object.values(modelos)) liberarGltf(g);

@@ -273,7 +273,6 @@ export function crearArteFarolero({ scene, keep, world0, decalMat, reducir }) {
     [0, 0.39, 0],
     [0.48, 0.78, 0.34],
   );
-  const premio = malla(scene, "joya", fuego, [0, 0.94, 0], [0.25, 0.32, 0.25]);
 
   /** @param {import('./tipos.js').Paleta} p */
   function aplicarPaleta(p) {
@@ -340,16 +339,8 @@ export function crearArteFarolero({ scene, keep, world0, decalMat, reducir }) {
       0.6,
       destello + (acierto && muestra ? 0.35 : 0),
     );
-    lapida.visible = premio.visible = Boolean(c.lapida);
-    if (c.lapida) {
-      lapida.position.set(c.lapida.x, 0.39, c.lapida.z);
-      premio.position.set(
-        c.lapida.x,
-        0.94 + 0.08 * Math.sin(t * 3),
-        c.lapida.z,
-      );
-      premio.rotation.y = t;
-    }
+    lapida.visible = Boolean(c.lapida);
+    if (c.lapida) lapida.position.set(c.lapida.x, 0.39, c.lapida.z);
   }
   return { aplicarPaleta, sync, dispose() {} };
 }
