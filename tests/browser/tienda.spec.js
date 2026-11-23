@@ -169,6 +169,47 @@ test("la pareja visita el carro en la práctica y compra después de vencer a Mi
   await page.keyboard.press("p");
   await expect(carta).toBeHidden();
 
+  // F puede reasignarse al movimiento: el botón del puesto sigue disponible para entrar al jefe.
+  const enfrentar = page.getByRole("button", { name: "Enfrentar al Farolero" });
+  await expect(enfrentar).toHaveAttribute("aria-keyshortcuts", "F");
+  await page.locator("#pause").click();
+  await page.getByRole("button", { name: "Ajustes", exact: true }).click();
+  const derecha = page.getByRole("button", { name: /Sael · Derecha/ });
+  await derecha.click();
+  await page.keyboard.press("KeyF");
+  await expect(derecha).toHaveText("F");
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await page.keyboard.down("KeyF");
+  await page.evaluate(() => window.__game.step(3));
+  await page.keyboard.up("KeyF");
+  expect(await page.evaluate(() => window.__game.etapa)).toBe("puesto");
+  await expect(enfrentar).not.toHaveAttribute("aria-keyshortcuts", "F");
+  await enfrentar.click();
+  await page.waitForFunction(
+    () =>
+      window.__game.combate?.jefe.id === "farolero" &&
+      window.__game.pantalla === "playing",
+  );
+  expect(
+    await page.evaluate(() => window.__game.state.players.map((p) => p.hp)),
+  ).toEqual([1250, 1250]);
+  await page.evaluate(() => {
+    const g = window.__game;
+    g.saltarPresentacion();
+    g.setVidaJefe(0);
+    g.step(420);
+  });
+  await expect(
+    page.getByRole("heading", { name: "El Farolero ha caído" }),
+  ).toBeVisible();
+  await expect(page.locator("#continuar-puesto")).toBeHidden();
+  await page.locator("#primary").click();
+  await page.waitForFunction(
+    () =>
+      window.__game.combate?.jefe.id === "farolero" &&
+      window.__game.pantalla === "playing",
+  );
   // El reintento usa la misma compra; al volver al menú, la siguiente partida empieza de cero.
   await page.keyboard.press("Escape");
   await page.locator("#restart").click();
@@ -179,7 +220,17 @@ test("la pareja visita el carro en la práctica y compra después de vencer a Mi
   expect(
     await page.evaluate(() => window.__game.state.players.map((p) => p.hp)),
   ).toEqual([1250, 1250]);
-  await page.keyboard.press("Escape");
+  // Tras la derrota final solo se puede volver a la portada, igual que al caer ante Mirra.
+  await page.evaluate(() => {
+    const g = window.__game;
+    g.saltarPresentacion();
+    g.matarJugadores();
+    g.step(2);
+  });
+  await expect(
+    page.getByRole("heading", { name: "Caísteis los dos" }),
+  ).toBeFocused();
+  await expect(page.getByRole("button")).toHaveText(["Volver al inicio"]);
   await page.getByRole("button", { name: "Volver al inicio" }).click();
   await page.waitForFunction(() => window.__game.pantalla === "menu");
   await jugar.click();

@@ -63,7 +63,24 @@
           >
             Ⅱ
           </button>
-          <p id="objective"></p>
+          <div id="farol-hud" hidden>
+            <p id="farol-vuelta"></p>
+            <div role="status" aria-atomic="true">
+              <strong id="farol-estado"></strong>
+              <p id="farol-instruccion"></p>
+            </div>
+            <div id="farol-reloj">
+              <progress id="farol-plazo" max="1" value="1"></progress>
+              <span id="farol-tiempo"></span>
+            </div>
+          </div>
+          <p id="objective" role="status"></p>
+          <button
+            type="button"
+            id="enfrentar-farolero"
+            aria-keyshortcuts="F"
+            hidden
+          ></button>
         </div>
         <div id="mural" hidden></div>
         <div id="tienda"></div>
@@ -174,6 +191,24 @@
             abrir la carta. Esc o Start pausa la partida.
           </p>
         </details>
+        <fieldset id="farol-ajustes" hidden>
+          <legend id="farol-controles"></legend>
+          <ul id="farol-guia">
+            <li id="farol-guia-prisma"></li>
+            <li id="farol-guia-ecos"></li>
+            <li id="farol-guia-campanas"></li>
+          </ul>
+          <label for="farol-brillo" id="farol-brillo-etiqueta"></label>
+          <select id="farol-brillo">
+            <option value="0.08" id="farol-brillo-8"></option>
+            <option value="0.16" id="farol-brillo-16" selected></option>
+            <option value="0.25" id="farol-brillo-25"></option>
+          </select>
+          <label class="farol-aviso">
+            <input id="farol-aviso" type="checkbox" checked />
+            <span id="farol-aviso-etiqueta"></span>
+          </label>
+        </fieldset>
       </dialog>
       <p class="sr" aria-live="polite" id="announce"></p>
       <noscript>Activa JavaScript para jugar AtaDos.</noscript>

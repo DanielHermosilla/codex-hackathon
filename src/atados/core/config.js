@@ -173,18 +173,34 @@ export const CONFIG = {
         dano: {
           explosion: 520,
           luz: 320,
-          vacio: 180,
+          acido: 180,
           pisoton: 300,
           braseros: 260,
         }, // puntos en la escala ×10 de D-202
         inicio: 4,
         intervalo: 8,
         secuencia: [
-          { id: "orbe", aviso: 5 },
+          { id: "acido", aviso: 4.5 },
           { id: "luz", aviso: 3 },
           { id: "pisoton", aviso: 3 },
           { id: "braseros", aviso: 4 },
         ],
+      },
+      acido: {
+        punteria: 4.5, // segundos durante los que la mira sigue al jugador marcado
+        vuelo: 1.2, // desde que la mira se fija hasta que aparece el charco
+        arco: 2.15, // altura adicional en la mitad de la parábola, en metros
+        bocaFrente: 1.6, // entre las dos mandíbulas del modelo de Mirra
+        bocaAltura: 2.3,
+        radio: 2.4,
+        evaporacion: 12,
+        intervaloDano: 0.8,
+        radioBarril: 0.72,
+        distanciaBarril: 4.8, // distancia inicial al marcado; el barril ocupa suelo sólido
+        mechaFinal: 1, // segundos que quedan si el ácido cae lejos
+        fraccionCoberturas: 0.4,
+        duracionOnda: 0.6,
+        duracionResultado: 1.4,
       },
       pausa: 1.8, // s entre ataques en fase 1 («pausas largas»). PROVISIONAL
       arena: {
@@ -350,6 +366,51 @@ export const CONFIG = {
         },
       },
     },
+    // El Farolero dirige tres pruebas por vuelta. El ensayo enseña la misma secuencia que el duelo.
+    farolero: {
+      monedas: 1, // recompensa por vencer al Farolero
+      textos: "farolero",
+      arte: "farolero",
+      vida: 6000, // seis aciertos; escala de puntos D-202
+      radio: 1.55,
+      altura: 3.55,
+      pausa: 0,
+      fases: [{ desde: 1, pausaMult: 1, ataques: [] }],
+      ataques: {}, // El reloj de las pruebas es el único que agenda ataques en esta sala.
+      arena: {
+        radioL: 1.6,
+        jefe: [0, -0.7],
+        sael: [-0.28, 0.72],
+        odo: [0.28, 0.72],
+        pilares: [], // El trazado completo de las marcas queda libre para la pareja y su cadena.
+      },
+      pruebas: {
+        aviso: 2, // segundos para leer el gesto antes de empezar a medirlo
+        resultado: 1.5,
+        extraEnsayo: 2,
+        aciertosVictoria: 6,
+        danoFallo: 220,
+        prisma: {
+          tiempo: 5,
+          radio: 0.85,
+          puestos: [
+            [0, 1.7],
+            [2.1, -0.5],
+            [-2.1, -0.5],
+          ],
+        },
+        ecos: { tiempo: 3, radio: 1.75 },
+        campanas: {
+          tiempo: 8,
+          radio: 1.1,
+          puestos: [
+            [-3.2, 1.4],
+            [0, -1.7],
+            [3.2, 1.4],
+          ],
+        },
+      },
+    },
   },
   // ─── Audio (docs/atados/diseno/gdd/07-audio.md). Efectos por código con zzfx (D-061), cadena (D-062), avisos
   // propios por ataque (D-106), música adaptativa por capas (D-059, D-060), silencios (D-183), ajustes (D-112).
@@ -497,7 +558,7 @@ export const CONFIG = {
       capaS: 1.2, // al sumar o quitar una capa
       finS: 0.6, // capas fuera al terminar el combate
       adelantoS: 0.25, // técnico: ventana de programación de notas
-      zonaPorJefe: { mirra: "trigal", muneco: "pasillo" }, // la práctica suena con el folk del pasillo
+      zonaPorJefe: { mirra: "trigal", muneco: "pasillo", farolero: "farolero" }, // la práctica suena con el folk del pasillo
       intensidad: {
         porVidaJefe: 0.45,
         porAtaque: 0.25,
@@ -575,6 +636,33 @@ export const CONFIG = {
             },
           },
         },
+        // Banda sonora sintetizada: pedal grave, latido y tensión desde la Penumbra.
+        farolero: {
+          carpeta: "farolero",
+          bpm: 62,
+          raiz: 73.42,
+          escala: [0, 2, 3, 5, 7, 8, 10],
+          capas: {
+            base: {
+              sinte: "drone",
+              ganancia: 0.43,
+              estados: ["presentacion", "pelea"],
+              porFase: [0.85, 0.95, 1],
+            },
+            pulso: {
+              sinte: "tambor",
+              ganancia: 0.33,
+              estados: ["pelea"],
+              patron: [0.9, 0, 0, 0.5, 0, 0, 0.35, 0],
+            },
+            penumbra: {
+              sinte: "tension",
+              ganancia: 0.23,
+              estados: ["pelea"],
+              faseMin: 2,
+            },
+          },
+        },
       },
       // D-134/D-182: pistas dedicadas (primer archivo de su carpeta). Placeholder si falta.
       temas: {
@@ -602,6 +690,9 @@ export const CONFIG = {
       mandibulas: "avisoMandibulas",
       zumbido: "avisoZumbido",
       inhalacion: "avisoInhalacion",
+      prisma: "avisoPrisma",
+      ecos: "avisoEcos",
+      campanas: "avisoCampanas",
     },
     avisoGenerico: "avisoGenerico",
     // Enemigos del pasillo (D-209): aún no tienen sonidos propios; reutilizan los del combate. Evento → id de sfx.
@@ -629,6 +720,13 @@ export const CONFIG = {
           enjambre: { sonido: "mirraEnjambre", bucle: true }, // suena mientras la nube existe
           banquete: { sonido: "mirraBanquete" },
         },
+        golpeGenerico: "mirraSiega",
+        dolor: "mirraDolor",
+        transicion: "mirraTransicion",
+        muerte: "mirraMuerte",
+      },
+      farolero: {
+        golpes: {},
         golpeGenerico: "mirraSiega",
         dolor: "mirraDolor",
         transicion: "mirraTransicion",
@@ -1009,6 +1107,27 @@ export const CONFIG = {
             forma: 1,
             ajuste: "ataque",
           },
+        ],
+      },
+      // Tres señales cortas: un brillo ascendente, dos ecos graves y una campanada.
+      avisoPrisma: {
+        categoria: "avisoAtaque",
+        capas: [
+          { volumen: 0.32, frecuencia: 440, ataque: 0.02, soltar: 0.19 },
+          { volumen: 0.27, frecuencia: 880, retraso: 0.11, soltar: 0.26 },
+        ],
+      },
+      avisoEcos: {
+        categoria: "avisoAtaque",
+        capas: [
+          { volumen: 0.38, frecuencia: 175, ataque: 0.03, soltar: 0.2 },
+          { volumen: 0.26, frecuencia: 155, retraso: 0.25, soltar: 0.23 },
+        ],
+      },
+      avisoCampanas: {
+        categoria: "avisoAtaque",
+        capas: [
+          { volumen: 0.4, frecuencia: 660, modulacion: 330, soltar: 0.47 },
         ],
       },
       avisoGenerico: {
