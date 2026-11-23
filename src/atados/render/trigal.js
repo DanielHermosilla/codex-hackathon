@@ -509,10 +509,26 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
     dirZ = Math.SQRT1_2;
   let siega = 0,
     siegaObj = 0; // 0 = intacto, 1 = franjas segadas
-  function colocarDentro() {
+  /** @type {{x:number,z:number,r:number}[]} */
+  let huecos = [];
+  let habiaHuecos = false;
+  // Solo las matas que cruzan el borde del vacío necesitan cambiar su matriz.
+  const bajoVacio = new Uint8Array(ND);
+  function colocarDentro(soloCambiosDeVacio = false) {
+    let cambiado = false;
     for (let i = 0; i < ND; i++) {
       const x = dPos[i * 4],
         z = dPos[i * 4 + 1];
+      let oculta = 0;
+      for (const p of huecos) {
+        if ((x - p.x) ** 2 + (z - p.z) ** 2 < p.r * p.r) {
+          oculta = 1;
+          break;
+        }
+      }
+      if (soloCambiosDeVacio && bajoVacio[i] === oculta) continue;
+      bajoVacio[i] = oculta;
+      cambiado = true;
       const banda =
         (((x * dirX + z * dirZ) % F.ancho) + F.ancho) % F.ancho < F.segado;
       // La siega avanza a lo largo de la franja (perpendicular a la dirección de las bandas).
@@ -526,10 +542,12 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
         (hash(i, 7) - 0.5) * 0.4,
       );
       d.scale.set(h * 1.5 + 0.12, h, h * 1.5 + 0.12);
+      // Cuando se abre un pozo, desaparece tambi�n el trigo que crec�a encima.
+      if (oculta) d.scale.setScalar(0);
       d.updateMatrix();
       dentro.setMatrixAt(i, d.matrix);
     }
-    dentro.instanceMatrix.needsUpdate = true;
+    if (cambiado) dentro.instanceMatrix.needsUpdate = true;
   }
   colocarDentro();
 
@@ -543,6 +561,9 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
    */
   function sync(w, c, dt, tiempo, vfx) {
     uViento.value = tiempo * T.viento.velocidad;
+    huecos = c.arenaMirra?.huecos ?? [];
+    if (huecos.length || habiaHuecos) colocarDentro(true);
+    habiaHuecos = huecos.length > 0;
     molinoAspas.rotation.z = tiempo * 0.25;
     // Fase 2 (jefe.fase interna ≥ 1): siega en franjas durante la transición.
     siegaObj = c.jefe.fase >= 1 ? 1 : 0;
@@ -576,6 +597,11 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
       if (presente) {
         P.comido = 0;
         P.s = Math.min(1, P.s + dt * 3);
+      } else if (c.arenaMirra?.explosion && P.comido === 0) {
+        // La onda derriba la cobertura en su sitio, fuera de la animaci�n de devorar.
+        vfx?.paja(P.x, 1.2, P.z, 22);
+        P.s = 0;
+        P.comido = 1;
       } else if (P.comido < 1) {
         if (P.comido === 0) vfx?.paja(P.x, 1.6, P.z, 26);
         P.comido = Math.min(1, P.comido + dt / 0.9);

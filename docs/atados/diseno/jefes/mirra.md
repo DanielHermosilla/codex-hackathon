@@ -21,9 +21,12 @@
 - Lugar en el lore: primera diosa que encuentran; prueba que la culpa de Odo y Sael tiene cuerpo [D-053, D-057].
 
 ## Arena
-- Trigal seco con espantapájaros-pilar [D-088]. Solo pilares estáticos que cambian por fase [D-184].
+- Trigal seco con espantapájaros-pilar [D-088]. Pilares estáticos que pueden desaparecer durante la pelea [D-184].
 - Tamaño (propuesta): claro circular de ~6 L de diámetro. Lindes de piedra baja y cerca; no se cae de la arena.
-- Pilares (propuesta): 4 espantapájaros a ~2 L del centro. Enredan la cadena [D-048]; la tensión se mide por tramo y funciona enrollada en ellos [D-147]: un pilar sirve de ancla fija.
+- Ocho espantapájaros a distintas distancias del centro, en grupos y claros asimétricos. Enredan la cadena [D-048]; la tensión se mide por tramo y funciona enrollada en ellos [D-147]: un pilar sirve de ancla fija.
+- Los especiales interrumpen el ataque básico en curso. Mirra vuelve a su repertorio al resolverse el especial. Cada hueco de vacío se encoge durante 12 s hasta cerrarse. El borde visible delimita la zona de daño.
+- El pilar explosivo destruye entre el 30 % y el 50 % de las coberturas restantes cuando esa fracción admite un número entero. Las coberturas más cercanas caen primero.
+- Cada descarga tiene un color. El primer brasero que pisa cualquiera de los dos concede a ambos protección de ese color durante 3 s. El brillo de los personajes y la barra indican el color elegido y el tiempo restante. Los braseros aparecen con al menos 4,5 m libres entre su borde y cada jugador. Los proyectiles dirigidos tardan 4 s hasta el impacto, salvo que una cobertura los intercepte antes.
 - Trigal (propuesta): por debajo de la rodilla. Nunca tapa anillos ni avisos [D-051, D-089].
 - Iluminación: hora dorada, la base de los pasillos [D-086].
 - Cámara: encuadra a los dos jugadores y a Mirra [D-176].
@@ -34,9 +37,9 @@
 
 | Fase | Vida % | Ataques (bloques) | Qué cambia | Rol J1 (Sael) | Rol J2 (Odo) |
 |---|---|---|---|---|---|
-| 1 · La que Alimentaba | 100–50 (de partida) | `barrido` (Siega), `proyectil_arco` (Grano), `carga` (Hambre) | Base. Un ataque por vez. Pausas largas. 4 pilares | Objetivo: esquiva y, al terminar el ataque, se ancla cerca de Mirra | Otro: rodea con la cadena tensa y corta en la recuperación; o enreda la cadena en un pilar y corta desde ahí |
+| 1 · La que Alimentaba | 100–50 (de partida) | `barrido` (Siega), `proyectil_arco` (Grano), `carga` (Hambre) | Base. Un ataque por vez. Pausas largas. Ocho pilares al empezar | Objetivo: esquiva y, al terminar el ataque, se ancla cerca de Mirra | Otro: rodea con la cadena tensa y corta en la recuperación; o enreda la cadena en un pilar y corta desde ahí |
 | Transición | 50 | `transicion_fase` + `destello` | Corta e invulnerable [D-153]. Destello: ofrece una espiga con la mano abierta, quieta 1–2 s, y la devora [D-156]. Come 2 pilares, siega el trigal. Silencio de cambio de fase [D-183]. Sin brasas de curación [D-171] | Se reagrupa o castiga el destello | Ídem |
-| 2 · La Hambrienta | 50–0 (de partida) | `barrido` doble (Siega de ida y vuelta), `zona_movil` (Enjambre), `tiron_radial` + `zona_circular` (Banquete), `carga` (Hambre) | Forma: la copa se abre en alas de langosta. Ritmo: pausas un 30 % más cortas (de partida). Patrón nuevo: Banquete. Arena: 2 pilares, más abierta | Si el Enjambre lo sigue: lo lleva lejos y mantiene la cadena tensa | Corta mientras Mirra persigue al otro; en el Banquete, corta en el letargo |
+| 2 · La Hambrienta | 50–0 (de partida) | `barrido` doble (Siega de ida y vuelta), `zona_movil` (Enjambre), `tiron_radial` + `zona_circular` (Banquete), `carga` (Hambre) | Forma: la copa se abre en alas de langosta. Ritmo: pausas un 30 % más cortas (de partida). Patrón nuevo: Banquete. Arena más abierta tras devorar los pilares restantes marcados para esta fase | Si el Enjambre lo sigue: lo lleva lejos y mantiene la cadena tensa | Corta mientras Mirra persigue al otro; en el Banquete, corta en el letargo |
 
 ## Ataques
 Cada ataque da un rol a cada jugador [D-164]. "Objetivo" = a quien apunta; "otro" = el compañero.

@@ -1,5 +1,16 @@
 // English texts (D-102). Boss lines translate a draft: TODO review with Diego.
 export default {
+  "brasero.color.0": "red",
+  "brasero.color.1": "blue",
+  "brasero.color.2": "gold",
+  "brasero.escudo": "Shared shield ({color}) · {tiempo} s",
+  "indicacion.orbe":
+    "Void · carry the orb to the marked pillar, then leave the circle.",
+  "indicacion.luz": "Divine light · take cover in the shadow of an obstacle.",
+  "indicacion.pisotonSolo": "Stomp · stand inside the marked circle.",
+  "indicacion.pisoton": "Stomp · stand together inside the marked circle.",
+  "indicacion.braseros":
+    "Shots arrive in 4 s · step into the {color} brazier to shield both players for 3 s.",
   "indicacion.muneco":
     "Split up: the chain only cuts when taut. Sweep it through the dummy.",
   "indicacion.munecoPilar":

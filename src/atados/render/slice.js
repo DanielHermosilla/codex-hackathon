@@ -11,6 +11,10 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { cargarModelos, liberarGltf } from "./modelos.js";
 import { resolverPaleta, mezclarHex } from "./paleta.js";
 import { crearCamara } from "./camara.js";
+import { crearArenaMirraVisual } from "./arena-mirra.js";
+import { BRASEROS } from "../gameplay/ritos.js";
+import { escudoVisible } from "../ui/hud-logica.js";
+import { crearVistaRitos } from "./ritos.js";
 import { crearTrigal } from "./trigal.js";
 import { crearPersonajes } from "./personajes.js";
 import { crearCadenaArte } from "./cadena-arte.js";
@@ -148,6 +152,8 @@ export async function crearRenderSlice({
     def.arte === "muneco"
       ? crearMuneco({ scene, cfg, keep, modelos, def })
       : crearMirra({ scene, cfg, keep, modelos, def });
+  const arenaVisual = crearArenaMirraVisual({ scene, keep });
+  const vistaRitos = crearVistaRitos(scene, keep);
   const vfx = crearVfx({ scene, cfg, keep });
   const puesto = crearPuesto({ scene, cfg, keep, world0 }); // carrito del Puesto 23 con el emblema de Codex
   const exts = extras
@@ -343,8 +349,17 @@ export async function crearRenderSlice({
     if (vivoPrev && !c.jefe.vivo) camara.sacudir(cfg.feel.shake.muerteJefe);
     vivoPrev = c.jefe.vivo;
 
+    arenaVisual.sync(w, c);
+    vistaRitos(c.estado === "pelea" && c.id === "mirra" ? c.ritos : null);
     trigal.sync(w, c, dtAnim, tiempo, fxJefe);
-    personajes.sync(w, dtAnim, eventosJug, tiempo);
+    const escudo = escudoVisible(c);
+    personajes.sync(
+      w,
+      dtAnim,
+      eventosJug,
+      tiempo,
+      escudo ? BRASEROS.colores[escudo.color] : null,
+    );
     cadena.sync(w, dtAnim);
     tele.sync(c, vfx, colores);
     mirra.sync(c, w, dtAnim, tiempo, {

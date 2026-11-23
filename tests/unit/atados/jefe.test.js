@@ -96,7 +96,7 @@ describe("fases por vida (D-153)", () => {
     expect(c.jefe.accion.tipo).toBe("transicion_fase");
     expect(c.jefe.invulnerable).toBe(true);
     expect(c.jefe.fase).toBe(1);
-    expect(c.w.pillars.map((p) => p.id).sort()).toEqual([0, 2]);
+    expect(c.w.pillars.map((p) => p.id).sort()).toEqual([0, 2, 4, 5, 6, 7]);
     // Invulnerable mientras cambia la arena: ni la regla ni el mundo dejan pasar daño.
     expect(registrarDano(c.ctx, 500, 1, [500, 0])).toBe(0);
     pasoCombate(c, quietos(), DT);
@@ -616,7 +616,7 @@ describe("caídas, derrota y reintento (D-020, D-028, D-111, D-167, D-173)", () 
     ).toBe(true);
     expect(r.jefe.hp).toBe(r.jefe.hpMax);
     expect(r.jefe.fase).toBe(0);
-    expect(r.w.pillars.length).toBe(4);
+    expect(r.w.pillars.length).toBe(8);
     expect(r.opts.reintentos).toBe(1);
     expect(r.presentacion.saltable).toBe(true);
   });

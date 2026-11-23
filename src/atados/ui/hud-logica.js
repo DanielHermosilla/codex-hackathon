@@ -17,7 +17,14 @@ import { t } from "../i18n/index.js";
 /** @param {number} v */
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 
-// ─── Color ───
+/** @param {Combate} c */
+export function escudoVisible(c) {
+  const e = c.ritos?.escudo;
+  return c.id === "mirra" && c.estado === "pelea" && e && e.restante > 0
+    ? e
+    : null;
+}
+
 /** @param {number} n */
 export const hexCss = (n) => `#${n.toString(16).padStart(6, "0")}`;
 

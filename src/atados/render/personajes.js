@@ -178,8 +178,9 @@ export function crearPersonajes({
    * @param {number} dt
    * @param {{ flashes: boolean, dash: (i: number, p: any) => void, golpe: (i: number, p: any) => void, muere: (i: number, p: any) => void, paso: (i: number, x: number, z: number, fuerza: number) => void }} eventos
    * @param {number} tiempo
+   * @param {number|null} [colorEscudo]
    */
-  function sync(w, dt, eventos, tiempo) {
+  function sync(w, dt, eventos, tiempo, colorEscudo = null) {
     const ch = w.chain;
     for (let i = 0; i < 2; i++) {
       const p = w.players[i],
@@ -357,6 +358,9 @@ export function crearPersonajes({
         j.mesh.visible = true;
       }
 
+      // El escudo tiñe los dos cuerpos sin ocultar su animación de golpe.
+      j.mat.emissive.setHex(colorEscudo ?? 0xffffff);
+      if (colorEscudo !== null && p.alive) j.mat.emissiveIntensity += 0.65;
       j.estaca.visible = p.alive && p.anchored;
       if (!anillo) continue;
       // Anillo: arco = vida (D-063). Anclado: más opaco y con estaca; muerto: casi apagado.

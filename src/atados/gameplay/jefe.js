@@ -399,7 +399,7 @@ function elegirAtaque(ctx) {
  * @param {Ctx} ctx
  * @param {number} dt
  */
-export function actualizarJefe(ctx, dt) {
+export function actualizarJefe(ctx, dt, especial = false) {
   const { jefe } = ctx;
   jefe.vx = 0;
   jefe.vz = 0;
@@ -421,6 +421,7 @@ export function actualizarJefe(ctx, dt) {
     iniciarCola(ctx, /** @type {{ tipo: string }} */ (jefe.cola.shift()));
     return;
   }
+  if (especial) return;
   acercarse(ctx, dt);
   jefe.pausa -= dt;
   if (jefe.pausa > 0) return;

@@ -188,6 +188,7 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
     golpeAcum = 0,
     polvoT = 0;
   const xPrev = { x: 0, z: 0, ok: false };
+  let enSalto = false;
 
   /**
    * @param {import('./tipos.js').Combate} c
@@ -277,6 +278,18 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
         fx.trozos(w._contact.x, 1.4, w._contact.z, 3, 1);
       }
       if (!acciones.idle) cuerpo.position.y = Math.sin(reloj * 2.2) * 0.06;
+      // El salto termina en el mismo paso que resuelve el daño del pisotón.
+      const salta =
+        c.estado === "pelea" &&
+        c.ritos?.tipo === "pisoton" &&
+        c.ritos.tiempo < 0.65;
+      if (salta)
+        cuerpo.position.y += 1.7 * Math.sin((Math.PI * c.ritos.tiempo) / 0.65);
+      else if (enSalto && c.estado === "pelea") {
+        fx.polvo(j.x, j.z, 20, 1.7);
+        fx.sacudir(cfg.feel.shake.carga);
+      }
+      enSalto = salta;
     }
 
     if (mixer) {
