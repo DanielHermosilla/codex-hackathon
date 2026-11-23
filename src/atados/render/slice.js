@@ -8,6 +8,8 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
 import { cargarModelos, liberarGltf } from "./modelos.js";
 import { resolverPaleta, mezclarHex } from "./paleta.js";
 import { crearCamara } from "./camara.js";
@@ -22,6 +24,7 @@ import { crearTelegrafias } from "./telegrafias.js";
 import { crearMirra } from "./mirra-arte.js";
 import { crearMuneco } from "./muneco-arte.js";
 import { crearPuesto } from "./puesto.js";
+import { crearBrillos } from "./brillos.js";
 import { crearVfx } from "./vfx.js";
 
 export const MODELOS_SLICE = ["sael", "odo", "espantapajaros", "mirra"];
@@ -137,7 +140,9 @@ export async function crearRenderSlice({
     world0,
     jefe0: c0.jefe,
   });
+  const brillos = crearBrillos(keep);
   const personajes = crearPersonajes({
+    brillos,
     scene,
     cfg,
     modelos,
@@ -152,8 +157,8 @@ export async function crearRenderSlice({
     def.arte === "muneco"
       ? crearMuneco({ scene, cfg, keep, modelos, def })
       : crearMirra({ scene, cfg, keep, modelos, def });
-  const arenaVisual = crearArenaMirraVisual({ scene, keep });
-  const vistaRitos = crearVistaRitos(scene, keep);
+  const arenaVisual = crearArenaMirraVisual({ scene, keep, brillos });
+  const vistaRitos = crearVistaRitos(scene, keep, brillos);
   const vfx = crearVfx({ scene, cfg, keep });
   const puesto = crearPuesto({ scene, cfg, keep, world0 }); // carrito del Puesto 23 con el emblema de Codex
   const exts = extras
@@ -226,7 +231,11 @@ export async function crearRenderSlice({
     B.umbral,
   );
   composer.addPass(bloom);
-  composer.addPass(new OutputPass());
+  const salida = new OutputPass();
+  const suavizarBordes = new ShaderPass(FXAAShader);
+  composer.addPass(salida);
+  // El suavizado lee el color final, incluidos los halos y los contornos del trigo.
+  composer.addPass(suavizarBordes);
 
   // ─── Juice: reacciones a cambios de estado (render puro) ───
   /** Reacciones del render a los eventos de cada jugador (ver personajes.js). */
@@ -349,8 +358,14 @@ export async function crearRenderSlice({
     if (vivoPrev && !c.jefe.vivo) camara.sacudir(cfg.feel.shake.muerteJefe);
     vivoPrev = c.jefe.vivo;
 
-    arenaVisual.sync(w, c);
-    vistaRitos(c.estado === "pelea" && c.id === "mirra" ? c.ritos : null);
+    const flashes = flashesOn();
+    arenaVisual.sync(w, c, flashes);
+    vistaRitos(
+      c.estado === "pelea" && c.id === "mirra" ? c.ritos : null,
+      dtAnim,
+      flashes,
+      c.jefe,
+    );
     trigal.sync(w, c, dtAnim, tiempo, fxJefe);
     const escudo = escudoVisible(c);
     personajes.sync(
@@ -373,6 +388,11 @@ export async function crearRenderSlice({
     puntos.length = 0;
     if (c.jefe.vivo) puntos.push(c.jefe.x, c.jefe.z, c.jefe.r);
     else if (c.lapida) puntos.push(c.lapida.x, c.lapida.z, 1.5);
+    // Mantén las opciones de color dentro del encuadre cuando aparecen lejos de la pareja.
+    if (c.estado === "pelea" && c.ritos.tipo === "braseros") {
+      for (const fuego of c.ritos.braseros)
+        puntos.push(fuego.x, fuego.z, BRASEROS.radio);
+    }
     for (const e of exts) e.foco?.(puntos);
     // Portada del menú: la cámara encuadra a la pareja y al carrito (sin el jefe), con el carrito a la derecha.
     if (verPuesto) {
@@ -401,6 +421,10 @@ export async function crearRenderSlice({
     resize(wd, ht) {
       camara.resize(wd, ht);
       composer.setSize(wd, ht);
+      suavizarBordes.uniforms.resolution.value.set(
+        1 / composer.readBuffer.width,
+        1 / composer.readBuffer.height,
+      );
       bloom.resolution.set(wd / 2, ht / 2);
     },
     sync,
@@ -446,6 +470,9 @@ export async function crearRenderSlice({
       vfx.dispose();
       for (const o of keepList) o.dispose?.();
       for (const g of Object.values(modelos)) liberarGltf(g);
+      suavizarBordes.dispose();
+      salida.dispose();
+      bloom.dispose();
       composer.dispose();
       scene.fog = null;
       renderer.shadowMap.enabled = false;

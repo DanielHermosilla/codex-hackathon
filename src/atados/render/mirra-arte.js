@@ -185,6 +185,9 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
 
   let reloj = 0,
     muerteT = 0,
+    fasePaso = 0,
+    pasoVista = 0,
+    aterrizaje = 0,
     golpeAcum = 0,
     polvoT = 0;
   const xPrev = { x: 0, z: 0, ok: false };
@@ -204,6 +207,7 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
     raiz.position.set(j.x, 0, j.z);
     cuerpo.rotation.set(0, -j.face, 0);
     cuerpo.position.set(0, 0, 0);
+    cuerpo.scale.setScalar(1);
     for (const m of flashMats) m.emissiveIntensity = flash;
     if (alas) alas.visible = j.fase >= 1;
     if (espiga) espiga.visible = !!a && a.tipo === "destello";
@@ -213,6 +217,10 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
     xPrev.z = j.z;
     xPrev.ok = true;
 
+    // Conserva la fase de zancada al acelerar o frenar, sin reposicionar el clip de golpe.
+    pasoVista +=
+      (Math.min(2.3, vel / 2.5) - pasoVista) * (1 - Math.exp(-10 * dt));
+    fasePaso = (fasePaso + dt * pasoVista) % (acciones.camina?.dur ?? 1);
     for (const k in objetivo) objetivo[k] = 0;
     const G = RJ.golpe;
     if (!j.vivo) {
@@ -229,12 +237,10 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
       muerteT = 0;
       raiz.visible = true;
       if (!a) {
-        if (vel > 0.4)
-          poner(
-            "camina",
-            (reloj * Math.min(1.6, vel / 2.5)) % (acciones.camina?.dur ?? 1),
-          );
-        else poner("idle", reloj % (acciones.idle?.dur ?? 2));
+        poner("idle", reloj % (acciones.idle?.dur ?? 2));
+        poner("camina", fasePaso);
+        objetivo.camina = clamp01((pasoVista - 0.04) / 0.5);
+        objetivo.idle = 1 - objetivo.camina;
       } else {
         const clip = a.tipo === "ataque" ? CLIP_DE[a.id] : CLIP_DE[a.tipo];
         /** @type {number} */
@@ -283,18 +289,37 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
         c.estado === "pelea" &&
         c.ritos?.tipo === "pisoton" &&
         c.ritos.tiempo < 0.65;
-      if (salta)
-        cuerpo.position.y += 1.7 * Math.sin((Math.PI * c.ritos.tiempo) / 0.65);
-      else if (enSalto && c.estado === "pelea") {
-        fx.polvo(j.x, j.z, 20, 1.7);
-        fx.sacudir(cfg.feel.shake.carga);
+      if (salta) {
+        const fase = 1 - c.ritos.tiempo / 0.65;
+        // Arco continuo hasta el golpe. Adelanta el tronco al bajar.
+        cuerpo.position.y += 1.85 * 4 * fase * (1 - fase);
+        cuerpo.rotation.z -= 0.2 * fase;
+        aterrizaje = 0;
+      } else {
+        const prepara =
+          c.ritos?.tipo === "pisoton"
+            ? clamp01((1.2 - c.ritos.tiempo) / 0.55)
+            : 0;
+        cuerpo.scale.y -= 0.13 * prepara * Math.sin(Math.PI * prepara);
+        if (enSalto && c.estado === "pelea") {
+          aterrizaje = 0.16;
+          fx.polvo(j.x, j.z, 20, 1.7);
+          fx.sacudir(cfg.feel.shake.carga);
+        }
+        // La corteza se comprime al caer y recupera su volumen en una fracción de segundo.
+        aterrizaje *= Math.exp(-8 * dt);
+        cuerpo.scale.set(
+          1 + aterrizaje * 0.4,
+          cuerpo.scale.y - aterrizaje,
+          1 + aterrizaje * 0.4,
+        );
       }
       enSalto = salta;
     }
 
     if (mixer) {
       // Mezcla suavizada y normalizada (la suma de pesos es 1: nunca asoma la pose de reposo).
-      const f = Math.min(1, dt * 12);
+      const f = 1 - Math.exp(-14 * dt);
       let suma = 0;
       for (const n in acciones) {
         const ac = acciones[n];
