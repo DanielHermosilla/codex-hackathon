@@ -494,7 +494,7 @@ export function accionesDeEvento(cfg, e, jefeId, tele = teleNormal) {
     }
     case "ritual_inicio": // aparece un peligro de arena (solo se emite si llegó a colocarse)
       return sfxArena(cfg, A.arena.avisos[/** @type {string} */ (e.rito)], e);
-    case "arena_golpe": // desenlace de un peligro: cae el orbe, estalla el pilar, cae la luz, pisotón, descarga
+    case "arena_golpe": // desenlace de un peligro: estalla el barril, cae la luz, pisotón, descarga
       return sfxArena(cfg, A.arena.golpes[/** @type {string} */ (e.golpe)], e);
     case "arena_escudo": // la pareja pisó un brasero y quedó protegida
       return sfxArena(cfg, A.arena.escudo, e);

@@ -23,8 +23,6 @@ const GRANDES = new Set([
   "faseGolpe",
   "mirraMuerte",
   "pisotonGolpe",
-  "orbeCae",
-  "orbeExplota",
 ]);
 // Sonidos que se repiten a menudo: deben ser cortos para no ensuciar la mezcla.
 const FRECUENTES = [

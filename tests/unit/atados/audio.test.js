@@ -376,7 +376,7 @@ describe("avisos y buses (D-106)", () => {
     ]);
   });
   it("los ritos mapean sus avisos, golpes y escudo a sus efectos", () => {
-    for (const rito of ["orbe", "luz", "pisoton", "braseros"])
+    for (const rito of ["luz", "pisoton", "braseros"])
       expect(
         accionesDeEvento(CONFIG, { tipo: "ritual_inicio", rito }, "mirra")[0]
           .id,
