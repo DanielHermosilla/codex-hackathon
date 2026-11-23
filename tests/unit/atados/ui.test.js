@@ -34,7 +34,7 @@ import {
 
 const cfg = CONFIG;
 const jugador = (o = {}) => ({
-  hp: 100,
+  hp: cfg.player.maxHp,
   alive: true,
   anchored: false,
   dashT: 0,
@@ -60,7 +60,7 @@ describe("anillo diegético (D-063)", () => {
     let min = 2,
       max = -1;
     for (let t = 0; t < 2; t += 0.01) {
-      const s = estadoAnillo(jugador({ hp: 20 }), cfg, t);
+      const s = estadoAnillo(jugador({ hp: 200 }), cfg, t);
       expect(s.vidaBaja).toBe(true);
       min = Math.min(min, s.pulso);
       max = Math.max(max, s.pulso);
@@ -123,6 +123,17 @@ describe("números de daño (D-166, D-112)", () => {
     expect(tamanoNumero(0, N)).toBe(N.tamanoMin);
     expect(tamanoNumero(100, N)).toBeGreaterThan(tamanoNumero(10, N));
     expect(tamanoNumero(1e9, N)).toBe(N.tamanoMax);
+  });
+  it("con el daño ×10 (D-202) el mismo golpe relativo se ve hasta ~20 % más grande, nunca gigante", () => {
+    const N = cfg.hud.numeroDano;
+    // Fórmula de antes de D-202: 22 + √valor × 5, tope 84, con el valor antes de multiplicar por 10.
+    const antes = (v) => Math.min(84, 22 + Math.sqrt(v) * 5);
+    for (const v of [1, 5, 10, 40, 100, 150]) {
+      const ratio = tamanoNumero(v * 10, N) / antes(v);
+      expect(ratio).toBeGreaterThanOrEqual(1);
+      expect(ratio).toBeLessThanOrEqual(1.2);
+    }
+    expect(N.tamanoMax).toBeLessThanOrEqual(100);
   });
   it("visible mientras hay contacto y se apaga al terminar el fundido", () => {
     expect(datosNumero(hit(), cfg)).toMatchObject({
@@ -254,6 +265,8 @@ describe("iconos de tecla / botón", () => {
     expect(mandoActivo(pad([0.15, 0.15]), G)).toBe(
       Math.hypot(0.15, 0.15) >= G.deadzone,
     ); // la norma, no cada eje
+    expect(mandoActivo(pad([0, 0, 0.5, 0]), G, true)).toBe(true);
+    expect(mandoActivo(pad([0, 0, 0.5, 0]), G, false)).toBe(false);
     expect(mandoActivo(pad([0, 0], [G.dash]), G)).toBe(true);
     expect(
       mandoActivo(pad([0, 0], [], { [G.anchor]: G.anchorThreshold + 0.1 }), G),

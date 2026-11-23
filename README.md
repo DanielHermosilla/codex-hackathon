@@ -1,6 +1,6 @@
 # Hackatón Codex
 
-**AtaDos** es un boss rush cooperativo de Geek Labs para navegador de escritorio. Sael y Odo están unidos por una cadena, y la cadena es su única arma: corta cuando está tensa y la pasan a través del enemigo. Empiezas practicando con un muñeco de paja y después enfrentas a Mirra la Hambrienta, que tiene seis ataques y dos fases.
+**AtaDos** es un boss rush cooperativo de Geek Labs para navegador de escritorio. Sael y Odo están unidos por una cadena, y la cadena es su única arma: corta cuando está tensa y la pasan a través del enemigo. La partida empieza al pie del Templo Ancla. Puedes practicar con el muñeco de paja o subir directamente por el pasillo. Las tarjetas enseñan los controles por el camino. Cruza el arco de la cima para enfrentar a Mirra la Hambrienta, que combina seis ataques en dos fases con el vacío, la luz divina, el pisotón y los braseros.
 
 ## Jugar
 
@@ -14,6 +14,8 @@ npm run dev
 Abre la dirección que imprima Vite, normalmente `http://localhost:5173`. Deja la terminal abierta mientras juegas. Pulsa Ctrl+C para cerrar el servidor. Usa un navegador de escritorio con WebGL 2 y teclado.
 
 Elige **Solo** para mover a Sael con WASD y a Odo con las flechas. Espacio hace esquivar a ambos. Enreda la cadena en un pilar para fijar un extremo y barrer desde ahí. En **Dos jugadores**, Sael esquiva con Espacio y Odo con Shift derecho. Mantén Shift izquierdo o Enter para anclar a Sael u Odo. La partida se pausa con Esc o al cambiar de ventana. El menú **Controles** también indica cómo jugar con mando.
+
+Al vencer a Mirra recibes una moneda. Elige **Continuar al carro de completos**, camina hasta el furgón y pulsa **P** para abrir la carta. Cada producto cuesta una moneda y mejora a ambos personajes. **Esc** cierra la carta.
 
 La [pista 3D de prueba](pista.html) sigue disponible desde **Controles**. La [dirección de diseño](docs/atados/), los [créditos de recursos](CREDITS.md) y la [arquitectura](docs/architecture.md) acompañan al juego.
 

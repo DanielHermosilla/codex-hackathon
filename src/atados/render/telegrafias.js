@@ -58,7 +58,7 @@ export function crearTelegrafias({ scene, cfg, keep, decalMat, def }) {
     new THREE.MeshStandardMaterial({
       color: X.veta,
       emissive: X.veta,
-      emissiveIntensity: 1.1,
+      emissiveIntensity: 1.7,
       flatShading: true,
     }),
   );
@@ -95,6 +95,20 @@ export function crearTelegrafias({ scene, cfg, keep, decalMat, def }) {
             colores.polvo,
             1.2,
           );
+        // La hoz levanta polvo a lo largo de su arco, dentro de la marca de daño.
+        if (z.forma === "arco") {
+          for (let i = 0; i < 5; i++) {
+            const angulo = z.ang + z.apertura * (i / 4 - 0.5);
+            const radio = z.r * 0.84;
+            vfx.polvo(
+              z.x + radio * Math.cos(angulo),
+              z.z + radio * Math.sin(angulo),
+              3,
+              colores.polvo,
+              0.8,
+            );
+          }
+        }
       }
       v.activaPrev = activa;
       if (!ver) continue;

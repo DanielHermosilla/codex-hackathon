@@ -3,11 +3,15 @@
 // etiquetas de los drops placeholder. La lápida está en hud-lapida.js. Todo texto pasa por t() (D-102).
 // Solo lee el estado: no decide gameplay. Sin transiciones CSS: los fundidos salen del tiempo de juego,
 // así las capturas a paso fijo son fieles.
-import { t } from "../i18n/index.js";
-import { escalon, seguirVida } from "./hud-logica.js";
+import { t, getIdioma } from "../i18n/index.js";
+import { BRASEROS } from "../gameplay/ritos.js";
+import { escalon, seguirVida, escudoVisible, hexCss } from "./hud-logica.js";
 
 export const ESTILOS_JEFE = `
 .hud .barra{position:absolute;left:50%;top:20px;transform:translateX(-50%);width:min(46vw,540px);text-align:center;}
+.hud .proteccion{position:absolute;top:65px;left:50%;transform:translateX(-50%);width:min(36vw,240px);text-align:center;font-size:14px;font-variant-numeric:tabular-nums;text-shadow:0 1px 4px var(--fondo);}
+.hud .proteccion .pista{height:5px;background:var(--fondo);margin-top:3px;}
+.hud .proteccion .carga{height:100%;transform-origin:left;}
 .hud .barra .nombre{font-size:15px;letter-spacing:.14em;text-transform:uppercase;text-shadow:0 1px 4px var(--fondo),0 0 10px var(--fondo);margin-bottom:6px;}
 .hud .barra .fondo{position:relative;height:9px;background:color-mix(in srgb,var(--fondo) 78%,transparent);border-radius:2px;overflow:hidden;
   box-shadow:0 0 0 1px color-mix(in srgb,var(--fondo) 90%,transparent);}
@@ -49,7 +53,6 @@ function el(tag, cls, parent, text) {
  * @param {object} deps
  * @param {import('./hud-logica.js').Config} deps.cfg
  * @param {HTMLElement} deps.parent
- * @param {() => import('./hud-logica.js').Combate} deps.getCombate
  * @param {import('./hud-logica.js').ToScreen} deps.toScreen
  * @param {import('./hud-logica.js').RenderTexto} deps.renderTexto
  * @param {() => import('./hud-logica.js').EstadoDispositivo} deps.dispositivo
@@ -57,7 +60,6 @@ function el(tag, cls, parent, text) {
 export function crearHudJefe({
   cfg,
   parent,
-  getCombate,
   toScreen,
   renderTexto,
   dispositivo,
@@ -71,6 +73,10 @@ export function crearHudJefe({
   /** @type {HTMLElement[]} */
   const marcas = [];
 
+  const proteccion = el("div", "proteccion", parent);
+  const etiquetaEscudo = el("span", "", proteccion);
+  const carga = el("div", "carga", el("div", "pista", proteccion));
+  proteccion.hidden = true;
   const pres = el("div", "velo pres", parent);
   const presTitulo = el("div", "titulo", pres);
   const presFilete = el("div", "filete", pres);
@@ -81,7 +87,6 @@ export function crearHudJefe({
   const der = el("div", "velo der", parent);
   const derTitulo = el("div", "titulo", der);
   const derFrase = el("div", "frase", der);
-  const derRush = el("div", "aviso", der);
   const derAviso = el("div", "aviso", der);
 
   const sub = el("div", "sub", parent);
@@ -113,9 +118,21 @@ export function crearHudJefe({
   let estela = 1;
 
   return {
-    /** @param {number} dt */
-    update(dt) {
-      const c = getCombate();
+    /** @param {number} dt @param {import('./hud-logica.js').Combate} c */
+    update(dt, c) {
+      const escudo = escudoVisible(c);
+      proteccion.hidden = !escudo;
+      if (escudo) {
+        const color = t("brasero.color." + escudo.color);
+        // El marcador llega a cero cuando realmente termina la protección.
+        const decimas = (Math.ceil(escudo.restante * 10) / 10).toFixed(1);
+        const tiempo =
+          getIdioma() === "es" ? decimas.replace(".", ",") : decimas;
+        set(etiquetaEscudo, t("brasero.escudo", { color, tiempo }));
+        carga.style.backgroundColor = hexCss(BRASEROS.colores[escudo.color]);
+        carga.style.transform =
+          "scaleX(" + escudo.restante / BRASEROS.ventana + ")";
+      }
       const j = c.jefe,
         def = j.def,
         tx = def.textos;
@@ -164,7 +181,7 @@ export function crearHudJefe({
       if (enDer) {
         set(derTitulo, t("combate.derrota"));
         set(derFrase, t(`jefe.${tx}.derrota`));
-        set(derRush, c.opts.dificil ? t("combate.reiniciaRush") : "");
+        // Esta demo reintenta en la pradera en ambas dificultades (D-213).
         renderTexto(
           derAviso,
           c.derrotaT >= cfg.jefes.comun.derrota.esperaReintento
@@ -193,8 +210,17 @@ export function crearHudJefe({
         set(e, d.extra ? t("drop.extra") : t("drop.placeholder"));
       }
     },
+    // Sin combate (recorrido) se ocultan todas las capas del jefe; con combate las vuelve a mostrar update().
+    /** @param {boolean} v */
+    set visible(v) {
+      if (v) return; // update() decide qué se ve en cada cuadro
+      proteccion.hidden = true; // al salir de la arena también desaparece la protección del rito
+      for (const e of [barra, pres, der, sub, ...dropsEl])
+        e.style.display = "none";
+    },
     dispose() {
-      for (const e of [barra, pres, der, sub, ...dropsEl]) e.remove();
+      for (const e of [barra, proteccion, pres, der, sub, ...dropsEl])
+        e.remove();
     },
   };
 }

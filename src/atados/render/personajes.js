@@ -3,8 +3,10 @@
 // muelle, reacción al dash y al golpe, postura anclada y cadáver arrastrado con pose de muerto.
 // Anillo plano en el suelo (D-051, v2 de D-188) cuyo arco es la vida (D-063). Solo lee el estado.
 import * as THREE from "three";
+import { crearApoyoMarca } from "./apoyo-marca.js";
 import { hornearPorPartes } from "./modelos.js";
 
+const plano = () => 0; // altura visual de las arenas planas
 const PARTES = [
   "torso",
   "cabeza",
@@ -20,8 +22,12 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 /** @param {number} a @param {number} b */
 const angDif = (a, b) => Math.atan2(Math.sin(a - b), Math.cos(a - b));
 
+// `alturaSuelo(x, z)` = altura visual del suelo (m) bajo cada personaje (rampas y peldaños del recorrido,
+// D-210; ver render/altura.js). `alturaAire()` = m que el cuerpo va por encima de su suelo (la caída al
+// valle, D-205): el anillo y la estaca se quedan en el suelo y marcan dónde aterriza. Por defecto 0 los
+// dos: en las arenas planas nada cambia.
 /**
- * @param {{ scene: THREE.Scene, cfg: import('./tipos.js').Cfg, modelos: import('./tipos.js').Modelos, keep: import('./tipos.js').Keep, decalMat: import('./tipos.js').DecalMat, anillo?: boolean }} args
+ * @param {{ scene: THREE.Scene, cfg: import('./tipos.js').Cfg, modelos: import('./tipos.js').Modelos, keep: import('./tipos.js').Keep, decalMat: import('./tipos.js').DecalMat, brillos?: ReturnType<typeof import('./brillos.js').crearBrillos>, anillo?: boolean, alturaSuelo?: (x: number, z: number) => number, alturaAire?: () => number }} args
  */
 export function crearPersonajes({
   scene,
@@ -29,29 +35,16 @@ export function crearPersonajes({
   modelos,
   keep,
   decalMat,
+  brillos,
   anillo = true,
+  alturaSuelo = plano,
+  alturaAire = () => 0,
 }) {
   const P = cfg.paleta.jugadores;
   const M = cfg.render.materiales;
   const R = cfg.render.jugador;
   const A = R.anillo;
 
-  // Anillo: línea fina (fondo tenue + arco de vida) y relleno muy suave. Geometrías compartidas.
-  const ringGeo = keep(
-    new THREE.RingGeometry(
-      A.radio - A.grosor,
-      A.radio,
-      A.segmentos,
-      1,
-      Math.PI / 2,
-      -Math.PI * 2,
-    ),
-  );
-  ringGeo.rotateX(-Math.PI / 2);
-  const fillGeo = keep(
-    new THREE.CircleGeometry(A.radio - A.grosor, A.segmentos),
-  );
-  fillGeo.rotateX(-Math.PI / 2);
   // Estaca del ancla: clavo de bronce corto (se ve aunque el anillo quede tapado).
   const estacaGeo = keep(new THREE.ConeGeometry(0.07, 0.5, 5));
   estacaGeo.rotateX(Math.PI);
@@ -104,6 +97,22 @@ export function crearPersonajes({
     const cuerpo = new THREE.Group(); // gira con face; escala para squash & stretch
     cuerpo.add(mesh);
     root.add(cuerpo);
+    // Anillo: línea fina (fondo tenue + arco de vida) y relleno muy suave. Cada jugador adapta sus vértices al suelo local.
+    const ringGeo = keep(
+      new THREE.RingGeometry(
+        A.radio - A.grosor,
+        A.radio,
+        A.segmentos,
+        1,
+        Math.PI / 2,
+        -Math.PI * 2,
+      ),
+    );
+    ringGeo.rotateX(-Math.PI / 2);
+    const fillGeo = keep(
+      new THREE.CircleGeometry(A.radio - A.grosor, A.segmentos),
+    );
+    fillGeo.rotateX(-Math.PI / 2);
     const lineaFondo = new THREE.Mesh(
       ringGeo,
       decalMat(d.color, A.fondoOpacidad),
@@ -123,6 +132,17 @@ export function crearPersonajes({
     estaca.castShadow = true;
     lineaFondo.visible = linea.visible = relleno.visible = anillo;
     root.add(lineaFondo, linea, relleno, estaca);
+    // El escudo existe en la sala de Mirra. El recorrido comparte el personaje y evita cargar esos efectos.
+    const escudo = brillos?.aro(root, 0xffffff);
+    if (escudo) {
+      escudo.malla.scale.setScalar(A.radio * 1.12);
+      escudo.malla.position.y = 0.065;
+      escudo.malla.visible = false;
+    }
+    const destellos = brillos
+      ? Array.from({ length: 4 }, () => brillos.halo(root, 0xffffff))
+      : [];
+    for (const chispa of destellos) chispa.visible = false;
     scene.add(root);
     return {
       i,
@@ -137,6 +157,16 @@ export function crearPersonajes({
       lineaFondo,
       relleno,
       estaca,
+      escudo,
+      destellos,
+      intensidadEscudo: 0,
+      apoyos:
+        anillo && alturaSuelo !== plano
+          ? [
+              crearApoyoMarca(ringGeo, alturaSuelo),
+              crearApoyoMarca(fillGeo, alturaSuelo),
+            ]
+          : [],
       ringIdx: /** @type {THREE.BufferAttribute} */ (ringGeo.index).count,
       paso: i * 0.5,
       vel: 0,
@@ -178,14 +208,15 @@ export function crearPersonajes({
    * @param {number} dt
    * @param {{ flashes: boolean, dash: (i: number, p: any) => void, golpe: (i: number, p: any) => void, muere: (i: number, p: any) => void, paso: (i: number, x: number, z: number, fuerza: number) => void }} eventos
    * @param {number} tiempo
+   * @param {number|null} [colorEscudo]
    */
-  function sync(w, dt, eventos, tiempo) {
+  function sync(w, dt, eventos, tiempo, colorEscudo = null) {
     const ch = w.chain;
     for (let i = 0; i < 2; i++) {
       const p = w.players[i],
         j = jugadores[i];
       const zancada = R.zancada[j.d.id];
-      j.root.position.set(p.x, 0, p.z);
+      j.root.position.set(p.x, alturaSuelo(p.x, p.z), p.z); // pies sobre el suelo visual (anillo y estaca van con la raíz)
       const speed = Math.hypot(p.vx, p.vz);
       j.vel += (speed - j.vel) * Math.min(1, dt * 12);
       // Velocidad de giro (para el ladeo).
@@ -247,7 +278,7 @@ export function crearPersonajes({
           angDif(tira, j.yawMuerto) * Math.min(1, dt * (speed > 0.3 ? 6 : 1.5));
         j.cuerpo.rotation.set(0, -j.yawMuerto, 0);
         j.cuerpo.scale.set(1, 1, 1);
-        j.cuerpo.position.y = 0;
+        j.cuerpo.position.y = alturaAire();
         b.raiz.rotation.set(0, 0, (Math.PI / 2) * k);
         b.raiz.position.set(-0.55 * k, 0.12 * k, 0);
         const sac = Math.sin(tiempo * 9) * Math.min(1, speed * 0.2) * 0.15; // tumbos al ser arrastrado
@@ -301,7 +332,7 @@ export function crearPersonajes({
           1 - est * 0.55 - apoyo - an * 0.08,
           1 - est * 0.3 + apoyo * 0.5 + an * 0.06,
         );
-        j.cuerpo.position.y = rebote - an * 0.04;
+        j.cuerpo.position.y = rebote - an * 0.04 + alturaAire(); // en la caída, el cuerpo va en el aire
         const torsoR = j.reposo.torso;
         b.torso.position.set(
           torsoR.x + an * -0.03,
@@ -357,13 +388,39 @@ export function crearPersonajes({
         j.mesh.visible = true;
       }
 
+      // El escudo tiñe los dos cuerpos sin ocultar su animación de golpe.
+      j.mat.emissive.setHex(colorEscudo ?? 0xffffff);
+      // El brillo entra con una rampa corta, y sale al mismo tiempo que el escudo.
+      const protegido = colorEscudo !== null && p.alive;
+      j.intensidadEscudo = protegido
+        ? 1 - (1 - j.intensidadEscudo) * Math.exp(-18 * dt)
+        : 0;
+      if (j.escudo) j.escudo.malla.visible = protegido;
+      if (protegido && j.escudo) {
+        j.mat.emissiveIntensity += 0.76 * j.intensidadEscudo;
+        j.escudo.u.color.value.setHex(colorEscudo);
+        j.escudo.u.opacidad.value = 0.78 * j.intensidadEscudo;
+      }
+      for (const [k, chispa] of j.destellos.entries()) {
+        chispa.visible = protegido;
+        if (!protegido) continue;
+        const giro = tiempo * 2.3 + (k * Math.PI) / 2;
+        chispa.position.set(
+          0.75 * Math.cos(giro),
+          0.88 + 0.55 * Math.sin(giro * 1.5),
+          0.75 * Math.sin(giro),
+        );
+        chispa.scale.setScalar(0.32);
+        chispa.material.color.setHex(colorEscudo);
+        chispa.material.opacity = 0.72 * j.intensidadEscudo;
+      }
       j.estaca.visible = p.alive && p.anchored;
       if (!anillo) continue;
+      for (const apoyar of j.apoyos) apoyar(p.x, p.z, j.root.position.y);
       // Anillo: arco = vida (D-063). Anclado: más opaco y con estaca; muerto: casi apagado.
       const hp = clamp(p.hp / cfg.player.maxHp, 0, 1);
       j.hpVista += (hp - j.hpVista) * Math.min(1, dt * 8);
       const segs = Math.max(0, Math.round(j.hpVista * A.segmentos));
-      j.linea.geometry = ringGeo;
       j.linea.visible = p.alive && segs > 0;
       j.linea.userData.rango = segs * 6;
       j.lineaFondo.visible = true;
@@ -381,10 +438,10 @@ export function crearPersonajes({
   // El arco de vida se dibuja con drawRange sobre la geometría compartida: se fija justo antes de cada malla.
   for (const j of jugadores) {
     j.linea.onBeforeRender = () => {
-      ringGeo.setDrawRange(0, j.linea.userData.rango ?? j.ringIdx);
+      j.linea.geometry.setDrawRange(0, j.linea.userData.rango ?? j.ringIdx);
     };
     j.linea.onAfterRender = () => {
-      ringGeo.setDrawRange(0, Infinity);
+      j.linea.geometry.setDrawRange(0, Infinity);
     };
   }
 

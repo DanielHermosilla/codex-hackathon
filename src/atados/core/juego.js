@@ -1,6 +1,7 @@
 // Bucle de paso fijo con acumulador y tope de dt (regla 5). Sin three.js ni DOM:
 // recibe una función `sample(solo)` que devuelve las entradas y la lista de acciones de debug.
-// `crearJuego` = greybox del muñeco (hito 1); `crearJuegoJefe` = combate contra un jefe (hito 2).
+// `crearJuego` = greybox del muñeco (hito 1); `crearJuegoJefe` = combate contra un jefe (hito 2);
+// `crearJuegoRecorrido` = lobby + pasillo de subida (D-204 a D-211).
 import {
   createWorld,
   stepWorld,
@@ -16,6 +17,11 @@ import {
   pasoCombate,
   reintentar as reintentarCombate,
 } from "../gameplay/combate.js";
+import {
+  crearRecorrido,
+  pasoRecorrido,
+  reiniciarPasillo,
+} from "../gameplay/recorrido.js";
 
 /** @typedef {typeof import('./config.js').CONFIG} Config */
 /** @typedef {import('./input.js').Entrada} Entrada */
@@ -27,7 +33,7 @@ import {
  * @param {Config} cfg
  * @param {{ solo: boolean, sample: Muestreo, paso: (ins: Entrada[], dt: number) => boolean | void, debug: (acciones: string[]) => void }} deps
  */
-function crearBucle(cfg, { solo, sample, paso, debug }) {
+export function crearBucle(cfg, { solo, sample, paso, debug }) {
   let acc = 0;
   let steps = 0;
   // Pulsaciones de dash pendientes: se guardan hasta que un paso simulado las procese
@@ -74,7 +80,7 @@ function crearBucle(cfg, { solo, sample, paso, debug }) {
  * @param {Mundo} world
  * @param {string} a
  */
-function aplicarDebugComun(world, a) {
+export function aplicarDebugComun(world, a) {
   if (a === "hurtSael") debugHurt(world, SAEL);
   else if (a === "hurtOdo") debugHurt(world, ODO);
   else if (a === "killSael") debugKill(world, SAEL);
@@ -118,40 +124,68 @@ export function crearJuego(cfg, { solo = false, sample }) {
 }
 
 // Combate: el reintento reemplaza el combate entero (estado reproducible por semilla, D-028/D-173).
+// Cada reemplazo (reintento en el paso, `reintentar()`, `reiniciar()` o la tecla de reinicio) pasa los
+// eventos que el combate viejo aún no entregó al principio de la lista del nuevo: quien lee
+// `combate.eventos` no pierde ninguno aunque haya varios reemplazos entre dos lecturas.
 /**
  * @param {Config} cfg
- * @param {{ solo?: boolean, dificil?: boolean, seed?: number, jefe?: string, sample: Muestreo }} opciones
+ * @param {{ solo?: boolean, dificil?: boolean, seed?: number, jefe?: string, primeraVez?: boolean, sample: Muestreo }} opciones
  */
 export function crearJuegoJefe(
   cfg,
-  { solo = false, dificil = false, seed = 1, jefe = "mirra", sample },
-) {
-  let combate = crearCombate(cfg, { jefe, solo, dificil, seed });
-  const bucle = crearBucle(cfg, {
-    solo,
+  {
+    solo = false,
+    dificil = false,
+    seed = 1,
+    jefe = "mirra",
+    primeraVez = true,
     sample,
-    paso: (ins, dt) => {
-      const r = pasoCombate(combate, ins, dt);
-      if (combate.pedirReintento) combate = reintentarCombate(combate);
-      return r;
-    },
-    debug: (acciones) => {
-      for (const a of acciones) {
-        if (a === "reset") reiniciar();
-        else aplicarDebugComun(combate.w, a);
-      }
-    },
-  });
+  },
+) {
+  let combate = crearCombate(cfg, { jefe, solo, dificil, seed, primeraVez });
+  /**
+   * Cambia el combate en curso conservando sus eventos pendientes (van delante de los del nuevo).
+   * Solo pasa en un reemplazo, no en cada paso: la copia no cuenta como asignación por paso.
+   * @param {Combate} nuevo
+   */
+  function reemplazar(nuevo) {
+    const viejos = combate.eventos;
+    if (viejos.length) {
+      nuevo.eventos.splice(0, 0, ...viejos); // primero lo del combate viejo, en su orden
+      viejos.length = 0;
+    }
+    combate = nuevo;
+  }
+  /**
+   * Un paso fijo del combate; si los dos pidieron reintentar, lo reemplaza en el mismo paso.
+   * @param {Entrada[]} ins
+   * @param {number} dt  s
+   */
+  function paso(ins, dt) {
+    const r = pasoCombate(combate, ins, dt);
+    if (combate.pedirReintento) reemplazar(reintentarCombate(combate));
+    return r;
+  }
+  /** @param {string[]} acciones  acciones de debug del cuadro */
+  function aplicarDebug(acciones) {
+    for (const a of acciones) {
+      if (a === "reset") reiniciar();
+      else aplicarDebugComun(combate.w, a);
+    }
+  }
+  const bucle = crearBucle(cfg, { solo, sample, paso, debug: aplicarDebug });
   /** @param {boolean} [primeraVez] */
   function reiniciar(primeraVez = false) {
-    combate = crearCombate(cfg, {
-      jefe,
-      solo,
-      dificil,
-      seed,
-      primeraVez,
-      reintentos: combate.opts.reintentos,
-    });
+    reemplazar(
+      crearCombate(cfg, {
+        jefe,
+        solo,
+        dificil,
+        seed,
+        primeraVez,
+        reintentos: combate.opts.reintentos,
+      }),
+    );
     bucle.resetAcc();
   }
   return {
@@ -166,11 +200,69 @@ export function crearJuegoJefe(
     },
     /** @param {number} dt */
     update: (dt) => bucle.update(dt),
+    /** Un paso fijo sin bucle propio (lo usa el flujo de la partida, core/flujo.js, con su bucle). */
+    paso,
+    /** Acciones de debug sin bucle propio (el flujo gestiona antes la tecla de reinicio). */
+    aplicarDebug,
     reintentar() {
-      combate = reintentarCombate(combate);
+      reemplazar(reintentarCombate(combate));
       bucle.resetAcc();
     },
     reiniciar,
+  };
+}
+
+// Recorrido de inicio (lobby + pasillo, D-204 a D-211) sobre el mismo bucle de paso fijo.
+// El mundo se reemplaza al reiniciar el pasillo: leerlo siempre por `world` (no guardar la referencia).
+/**
+ * @param {Config} cfg
+ * @param {{ solo?: boolean, dificil?: boolean, seed?: number, caida?: boolean, sample: Muestreo }} opciones
+ *   caida = false empieza ya aterrizado (pruebas)
+ */
+export function crearJuegoRecorrido(
+  cfg,
+  { solo = false, dificil = false, seed = 1, caida = true, sample },
+) {
+  const recorrido = crearRecorrido(cfg, { solo, dificil, seed, caida });
+  /**
+   * Un paso fijo del recorrido.
+   * @param {Entrada[]} ins
+   * @param {number} dt  s
+   */
+  const paso = (ins, dt) => pasoRecorrido(recorrido, ins, dt);
+  /** @param {string[]} acciones  acciones de debug del cuadro */
+  function aplicarDebug(acciones) {
+    for (const a of acciones) {
+      if (a === "reset")
+        reiniciarPasillo(recorrido); // tecla de reinicio: vuelve al lobby
+      else aplicarDebugComun(recorrido.w, a);
+    }
+  }
+  const bucle = crearBucle(cfg, { solo, sample, paso, debug: aplicarDebug });
+  return {
+    recorrido,
+    /** Mundo de la cadena (cambia al reiniciar el pasillo). */
+    get world() {
+      return recorrido.w;
+    },
+    /** Estado de lectura para render y HUD (mismo objeto toda la partida). */
+    get estado() {
+      return recorrido.estado;
+    },
+    /** Eventos pendientes; quien los lee vacía la lista (`length = 0`). */
+    get eventos() {
+      return recorrido.eventos;
+    },
+    get steps() {
+      return bucle.steps;
+    },
+    /** @param {number} dt  s del cuadro; devuelve cuántos pasos fijos simuló */
+    update: (dt) => bucle.update(dt),
+    /** Un paso fijo sin bucle propio (lo usa el flujo de la partida, core/flujo.js, con su bucle). */
+    paso,
+    /** Acciones de debug sin bucle propio (el flujo gestiona antes la tecla de reinicio). */
+    aplicarDebug,
+    resetAcc: () => bucle.resetAcc(),
   };
 }
 

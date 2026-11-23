@@ -1,5 +1,6 @@
 import { muralText as es } from "./i18n/es.js";
 import { muralText as en } from "./i18n/en.js";
+import { getIdioma } from "./i18n/index.js";
 import "./mural.css";
 
 /**
@@ -8,13 +9,13 @@ import "./mural.css";
  */
 export function createMural(element) {
   // El texto del diálogo sigue el idioma de la interfaz.
-  const text = document.documentElement.lang.startsWith("en") ? en : es;
+  const text = getIdioma() === "en" ? en : es;
   // El título da contexto al lector de pantalla cuando aparece el diálogo.
   element.setAttribute("aria-label", text.stall);
   element.classList.add("atados-mural");
   element.hidden = true;
 
-  // Esta plantilla solo contiene el texto fijo del juego y el emblema local.
+  // Esta plantilla solo contiene el diálogo del juego.
   element.innerHTML = `
     <div class="mural-ticket">
       <div class="mural-heading">
@@ -26,7 +27,6 @@ export function createMural(element) {
           <dt>Sael</dt><dd>${text.sael}</dd>
           <dt>Odo</dt><dd>${text.odo}</dd>
         </dl>
-        <img src="${import.meta.env.BASE_URL}atados/codex.svg" alt="Codex" width="24" height="24"/>
       </div>
     </div>`;
 

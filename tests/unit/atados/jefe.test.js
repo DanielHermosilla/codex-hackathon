@@ -89,23 +89,23 @@ describe("fases por vida (D-153)", () => {
     saltarPresentacion(c);
     sinAtaques(c);
     const hpMax = c.jefe.hpMax;
-    c.jefe.hp = hpMax * 0.5 + 10;
-    const aplicado = registrarDano(c.ctx, 100, 1, [100, 0]);
-    expect(aplicado).toBe(100);
+    c.jefe.hp = hpMax * 0.5 + 100; // ×10 (D-202)
+    const aplicado = registrarDano(c.ctx, 1000, 1, [1000, 0]);
+    expect(aplicado).toBe(1000);
     expect(c.jefe.hp).toBe(hpMax * 0.5); // no se salta la fase
     expect(c.jefe.accion.tipo).toBe("transicion_fase");
     expect(c.jefe.invulnerable).toBe(true);
     expect(c.jefe.fase).toBe(1);
-    expect(c.w.pillars.map((p) => p.id).sort()).toEqual([0, 2]);
+    expect(c.w.pillars.map((p) => p.id).sort()).toEqual([0, 2, 4, 5, 6, 7]);
     // Invulnerable mientras cambia la arena: ni la regla ni el mundo dejan pasar daño.
-    expect(registrarDano(c.ctx, 500, 1, [500, 0])).toBe(0);
+    expect(registrarDano(c.ctx, 5000, 1, [5000, 0])).toBe(0);
     pasoCombate(c, quietos(), DT);
     expect(c.w.dummy.invulnerable).toBe(true);
     expect(c.jefe.hp).toBe(hpMax * 0.5);
     correr(c, CONFIG.jefes.comun.transicion + DT * 2);
     expect(c.jefe.invulnerable).toBe(false);
     expect(c.jefe.accion?.tipo).toBe("destello"); // D-156: pausa real, vulnerable
-    expect(registrarDano(c.ctx, 10, 1, [10, 0])).toBe(10);
+    expect(registrarDano(c.ctx, 100, 1, [100, 0])).toBe(100);
     correr(c, CONFIG.jefes.comun.destello + DT * 2);
     expect(c.jefe.accion?.tipo === "destello").toBe(false);
   });
@@ -129,7 +129,7 @@ describe("fases por vida (D-153)", () => {
         if (e.tipo === "telegrafia_inicio") vistos.add(e.ataque);
       c.jefe.hp = c.jefe.hpMax * 0.4; // que no muera
       c.w.players.forEach((p) => {
-        p.hp = 100;
+        p.hp = CONFIG.player.maxHp;
         p.alive = true;
       });
     }
@@ -265,10 +265,10 @@ describe("daño de los ataques", () => {
     const acc = forzarAtaque(c, "siega");
     correr(c, acc.T + 0.5);
     expect(c.w.players[0].hp).toBe(
-      100 - CONFIG.jefes.mirra.ataques.siega.bloques[0].dano,
+      CONFIG.player.maxHp - CONFIG.jefes.mirra.ataques.siega.bloques[0].dano,
     );
     expect(c.stats.golpes[0]).toBe(1);
-    expect(c.w.players[1].hp).toBe(100); // fuera del radio
+    expect(c.w.players[1].hp).toBe(CONFIG.player.maxHp); // fuera del radio
 
     const d = nuevo();
     saltarPresentacion(d);
@@ -278,7 +278,7 @@ describe("daño de los ataques", () => {
     const a2 = forzarAtaque(d, "siega");
     correr(d, a2.T - 0.03); // la hoja pasa por el centro del arco a mitad del golpe
     correr(d, 0.4, (t) => [inp({ mz: 1, dash: t < DT }), inp()]);
-    expect(d.w.players[0].hp).toBe(100);
+    expect(d.w.players[0].hp).toBe(CONFIG.player.maxHp);
   });
 
   it("el cuerpo del jefe solo empuja, no daña (D-152)", () => {
@@ -289,7 +289,7 @@ describe("daño de los ataques", () => {
     colocar(c, [2.5, 0], [8, 0]);
     correr(c, 1.5, () => [inp({ mx: -1 }), inp()]);
     const p = c.w.players[0];
-    expect(p.hp).toBe(100);
+    expect(p.hp).toBe(CONFIG.player.maxHp);
     expect(Math.hypot(p.x - c.jefe.x, p.z - c.jefe.z)).toBeGreaterThanOrEqual(
       c.jefe.r + CONFIG.player.radius - 1e-6,
     );
@@ -397,7 +397,7 @@ describe("regresiones de la revisión Codex", () => {
     forzarAtaque(c, "hambre");
     correr(c, 220 * DT);
     expect(c.w.players[0].hp).toBe(
-      100 - CONFIG.jefes.mirra.ataques.hambre.bloques[0].dano,
+      CONFIG.player.maxHp - CONFIG.jefes.mirra.ataques.hambre.bloques[0].dano,
     );
   });
 
@@ -470,7 +470,7 @@ describe("regresiones de la revisión Codex", () => {
     }
     expect(c.w.players[0].dashT).toBeGreaterThan(0);
     correr(c, 0.4);
-    expect(c.w.players[0].hp).toBe(100);
+    expect(c.w.players[0].hp).toBe(CONFIG.player.maxHp);
     // La mordida dura menos que la invulnerabilidad del dash: esquivarla a tiempo es posible.
     const bite = CONFIG.jefes.mirra.ataques.banquete.bloques[1];
     expect(bite.activo).toBeLessThanOrEqual(CONFIG.dash.duration);
@@ -488,7 +488,7 @@ describe("regresiones de la revisión Codex", () => {
       inp({ dash: Math.abs(t - 0.2) < DT / 2, mz: -1 }),
       inp(),
     ]);
-    expect(c.w.players[0].hp).toBeLessThan(100);
+    expect(c.w.players[0].hp).toBeLessThan(CONFIG.player.maxHp);
   });
 });
 
@@ -511,7 +511,7 @@ describe("Hambre contra la cadena tensa (D-148)", () => {
       maxV = Math.max(maxV, Math.hypot(c.w.dummy.vx, c.w.dummy.vz));
     }
     expect(maxV).toBeGreaterThan(10);
-    expect(c.jefe.hp).toBeLessThan(hp0 - 10); // los dos quietos: el corte sale de la velocidad del jefe
+    expect(c.jefe.hp).toBeLessThan(hp0 - 100); // los dos quietos: el corte sale de la velocidad del jefe
     expect(tropezo).toBe(true);
     expect(acc.recuperacion).toBe(
       CONFIG.jefes.mirra.ataques.hambre.bloques[0].tropiezo.duracion,
@@ -532,7 +532,47 @@ describe("Hambre contra la cadena tensa (D-148)", () => {
     for (let s = 0; s < 240 && c.jefe.accion; s++)
       pasoCombate(c, [inp({ anchor: true }), inp({ anchor: true })], DT);
     expect(acc.tropezo).toBe(false);
-    expect(hp0 - c.jefe.hp).toBeLessThan(5);
+    expect(hp0 - c.jefe.hp).toBeLessThan(50);
+  });
+});
+
+describe("escala ×10 de vida y daño (D-202)", () => {
+  it("los números de balance quedan ×10 y la proporción cadena / vida de Mirra no cambia", () => {
+    expect(CONFIG.player.maxHp).toBe(1000);
+    expect(CONFIG.jefes.mirra.vida).toBe(12000);
+    expect(CONFIG.damage.chain.scale).toBe(70);
+    expect(CONFIG.damage.chain.scale / CONFIG.jefes.mirra.vida).toBeCloseTo(
+      7 / 1200,
+      12,
+    );
+    // El daño de cada ataque es ≤ 30 % de la vida de un jugador, igual que antes (30 de 100).
+    for (const a of Object.values(CONFIG.jefes.mirra.ataques))
+      for (const b of a.bloques) {
+        const d = b.dano ?? b.danoPorTick ?? 0;
+        expect(d / CONFIG.player.maxHp).toBeLessThanOrEqual(0.3 + 1e-9);
+      }
+  });
+
+  it("una pasada tensa quita la misma fracción de la vida de Mirra que con los números de antes (÷10)", () => {
+    const fraccion = (cfg) => {
+      const c = nuevo({}, cfg);
+      saltarPresentacion(c);
+      sinAtaques(c);
+      colocarJefe(c, 0, -3);
+      colocar(c, [-3.5, 0], [3.5, 0]);
+      correr(c, 1.2, () => [
+        inp({ mx: -0.5, mz: -1 }),
+        inp({ mx: 0.5, mz: -1 }),
+      ]);
+      return (c.jefe.hpMax - c.jefe.hp) / c.jefe.hpMax;
+    };
+    const antes = cfgBase();
+    antes.player.maxHp /= 10;
+    antes.damage.chain.scale /= 10;
+    antes.jefes.mirra.vida /= 10;
+    const ahora = fraccion(cfgBase());
+    expect(ahora).toBeGreaterThan(0.001);
+    expect(ahora).toBeCloseTo(fraccion(antes), 6);
   });
 });
 
@@ -616,15 +656,17 @@ describe("caídas, derrota y reintento (D-020, D-028, D-111, D-167, D-173)", () 
     ).toBe(true);
     expect(r.jefe.hp).toBe(r.jefe.hpMax);
     expect(r.jefe.fase).toBe(0);
-    expect(r.w.pillars.length).toBe(4);
+    expect(r.w.pillars.length).toBe(8);
     expect(r.opts.reintentos).toBe(1);
     expect(r.presentacion.saltable).toBe(true);
   });
 
-  it("en difícil caer los dos reinicia con la presentación completa (D-029, D-172)", () => {
+  it("en difícil el reintento también trae la presentación corta (D-213; el rush lo decide el flujo)", () => {
     const c = nuevo({ dificil: true });
     const r = reintentar(c);
-    expect(r.presentacion.saltable).toBe(false);
+    expect(r.presentacion.saltable).toBe(true);
+    expect(r.presentacion.T).toBe(CONFIG.jefes.comun.presentacion.reintento);
+    expect(r.eventos.some((e) => e.tipo === "silencio")).toBe(false); // sin el silencio del nombre
   });
 
   it("el bucle reemplaza el combate al reintentar", () => {
@@ -656,7 +698,7 @@ describe("caídas, derrota y reintento (D-020, D-028, D-111, D-167, D-173)", () 
       for (let k = 0; k < 30; k++) {
         correr(c, 0.5, () => [inp({ mx: 0.3 }), inp({ mx: -0.3 })]);
         c.w.players.forEach((p) => {
-          p.hp = 100;
+          p.hp = CONFIG.player.maxHp;
         });
         for (const e of c.eventos)
           if (e.tipo === "telegrafia_inicio") out.push(e.ataque);
@@ -681,7 +723,7 @@ describe("caídas, derrota y reintento (D-020, D-028, D-111, D-167, D-173)", () 
         DT,
       );
       c.w.players.forEach((p) => {
-        p.hp = 100;
+        p.hp = CONFIG.player.maxHp;
         p.alive = true;
       });
       const ids = new Set(
@@ -700,12 +742,12 @@ describe("victoria y lápida (D-020, D-098, D-099, D-100, D-174)", () => {
     sinAtaques(c);
     // Algo de daño atribuido a cada uno y un golpe recibido.
     c.w.dummy.byPlayer[0] += 0; // la atribución real sale de mundo.js; aquí se simula vía registrarDano
-    c.jefe.hp = 50;
+    c.jefe.hp = 500; // ×10 (D-202)
     c.jefe.fase = 1; // ya en la última fase
-    c.ctx.golpear({ accion: { id: "prueba" } }, 0, 10, 0, 0, 0, false);
+    c.ctx.golpear({ accion: { id: "prueba" } }, 0, 100, 0, 0, 0, false);
     killPlayer(c.w.players[1]);
     pasoCombate(c, quietos(), DT);
-    registrarDano(c.ctx, 60, 1, [60, 0]);
+    registrarDano(c.ctx, 600, 1, [600, 0]);
     pasoCombate(c, quietos(), DT);
     expect(c.jefe.vivo).toBe(false);
     expect(c.estado).toBe("victoria");
@@ -740,7 +782,7 @@ describe("victoria y lápida (D-020, D-098, D-099, D-100, D-174)", () => {
     colocarJefe(c, 0, -3);
     colocar(c, [-3.5, 0], [3.5, 0]);
     correr(c, 1.2, () => [inp({ mx: -0.5, mz: -1 }), inp({ mx: 0.5, mz: -1 })]);
-    expect(c.stats.dano[0] + c.stats.dano[1]).toBeGreaterThan(5);
+    expect(c.stats.dano[0] + c.stats.dano[1]).toBeGreaterThan(50);
     expect(c.stats.dano[0] + c.stats.dano[1]).toBeCloseTo(
       c.jefe.hpMax - c.jefe.hp,
       5,

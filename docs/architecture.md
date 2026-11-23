@@ -23,18 +23,22 @@ Playwright solo se usa para la prueba en navegador. Prettier comprueba el format
 
 La portada carga `src/atados/main.js`. La pista anterior usa `pista.html` y `src/main.js`. Vite compila ambas páginas.
 
-`main.js` une la página (menú, modos Solo y Dos jugadores, pausa, resultados y cartel del puesto) con el combate. Cada sala (la práctica con el muñeco de paja y la pelea con Mirra) crea su combate, su render y su HUD; el audio y la entrada duran toda la sesión.
+`main.js` une la página (menú, modos Solo y Dos jugadores, pausa y resultados) con la partida. El lobby y el pasillo comparten un mundo. Al cruzar el arco se prepara la pradera de Mirra y se transfieren los puntos de vida de cada jugador. Tras la victoria, el botón «Continuar al carro de completos» abre el primer tramo del siguiente pasillo. El HUD sigue al mundo activo. El audio y la entrada duran toda la sesión.
 
 | Carpeta | Qué hay |
 |---|---|
-| `src/atados/core/` | `config.js` (todos los números, la paleta y los tiempos), RNG con semilla (`?seed=N`), entrada de teclado y mandos, bucle de paso fijo (60 pasos por segundo, `dt` con tope) |
+| `src/atados/core/` | `config.js` (todos los números, la paleta y los tiempos), RNG con semilla (`?seed=N`), entrada de teclado y mandos, bucle de paso fijo (60 pasos por segundo, `dt` con tope), recorrido y transición al jefe en `flujo.js` |
 | `src/atados/gameplay/` | Reglas puras sin three.js ni DOM: cadena de eslabones con enredo en pilares y daño por tensión, jugadores (dash, ancla, cadáver), jefe genérico con fases y bloques de ataque reutilizables |
-| `src/atados/render/` | Escena del trigal, cámara 3/4, personajes y Mirra con modelos GLB, cadena de metal, telegrafías planas, partículas con pools, muñeco de práctica y Puesto 23 |
+| `src/atados/render/` | Templo con escaleras y rampas visuales, pradera de la cima, cámara 3/4, personajes y Mirra con modelos GLB, cadena de metal, telegrafías planas, partículas con pools, muñeco de práctica, enemigos del pasillo, furgón y efectos de los ritos de Mirra |
 | `src/atados/audio/` | Música por capas que sigue la pelea, avisos sonoros por ataque, zumbido de la cadena según la tensión (zzfx) |
-| `src/atados/ui/` | HUD del combate: barra del jefe, números de daño, lápida de victoria |
+| `src/atados/ui/` | Tarjetas del tutorial, murales, presentación del jefe, barra de vida, números de daño y lápida de victoria |
 | `src/atados/i18n/` | Textos en español e inglés (`?lang=en`) |
 
-Un jefe nuevo es un bloque de datos en `CONFIG.jefes`: vida, arena, fases y ataques hechos con los bloques de `gameplay/bloques.js` (barrido, zona, proyectiles en arco, carga, zona móvil, tirón). Todo ataque se puede cancelar y libera lo que creó. La práctica es un jefe más (`muneco`) sin ataques.
+La tienda pertenece a la partida. El evento de victoria concede la recompensa de Mirra. Cerca de la ventanilla, P abre la carta de Dani y pausa la simulación. Las compras se comparten entre los dos jugadores, duran al reintentar y se reinician al volver al menú. Los precios se definen en `CONFIG.tienda.precios`, los efectos en `gameplay/tienda.js` y la presentación en `ui/tienda.js`.
+
+Mirra intercala los seis ataques de sus dos fases con el orbe del vacío, la luz divina, el pisotón y los braseros. La rotación y los avisos se coordinan en `gameplay/combate.js`. Las reglas del vacío y de la luz están en `gameplay/arena-mirra.js`; el escudo y los braseros, en `gameplay/ritos.js`.
+
+Un jefe nuevo es un bloque de datos en `CONFIG.jefes`: vida, arena, fases y ataques hechos con los bloques de `gameplay/bloques.js` (barrido, zona, proyectiles en arco, carga, zona móvil, tirón). Todo ataque se puede cancelar y libera lo que creó. El muñeco opcional del lobby se gestiona en `gameplay/recorrido.js` y se rearma después de una práctica.
 
 `window.__game` expone el estado de solo lectura y utilidades deterministas para las pruebas: `step(n)` avanza `n` pasos fijos, `setInput` simula controles, `forzarAtaque` y `setVidaJefe` llevan la pelea a un momento concreto. Las pruebas de lógica están en `tests/unit/atados/` y las de navegador en `tests/browser/atados.spec.js`.
 

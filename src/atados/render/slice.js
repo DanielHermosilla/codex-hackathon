@@ -8,17 +8,24 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
 import { cargarModelos, liberarGltf } from "./modelos.js";
 import { resolverPaleta, mezclarHex } from "./paleta.js";
 import { crearCamara } from "./camara.js";
+import { crearArenaMirraVisual } from "./arena-mirra.js";
+import { BRASEROS } from "../gameplay/ritos.js";
+import { escudoVisible } from "../ui/hud-logica.js";
+import { crearVistaRitos } from "./ritos.js";
 import { crearTrigal } from "./trigal.js";
 import { crearPersonajes } from "./personajes.js";
 import { crearCadenaArte } from "./cadena-arte.js";
 import { crearTelegrafias } from "./telegrafias.js";
 import { crearMirra } from "./mirra-arte.js";
 import { crearMuneco } from "./muneco-arte.js";
-import { crearPuesto } from "./puesto.js";
+import { crearBrillos } from "./brillos.js";
 import { crearVfx } from "./vfx.js";
+import { configurarRenderer, reducidoSistema } from "./renderer-config.js";
 
 export const MODELOS_SLICE = ["sael", "odo", "espantapajaros", "mirra"];
 // Modelos que necesita cada arte de jefe (`def.arte`); la práctica no carga a Mirra.
@@ -59,11 +66,9 @@ export async function crearRenderSlice({
     keepList.push(o);
     return o;
   };
-  const reducido =
-    typeof matchMedia === "function" &&
-    matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reducido = reducidoSistema(); // preferencia del sistema, leída en vivo
   const reducir = () =>
-    cfg.feel.reducirMovimiento || params?.has("reducir") || reducido;
+    cfg.feel.reducirMovimiento || params?.has("reducir") || reducido();
   const flashesOn = () => cfg.feel.flashes.activo && !reducir();
   // Marcas planas en el suelo (D-143): sin bordes ni brillo, encima del trigo bajo, debajo de cuerpos.
   /** @type {import('./tipos.js').DecalMat} */
@@ -96,10 +101,7 @@ export async function crearRenderSlice({
   scene.background = new THREE.Color(pal.niebla);
 
   // ─── Luz: sol de hora dorada + cielo (D-086) ───
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFShadowMap;
-  renderer.toneMapping = THREE.NeutralToneMapping;
-  renderer.toneMappingExposure = cfg.render.exposicion;
+  configurarRenderer(renderer, cfg); // sombras y tone mapping (se repite en activar())
   const hemi = new THREE.HemisphereLight(
     pal.hemiCielo,
     pal.hemiSuelo,
@@ -133,7 +135,9 @@ export async function crearRenderSlice({
     world0,
     jefe0: c0.jefe,
   });
+  const brillos = crearBrillos(keep);
   const personajes = crearPersonajes({
+    brillos,
     scene,
     cfg,
     modelos,
@@ -148,8 +152,9 @@ export async function crearRenderSlice({
     def.arte === "muneco"
       ? crearMuneco({ scene, cfg, keep, modelos, def })
       : crearMirra({ scene, cfg, keep, modelos, def });
+  const arenaVisual = crearArenaMirraVisual({ scene, keep, brillos });
+  const vistaRitos = crearVistaRitos(scene, keep, brillos);
   const vfx = crearVfx({ scene, cfg, keep });
-  const puesto = crearPuesto({ scene, cfg, keep, world0 }); // carrito del Puesto 23 con el emblema de Codex
   const exts = extras
     .map((f) =>
       f({
@@ -211,7 +216,8 @@ export async function crearRenderSlice({
 
   // ─── Post: bloom suave (D-089) ───
   const composer = new EffectComposer(renderer);
-  composer.addPass(new RenderPass(scene, camera));
+  const renderPass = new RenderPass(scene, camera);
+  composer.addPass(renderPass);
   const B = cfg.render.bloom;
   const bloom = new UnrealBloomPass(
     new THREE.Vector2(256, 256),
@@ -220,7 +226,11 @@ export async function crearRenderSlice({
     B.umbral,
   );
   composer.addPass(bloom);
-  composer.addPass(new OutputPass());
+  const salida = new OutputPass();
+  const suavizarBordes = new ShaderPass(FXAAShader);
+  composer.addPass(salida);
+  // El suavizado lee el color final, incluidos los halos y los contornos del trigo.
+  composer.addPass(suavizarBordes);
 
   // ─── Juice: reacciones a cambios de estado (render puro) ───
   /** Reacciones del render a los eventos de cada jugador (ver personajes.js). */
@@ -255,7 +265,7 @@ export async function crearRenderSlice({
 
   let tiempo = 0;
   let kVista = -1;
-  let verPuesto = false; // true en el menú: la cámara incluye el Puesto 23
+  let cinematica = false; // true: la próxima presentación usa la cinemática de entrada (D-211)
   let intensidad = 0;
   let hitPrev = 0;
   let flashT = 0,
@@ -265,7 +275,14 @@ export async function crearRenderSlice({
   /** @type {number[]} */
   const puntos = [];
   const momento = { fase: 1, intensidad: 0 };
-  const presentacion = { k: 0, jx: 0, jz: 0, face: 0, alto: def.altura };
+  const presentacion = {
+    k: 0,
+    jx: 0,
+    jz: 0,
+    face: 0,
+    alto: def.altura,
+    cinematica: false,
+  };
 
   /** @param {number} dt */
   function sync(dt) {
@@ -343,8 +360,23 @@ export async function crearRenderSlice({
     if (vivoPrev && !c.jefe.vivo) camara.sacudir(cfg.feel.shake.muerteJefe);
     vivoPrev = c.jefe.vivo;
 
+    const flashes = flashesOn();
+    arenaVisual.sync(w, c, flashes);
+    vistaRitos(
+      c.estado === "pelea" && c.id === "mirra" ? c.ritos : null,
+      dtAnim,
+      flashes,
+      c.jefe,
+    );
     trigal.sync(w, c, dtAnim, tiempo, fxJefe);
-    personajes.sync(w, dtAnim, eventosJug, tiempo);
+    const escudo = escudoVisible(c);
+    personajes.sync(
+      w,
+      dtAnim,
+      eventosJug,
+      tiempo,
+      escudo ? BRASEROS.colores[escudo.color] : null,
+    );
     cadena.sync(w, dtAnim);
     tele.sync(c, vfx, colores);
     mirra.sync(c, w, dtAnim, tiempo, {
@@ -358,12 +390,12 @@ export async function crearRenderSlice({
     puntos.length = 0;
     if (c.jefe.vivo) puntos.push(c.jefe.x, c.jefe.z, c.jefe.r);
     else if (c.lapida) puntos.push(c.lapida.x, c.lapida.z, 1.5);
-    for (const e of exts) e.foco?.(puntos);
-    // Portada del menú: la cámara encuadra a la pareja y al carrito (sin el jefe), con el carrito a la derecha.
-    if (verPuesto) {
-      puntos.length = 0;
-      puesto.foco(puntos);
+    // Mantén las opciones de color dentro del encuadre cuando aparecen lejos de la pareja.
+    if (c.estado === "pelea" && c.ritos.tipo === "braseros") {
+      for (const fuego of c.ritos.braseros)
+        puntos.push(fuego.x, fuego.z, BRASEROS.radio);
     }
+    for (const e of exts) e.foco?.(puntos);
     let pres = null;
     if (c.estado === "presentacion") {
       presentacion.k = Math.min(
@@ -373,6 +405,7 @@ export async function crearRenderSlice({
       presentacion.jx = c.jefe.x;
       presentacion.jz = c.jefe.z;
       presentacion.face = c.jefe.face;
+      presentacion.cinematica = cinematica;
       pres = presentacion;
     }
     camara.update(w, puntos, dt, pres);
@@ -386,9 +419,17 @@ export async function crearRenderSlice({
     resize(wd, ht) {
       camara.resize(wd, ht);
       composer.setSize(wd, ht);
+      suavizarBordes.uniforms.resolution.value.set(
+        1 / composer.readBuffer.width,
+        1 / composer.readBuffer.height,
+      );
       bloom.resolution.set(wd / 2, ht / 2);
     },
     sync,
+    /** Vuelve a aplicar la configuración del renderer: llamarlo al pasar a esta vista, tras liberar la anterior. */
+    activar() {
+      configurarRenderer(renderer, cfg);
+    },
     render() {
       renderer.info.autoReset = false;
       renderer.info.reset();
@@ -405,8 +446,16 @@ export async function crearRenderSlice({
     // Vista de prueba de los estados de la cadena (gameplay no los usa con Mirra: D-193).
     setEfectoCadena: (/** @type {string | null | undefined} */ e) =>
       cadena.setEfecto(e),
-    set verPuesto(/** @type {boolean} */ v) {
-      verPuesto = v;
+    /**
+     * Cinemática de entrada del jefe (D-211). La integración la pone en `true` antes de la primera presentación
+     * de Mirra (tras cruzar el arco) y en `false` para los reintentos, que vuelven a la presentación corta.
+     * Se lee en cada cuadro mientras `combate.estado === "presentacion"`; fuera de ella no hace nada.
+     */
+    set cinematica(/** @type {boolean} */ v) {
+      cinematica = v;
+    },
+    get cinematica() {
+      return cinematica;
     },
     /**
      * @param {number} x @param {number} y @param {number} z
@@ -423,7 +472,6 @@ export async function crearRenderSlice({
     dispose() {
       for (const e of exts) e.dispose?.();
       trigal.dispose();
-      puesto.dispose();
       personajes.dispose();
       cadena.dispose();
       tele.dispose();
@@ -431,10 +479,16 @@ export async function crearRenderSlice({
       vfx.dispose();
       for (const o of keepList) o.dispose?.();
       for (const g of Object.values(modelos)) liberarGltf(g);
+      // Los pases y las luces mantienen recursos de GPU propios.
+      renderPass.dispose();
+      suavizarBordes.dispose();
+      salida.dispose();
+      bloom.dispose();
       composer.dispose();
+      sun.dispose();
+      hemi.dispose();
       scene.fog = null;
-      renderer.shadowMap.enabled = false;
-      renderer.toneMapping = THREE.NoToneMapping;
+      // La configuración del renderer no se deshace: la aplica la vista que se activa (renderer-config.js).
     },
   };
 }

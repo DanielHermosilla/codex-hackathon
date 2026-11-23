@@ -328,7 +328,7 @@ export function crearMotor(
     lineal(bus.cadena.gain, S.cadenaGanancia, plan.fadeOutS);
     silencio = {
       plan,
-      fin: ctx.currentTime + plan.fadeOutS + plan.duracionS,
+      fin: ctx.currentTime + plan.fadeOutS + plan.duracionS, // Infinity = abierto: solo lo cierra romperSilencio / cancelarSilencio
       onFin,
     };
     return true;

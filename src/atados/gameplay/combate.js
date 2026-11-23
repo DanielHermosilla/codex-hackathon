@@ -3,13 +3,27 @@
 //
 // D-006/D-064/D-074/D-180 presentación (completa la 1.ª vez, saltable en reintentos);
 // D-020/D-167 el caído revive al terminar el jefe con vida llena; D-028/D-111/D-173 derrota con frase
-// y reintento muy rápido; D-029/D-172 en difícil caer los dos reinicia el rush; D-098/D-100/D-165/D-174
+// y reintento muy rápido (D-213: siempre con la presentación corta; el reinicio del rush de D-029/D-172
+// lo decide el flujo de partida, core/flujo.js); D-098/D-100/D-165/D-174
 // lápida con stats; D-099 drop extra sin daño; D-106 eventos de sonido de aviso; D-183 silencios.
 
+import {
+  crearArenaMirra,
+  iniciarOrbe,
+  iniciarLuz,
+  avanzarArenaMirra,
+} from "./arena-mirra.js";
+import {
+  crearRitos,
+  iniciarPisoton,
+  iniciarBraseros,
+  avanzarRitos,
+} from "./ritos.js";
 import { createWorld, stepWorld } from "./mundo.js";
 import { createChain } from "./cadena.js";
 import {
   hurtPlayer,
+  killPlayer,
   revivePlayer,
   pushOutOfCircle,
   keepInsideCircle,
@@ -31,7 +45,6 @@ import { crearRng } from "../core/rng.js";
 /** @typedef {import('./tipos.js').Cfg} Cfg */
 /** @typedef {import('./tipos.js').Combate} Combate */
 /** @typedef {import('./tipos.js').Entrada} Entrada */
-/** @typedef {import('./tipos.js').Bloque} Bloque */
 
 const MAX_EVENTOS = 200;
 
@@ -87,7 +100,7 @@ export function crearCombate(cfg, opts = {}) {
   const multSolo = o.solo ? C.telegrafiaSolo : 1;
 
   const c = /** @type {Combate} */ (
-    /** @type {Omit<Combate, 'ctx'>} */ ({
+    /** @type {Omit<Combate, 'ctx' | 'golpeRito'>} */ ({
       cfg,
       opts: o,
       id: o.jefe,
@@ -97,6 +110,12 @@ export function crearCombate(cfg, opts = {}) {
       resultado: null,
       t: 0,
       tPelea: 0,
+      arenaMirra: crearArenaMirra(),
+      ritos: crearRitos(),
+      turnoArena: 0,
+      proximoRito: cfg.jefes.mirra.ritual.inicio,
+      avisoRito: "",
+      finAviso: 0,
       presentacion: {
         t: 0,
         T: o.primeraVez ? C.presentacion.primera : C.presentacion.reintento,
@@ -155,6 +174,8 @@ export function crearCombate(cfg, opts = {}) {
     _cand: [],
   };
   c.ctx = ctx;
+  c.golpeRito = (i, dano) =>
+    golpear(c, { accion: { id: c.avisoRito } }, i, dano, 0, 0, 0);
   w.dummy.invulnerable = true;
   emitir(c, "presentacion_inicio", { jefe: o.jefe, completa: o.primeraVez });
   if (o.primeraVez) emitir(c, "silencio", { motivo: "nombre" }); // D-183: solo la primera vez
@@ -178,7 +199,7 @@ export function emitir(c, tipo, datos = {}) {
 
 /**
  * @param {Combate} c
- * @param {Bloque} b
+ * @param {{accion: {id: string}}} b
  * @param {number} i
  * @param {number} dano
  * @param {number} empuje
@@ -266,6 +287,33 @@ function cederAnclados(c) {
   }
 }
 
+// Solo la apertura del vacío ocupa un turno. El hueco sigue cerrándose entre ataques.
+/** @param {Combate} c */
+function especialEnCurso(c) {
+  const a = c.arenaMirra;
+  return !!(c.ritos.tipo || a.orbe || a.pilar || a.explosion || a.luz);
+}
+
+/** @param {Combate} c @param {number} dt */
+function pasoArena(c, dt) {
+  if (c.tPelea >= c.proximoRito) {
+    const { secuencia, intervalo } = c.cfg.jefes.mirra.ritual;
+    const { id, aviso } = secuencia[c.turnoArena % secuencia.length];
+    if (id === "orbe") iniciarOrbe(c.arenaMirra, c.ctx);
+    if (id === "luz") iniciarLuz(c.arenaMirra, c.ctx);
+    if (id === "pisoton") iniciarPisoton(c.ritos, c.w, c.arenaMirra.huecos);
+    if (id === "braseros") iniciarBraseros(c.ritos, c.w, c.arenaMirra.huecos);
+    c.avisoRito = id;
+    c.finAviso = c.tPelea + aviso;
+    c.turnoArena++;
+    c.proximoRito += intervalo;
+  }
+  const ocupado = especialEnCurso(c);
+  avanzarArenaMirra(c.arenaMirra, c.ctx, dt);
+  avanzarRitos(c.ritos, c.w, dt, c.golpeRito);
+  return ocupado;
+}
+
 // Un paso fijo. Devuelve false si no simuló (hit-stop), igual que stepWorld.
 /**
  * @param {Combate} c
@@ -345,7 +393,11 @@ export function pasoCombate(c, inputs, dt) {
   }
   if (c.estado === "pelea") {
     c.tPelea += dt;
-    actualizarJefe(ctx, dt);
+    const especial =
+      c.id === "mirra" && jefe.vivo && !jefe.sinAtaques && pasoArena(c, dt);
+    if (especial && jefe.accion?.tipo === "ataque")
+      cancelarAccion(ctx, "especial");
+    actualizarJefe(ctx, dt, especial);
   }
 
   // Caídas.
@@ -390,9 +442,20 @@ function limpiarEmpujes(c) {
   }
 }
 
+/** Retira los avisos, el escudo y el pilar temporal al terminar la pelea. El terreno destruido no reaparece.
+ * @param {Combate} c */
+function cerrarArena(c) {
+  const temporal = c.arenaMirra.pilar;
+  if (temporal) c.w.pillars = c.w.pillars.filter((p) => p !== temporal);
+  c.arenaMirra = crearArenaMirra(); // no quedan huecos, luz ni explosiones junto a la lápida
+  c.ritos = crearRitos();
+  c.avisoRito = "";
+}
+
 /** @param {Combate} c */
 function derrota(c) {
   cancelarAccion(c.ctx, "derrota");
+  cerrarArena(c);
   limpiarEmpujes(c);
   c.jefe.cola.length = 0;
   liberarTodo(c.zonas);
@@ -410,6 +473,7 @@ function derrota(c) {
 /** @param {Combate} c */
 function victoria(c) {
   const { w, jefe, cfg } = c;
+  cerrarArena(c);
   liberarTodo(c.zonas);
   liberarTodo(c.proyectiles);
   limpiarEmpujes(c);
@@ -437,12 +501,16 @@ function victoria(c) {
       placeholder: true,
       extra: true,
     }); // D-099
-  emitir(c, "victoria", { stats: { ...c.stats } });
+  emitir(c, "victoria", {
+    stats: { ...c.stats },
+    monedas: jefe.def.monedas ?? 0,
+  });
 }
 
-// Reintento (D-028, D-167): mismo jefe, los dos a vida llena, misma semilla (estado reproducible).
-// En difícil caer los dos reinicia el rush (D-029, D-172): con un solo jefe, empieza de cero con la
-// presentación completa (PROVISIONAL hasta que exista el rush).
+// Reintento (D-028, D-167, D-213): mismo jefe, los dos a vida llena, misma semilla (estado reproducible),
+// presentación corta y saltable también en difícil. Si en difícil caer los dos debe reiniciar el rush
+// (D-029, D-172), eso no lo decide el combate: lo resuelve el flujo de partida (core/flujo.js); el evento
+// `derrota` lo avisa con `reiniciaRush`.
 /**
  * @param {Combate} c
  * @returns {Combate}
@@ -451,11 +519,29 @@ export function reintentar(c) {
   const o = c.opts;
   const r = crearCombate(c.cfg, {
     ...o,
-    primeraVez: o.dificil ? true : false,
+    primeraVez: false, // presentación corta (D-213): la completa solo sale la primera vez
     reintentos: o.reintentos + 1,
   });
   r._dashPrev[0] = r._dashPrev[1] = true; // lo que siga apretado no salta además la presentación: hay que soltarlo
   return r;
+}
+
+// Primer combate tras un pasillo (D-020, D-168): cada jugador entra con la vida que traía y el caído sigue
+// caído (revive al vencer al jefe, no al cruzar el arco). Las posiciones son las de entrada de la arena.
+// Solo para el primer combate: el reintento (`reintentar`) vuelve a empezar con los dos a vida llena.
+/**
+ * @param {Combate} c  combate recién creado (aún en la presentación)
+ * @param {{ hp: number, alive: boolean }[]} jugadores  Sael y Odo al salir del pasillo
+ */
+export function heredarJugadores(c, jugadores) {
+  for (let i = 0; i < 2; i++) {
+    const p = c.w.players[i];
+    const q = jugadores[i];
+    if (!q.alive)
+      killPlayer(p); // cadáver unido a la cadena: el otro lo arrastra (D-020)
+    else p.hp = Math.min(q.hp, c.cfg.player.maxHp); // puntos: la vida que traía del pasillo
+    c._vivos[i] = p.alive; // ya venía caído: no se anuncia otra caída (`jugador_cae`) en el primer paso
+  }
 }
 
 /**
@@ -552,6 +638,15 @@ export function snapshotCombate(c) {
           }
         : null,
       cola: j.cola.map((x) => x.tipo),
+    },
+    rito: {
+      tipo: c.ritos.tipo,
+      colorObjetivo: c.ritos.colorObjetivo,
+      braseros:
+        c.ritos.tipo === "braseros"
+          ? c.ritos.braseros.map((f) => ({ ...f }))
+          : [],
+      escudo: { ...c.ritos.escudo },
     },
     zonas: c.zonas.items
       .filter((z) => z.activo)

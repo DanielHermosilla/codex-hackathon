@@ -24,6 +24,22 @@ const CSS = `
 .hud kbd+kbd{margin-left:.1em;}
 `;
 
+// Colores de los dibujos de las tarjetas del tutorial (hud-tarjetas.js), todos de tokens de la paleta:
+// cadena en bronce y oro con sus runas (D-049, D-065), aviso y peligro del código de gameplay (D-188: el rojo
+// solo para peligro), y la piedra y la vegetación del pasillo para la columna y el objetivo (de paja).
+/** @param {import('../core/config.js').CONFIG['paleta']} P */
+function variablesTarjetas(P) {
+  const K = P.cadena,
+    G = P.gameplay,
+    Z = P.zonas.pasillo.base;
+  return (
+    `--cadena-bronce:${hexCss(K.bronce)};--cadena-oro:${hexCss(K.oro)};` +
+    `--runa-floja:${hexCss(K.runaFloja)};--runa-tensa:${hexCss(K.runaTensa)};` +
+    `--aviso:${hexCss(G.aviso)};--peligro:${hexCss(G.peligro)};--peligro-op:${G.peligroOpacidad};` +
+    `--piedra:${hexCss(Z.piedra)};--objetivo:${hexCss(Z.vegetacion)};`
+  );
+}
+
 // Monta fuentes, variables y CSS. Devuelve dispose().
 /**
  * @param {import('../core/config.js').CONFIG['paleta']} paleta
@@ -34,7 +50,9 @@ export function montarEstilos(paleta, css = "") {
   const vars =
     `:root{--texto:${hexCss(C.texto)};--texto-suave:${hexCss(C.textoSuave)};--fondo:${hexCss(C.fondo)};` +
     `--barra:${hexCss(C.barra)};--barra-inv:${hexCss(C.barraInv)};--estela:${hexCss(C.estela)};--destacado:${hexCss(C.destacado)};` +
-    `--sael:${hexCss(C.sael)};--odo:${hexCss(C.odo)};}`;
+    `--sael:${hexCss(C.sael)};--odo:${hexCss(C.odo)};` +
+    variablesTarjetas(paleta) +
+    "}";
   const style = document.createElement("style");
   style.textContent = FUENTES + vars + CSS + css;
   document.head.appendChild(style);

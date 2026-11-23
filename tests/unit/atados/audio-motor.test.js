@@ -315,7 +315,7 @@ describe("audio conectado al combate real", () => {
     await esperar();
     saltarPresentacion(t.c());
     t.drenar();
-    t.c().w.players[0].hp -= 10;
+    t.c().w.players[0].hp -= 100; // ×10 (D-202)
     t.paso(1);
     killPlayer(t.c().w.players[1]);
     t.paso(1);
@@ -327,7 +327,7 @@ describe("audio conectado al combate real", () => {
       "blanco",
     );
     t.c().w.players[1].alive = true;
-    t.c().w.players[1].hp = 100;
+    t.c().w.players[1].hp = CONFIG.player.maxHp;
     t.paso(1);
     expect(sfx(t.audio).map((r) => r.id)).toContain("revivir");
   });
@@ -402,5 +402,48 @@ describe("audio conectado al combate real", () => {
         .slice(n)
         .map((r) => r.id),
     ).not.toContain("revivir");
+  });
+
+  it("el silencio del nombre sobrevive al primer cuadro de la pradera", async () => {
+    const t = montar();
+    t.objetivo.disparar("keydown");
+    await esperar();
+    t.audio.api.evento({ tipo: "zona_entra", zona: "pasillo" });
+    t.set(crearCombate(t.cfg, { seed: 3, primeraVez: true }));
+    t.drenar();
+    expect(t.audio.api.silencio?.id).toBe("nombreJefe");
+    t.paso();
+    expect(t.audio.api.silencio?.id).toBe("nombreJefe");
+    t.audio.dispose();
+  });
+
+  it("salir del arco al menú cancela su silencio aunque no se haya entrado al jefe", async () => {
+    const t = montar();
+    t.objetivo.disparar("keydown");
+    await esperar();
+    t.audio.api.evento({ tipo: "silencio", motivo: "umbral" });
+    t.audio.api.evento({ tipo: "zona_entra", zona: "pasillo", estado: "nada" });
+    expect(t.audio.api.silencio).toBe(null);
+    expect(t.audio.api.musica.estado).toBe("nada");
+    t.audio.dispose();
+  });
+
+  it("silencio del umbral: dura hasta su cierre y el efecto de inicio de pelea suena una vez (D-183)", async () => {
+    const t = montar();
+    t.objetivo.disparar("keydown");
+    await esperar();
+    t.drenar(); // presentación del combate de prueba
+    const inicios = () => sfx(t.audio).filter((r) => r.id === "peleaInicio");
+    t.audio.api.evento({ tipo: "silencio", motivo: "umbral" });
+    expect(t.audio.api.silencio?.id).toBe("umbral");
+    t.ctx().avanzar(5); // la pradera tarda en cargar
+    t.audio.update(DT);
+    expect(t.audio.api.silencio?.id).toBe("umbral"); // sigue callado
+    expect(inicios()).toHaveLength(0);
+    t.audio.api.evento({ tipo: "silencio:fin", motivo: "umbral" });
+    expect(t.audio.api.silencio).toBe(null);
+    expect(inicios()).toHaveLength(0);
+    t.audio.api.evento({ tipo: "pelea_inicio" });
+    expect(inicios()).toHaveLength(1);
   });
 });

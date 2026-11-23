@@ -1,10 +1,21 @@
 // Todos los números de balance y ajuste viven aquí (regla 1 de AGENTS.md).
+// El recorrido de inicio (lobby, pasillo, tutorial) vive en su propio archivo para que gameplay y arte lo
+// editen sin pisarse con el resto; se une abajo como `CONFIG.recorrido`.
+import { RECORRIDO } from "./config-recorrido.js";
+
 export const CONFIG = {
   sim: { fixedDt: 1 / 60, maxFrameDt: 1 / 20, maxStepsPerFrame: 4 },
   view: { fov: 50, near: 0.1, far: 200, cameraPos: [0, 9, 9] },
   colors: { placeholder: 0x8a8f98 },
 
   // ─── Hito 1: greybox de la cadena (ADR-001). «provisional» = valor sin decidir, se ajusta en playtest ───
+
+  tienda: {
+    precios: { italiano: 1, mote: 1, sopaipilla: 1 }, // monedas por producto, compartidas por la pareja
+    carro: { x: 4, z: -26 }, // m: ventanilla en el lateral del pasillo posterior a Mirra
+    vidaItaliano: 250, // puntos por jugador en la escala ×10 (antes 25)
+    alcance: 3.8, // Metros desde el centro hasta donde se puede pedir por la ventanilla.
+  },
 
   // Stats idénticos para Sael y Odo (D-149).
   player: {
@@ -13,7 +24,7 @@ export const CONFIG = {
     accel: 16, // 1/s: tasa con que la velocidad va hacia la deseada; provisional (D-056, D-118)
     turnSpeed: 14, // rad/s, provisional
     mass: 1, // técnico: iguales (D-149)
-    maxHp: 100, // provisional (D-020)
+    maxHp: 1000, // provisional (D-020); ×10 por D-202 (antes 100)
     hurtIframes: 0.8, // s de invulnerabilidad tras recibir golpe, provisional (D-152)
   },
   dash: {
@@ -48,7 +59,7 @@ export const CONFIG = {
   },
   damage: {
     chain: {
-      scale: 7, // daño por (tensión × m/s × m de cadena dentro) por segundo (D-012, D-081, D-148), provisional
+      scale: 70, // daño por (tensión × m/s × m de cadena dentro) por segundo (D-012, D-081, D-148), provisional; ×10 por D-202 (antes 7)
       maxRelSpeed: 30, // m/s, tope técnico para que una corrección brusca del solver no dispare el daño
     },
   },
@@ -68,7 +79,7 @@ export const CONFIG = {
       { x: 0, z: -7, r: 0.9 },
     ],
     spawn: { sael: [-2, 4], odo: [2, 4] },
-    debugHurt: 25, // daño de la tecla de prueba
+    debugHurt: 250, // daño de la tecla de prueba; ×10 por D-202 (antes 25)
     colors: {
       sael: 0xf0e45a,
       odo: 0x4fb0ff,
@@ -92,7 +103,8 @@ export const CONFIG = {
     distPerMeter: 0.9, // zoom según distancia entre jugadores (D-033), provisional
     follow: 6, // 1/s
     // D-176: en jefe encuadra a los dos jugadores y al jefe. provisional
-    jefe: { minDist: 14, maxDist: 30, distPerMeter: 0.9, margen: 3 }, // distPerMeter: m de cámara por m de encuadre
+    // D-201: más «movida»: arena de 3 L (21 m de radio) → la cámara se aleja hasta 46 m (antes 14–30)
+    jefe: { minDist: 16, maxDist: 46, distPerMeter: 0.9, margen: 3 }, // distPerMeter: m de cámara por m de encuadre
   },
   // D-100, D-174: arrastre = llevar al otro al largo máximo o arrastrar el cadáver.
   stats: {
@@ -123,9 +135,10 @@ export const CONFIG = {
     // Práctica: un muñeco de paja quieto, sin ataques, para aprender a tensar la cadena y enredarla en un pilar.
     // Arena chica con dos pilares a los lados del muñeco.
     muneco: {
+      monedas: 0, // la práctica no entrega recompensa
       textos: "muneco",
       arte: "muneco", // render/muneco-arte.js
-      vida: 60, // ≈ 4 pasadas tensas (una pasada al muñeco quita ~16; es más delgado que Mirra)
+      vida: 600, // ×10 por D-202 (antes 60) ≈ 4 pasadas tensas (una pasada al muñeco quita ~160; es más delgado que Mirra)
       radio: 0.9, // m: el cuerpo que la cadena tiene que cruzar
       altura: 2.6, // m: para colocar números de daño y la cámara de presentación
       velocidad: 0, // no se mueve
@@ -146,26 +159,50 @@ export const CONFIG = {
       ataques: {},
     },
     mirra: {
+      monedas: 1, // recompensa por vencer a este jefe
       textos: "mirra",
       arte: "mirra", // render/mirra-arte.js       // claves de i18n: jefe.mirra.*
-      vida: 1200, // ficha (de partida) ≈ 24 pasadas a tensión máxima
+      vida: 12000, // ficha (de partida) ≈ 24 pasadas a tensión máxima; ×10 por D-202 (antes 1200)
       radio: 1.8, // m: ~4× el jugador, fijo (D-085, D-154)
       altura: 3.2,
       velocidad: 3.0, // m/s al acercarse. PROVISIONAL
       giro: 2.5, // rad/s. PROVISIONAL (sin giro instantáneo)
       distanciaIdealL: 0.5, // se acerca hasta esta distancia del borde de su cuerpo al objetivo. PROVISIONAL
+      // Los avisos de arena se intercalan con el repertorio habitual de Mirra.
+      ritual: {
+        dano: {
+          explosion: 520,
+          luz: 320,
+          vacio: 180,
+          pisoton: 300,
+          braseros: 260,
+        }, // puntos en la escala ×10 de D-202
+        inicio: 4,
+        intervalo: 8,
+        secuencia: [
+          { id: "orbe", aviso: 5 },
+          { id: "luz", aviso: 3 },
+          { id: "pisoton", aviso: 3 },
+          { id: "braseros", aviso: 4 },
+        ],
+      },
       pausa: 1.8, // s entre ataques en fase 1 («pausas largas»). PROVISIONAL
       arena: {
-        radioL: 2.2, // claro de ~15 m de radio: con 3 L (21 m) la cámara se alejaba y todo se veía diminuto
+        radioL: 3, // D-201: claro de 3 L = 21 m de radio (antes 2,2 L); la cámara de jefe llega a 46 m para encuadrarlo
         jefe: [0, -0.4], // en L. PROVISIONAL
         sael: [-0.3, 1.1],
         odo: [0.3, 1.1], // en L. PROVISIONAL
-        // ficha: 4 espantapájaros a ~2 L del centro (propuesta). r en m (técnico, como los pilares del hito 1)
+        // Ocho coberturas de Mirra con los mismos ángulos que en el claro pequeño.
+        // Las distancias crecen con el radio (3 / 2,2) para mantener los claros entre las coberturas.
         pilares: [
-          { id: 0, angDeg: 45, distL: 1.45, r: 0.75 },
-          { id: 1, angDeg: 135, distL: 1.45, r: 0.75 },
-          { id: 2, angDeg: 225, distL: 1.45, r: 0.75 },
-          { id: 3, angDeg: 315, distL: 1.45, r: 0.75 },
+          { id: 0, angDeg: 28, distL: 1.83, r: 0.75 },
+          { id: 1, angDeg: 137, distL: 2.28, r: 0.75 },
+          { id: 2, angDeg: 208, distL: 1.62, r: 0.75 },
+          { id: 3, angDeg: 321, distL: 2.36, r: 0.75 },
+          { id: 4, angDeg: 54, distL: 1.06, r: 0.75 },
+          { id: 5, angDeg: 161, distL: 2.09, r: 0.75 },
+          { id: 6, angDeg: 245, distL: 1.99, r: 0.75 },
+          { id: 7, angDeg: 346, distL: 1.24, r: 0.75 },
         ],
       },
       // D-153: 2 fases por vida. `desde` = fracción de vida a la que empieza.
@@ -199,7 +236,7 @@ export const CONFIG = {
               radioL: 1.5,
               vueltas: 1,
               activo: 0.2,
-              dano: 20,
+              dano: 200,
               empuje: 6,
             },
           ], // activo = s que tarda la hoja en cruzar el arco (PROVISIONAL)
@@ -221,7 +258,7 @@ export const CONFIG = {
               vueltas: 2,
               entre: { normal: 0.6, dificil: 0.4 },
               activo: 0.2,
-              dano: 20,
+              dano: 200,
               empuje: 6,
             },
           ],
@@ -243,7 +280,7 @@ export const CONFIG = {
               dispersionL: 0.9,
               vuelo: 0.6,
               activo: 0.5,
-              dano: 15,
+              dano: 150,
               empuje: 3, // activo = púas 0,5 s (efectoAlCaer)
               salidaRadio: 1.3, // m libres que el patrón siempre deja para los dos con la cadena puesta (técnico)
               salidaMargen: 0.75, // fracción de lo que un jugador recorre en la telegrafía que puede quedar lejos la salida (técnico)
@@ -264,10 +301,10 @@ export const CONFIG = {
               distanciaL: 4,
               anchoL: 0.6,
               velocidad: 16, // anchoL PROVISIONAL: la ficha dice 1 L, pero con la cadena de 1 L los dos no caben fuera a lados opuestos (rol D-164 imposible)
-              dano: 25,
+              dano: 250,
               empuje: 8,
               recalcularObjetivo: false,
-              tropiezo: { duracion: 1.5, tensionMin: 0.5, danoMin: 8 }, // ficha: si la cadena tensa la corta, tropieza 1,5 s (umbral PROVISIONAL)
+              tropiezo: { duracion: 1.5, tensionMin: 0.5, danoMin: 80 }, // ficha: si la cadena tensa la corta, tropieza 1,5 s (umbral PROVISIONAL; ×10 por D-202, antes danoMin 8)
             },
           ],
         },
@@ -285,7 +322,7 @@ export const CONFIG = {
               radioL: 0.8,
               duracion: 6,
               velocidadRelativa: 0.7,
-              danoPorTick: 5,
+              danoPorTick: 50,
               tick: 0.5,
             },
           ],
@@ -306,7 +343,7 @@ export const CONFIG = {
               posicion: "jefe",
               cantidad: 1,
               activo: 0.1,
-              dano: 30,
+              dano: 300,
               empuje: 8,
             }, // activo PROVISIONAL: mordida instantánea, ≤ dash.duration para que un dash a tiempo la esquive
           ],
@@ -381,10 +418,12 @@ export const CONFIG = {
       // rompeCon: id de sfx, 'jefe:<clave>' (sonido del jefe actual), 'musica:fase' o 'tema:<id>'.
       momentos: {
         umbral: {
-          duracionMs: 2000,
+          // Abierto (null): del fin del fundido del arco hasta la entrada a la presentación; lo cierra el
+          // flujo con `silencio:fin` (D-211). Sin rompeCon: `peleaInicio` suena solo con `pelea_inicio`.
+          duracionMs: null,
           buses: ["musica", "ambiente"],
           nivel: 0,
-          rompeCon: "peleaInicio",
+          rompeCon: null,
           habilitado: true,
         },
         nombreJefe: {
@@ -565,6 +604,13 @@ export const CONFIG = {
       inhalacion: "avisoInhalacion",
     },
     avisoGenerico: "avisoGenerico",
+    // Enemigos del pasillo (D-209): aún no tienen sonidos propios; reutilizan los del combate. Evento → id de sfx.
+    // PROVISIONAL hasta que el diseño de audio les dé voz. Quitar una clave = ese evento no suena.
+    enemigos: {
+      "enemigo:telegrafia": "avisoGenerico", // aviso de ataque (peligro: misma categoría que los del jefe)
+      "enemigo:herido": "corte", // fin de un corte de la cadena
+      "enemigo:muere": "corteFinal", // el corte que lo derriba
+    },
     jefes: {
       // El muñeco no ataca: solo se queja al cortarlo y al caer.
       muneco: {
@@ -1292,10 +1338,15 @@ export const CONFIG = {
     numeroDano: {
       // D-166, D-112: activable/desactivable (ajustes)
       activo: true,
-      valorMin: 0.5, // por debajo no se muestra
-      tamanoMin: 22,
-      tamanoMax: 84,
-      escala: 5, // px = min + √valor × escala, con tope
+      valorMin: 5, // por debajo no se muestra; ×10 por D-202 (antes 0,5)
+      tamanoMin: 22, // px
+      // D-202: el daño es ×10, así que √valor crece ×√10 ≈ 3,16. Para que un mismo golpe relativo se vea apenas más
+      // grande que antes (no ×3), la escala baja de 5 a 2: para el mismo golpe relativo (valor antes v, ahora 10 v)
+      // px = 22 + √(10 v) × 2 ≈ 22 + √v × 6,3, es decir ~+5 % en golpes chicos (v = 1: 27 → 28 px) y ~+16 % en
+      // medianos (v = 40: 54 → 62 px). El tope sube de 84 a 96 px (+14 %) para que los golpes grandes no se aplasten
+      // contra el tope antes que antes. Subir `escala` agranda todos; subir `tamanoMax` solo los golpes más fuertes.
+      tamanoMax: 96, // px, tope
+      escala: 2, // px = min + √valor × escala, con tope
       altoExtra: 1.1, // m sobre lo alto del jefe (por encima del sombrero de Mirra)
     },
     jefe: {
@@ -1311,6 +1362,22 @@ export const CONFIG = {
     },
     derrota: { fundido: 0.2 }, // s: D-173 reintento muy rápido, nada de fundidos largos
     lapida: { altura: 2.8, retraso: 0.5, fundido: 0.7 }, // m sobre la marca; s desde que aparece
+    // Números de daño de los enemigos del pasillo (ui/hud-numeros-enemigos.js): salen al cerrar cada corte
+    // (`enemigo:herido`). Tamaño = el del número del jefe (`numeroDano`) × `escala`. PROVISIONAL: sin cifra en el diseño.
+    numeroEnemigo: {
+      pool: 6, // números a la vez (técnico); con más cortes simultáneos se reutiliza el más viejo
+      duracion: 0.9, // s que se ve cada número (más = se acumulan más en pantalla)
+      fundido: 0.35, // s finales en que se apaga
+      subida: 0.8, // m que sube mientras dura
+      altura: 1.9, // m sobre el suelo donde sale (por encima de la cabeza de segadores y brincadores)
+      escala: 0.8, // fracción del tamaño del número del jefe: los enemigos son menores y sus números también
+    },
+    // Franjas de cine de la entrada a Mirra (ui/cinematica.js, D-211). PROVISIONAL: sin cifra en el diseño.
+    cinematica: {
+      entrada: 0.7, // s que tardan en entrar del todo (más largo = entrada más solemne)
+      salida: 0.5, // s que tardan en salir
+      alto: 11, // % del alto de la pantalla que tapa cada franja (más alto = más «cine», menos juego visible)
+    },
     tutorial: { fundidoEntrada: 0.25, fundidoSalida: 0.25 },
     mural: { duracion: 7, fundidoEntrada: 0.7, fundidoSalida: 0.9 }, // s; PROVISIONAL (el pasillo puede mandar mural:ocultar antes)
     mando: {
@@ -1346,11 +1413,15 @@ export const CONFIG = {
     },
   },
 
-  // Página: tiempos del flujo menú → práctica → Mirra (main.js). Solo presentación.
+  // Recorrido de inicio: lobby al pie del Templo Ancla → pasillo de subida → arco → Mirra (config-recorrido.js).
+  recorrido: RECORRIDO,
+
+  // Página: tiempos del flujo menú → caída → recorrido → Mirra (main.js). Solo presentación.
   ui: {
-    cartelPractica: 8, // s que se ve el cartel del puesto al empezar la práctica
-    finPractica: 1.4, // s entre el corte final al muñeco y la pantalla «Primer corte»
     finJefe: 5.5, // s para leer la lápida de Mirra antes de la pantalla de victoria
+    // Al cruzar el arco la pantalla funde a negro (`recorrido.flujo.fundidoArco`) y, ya cargada la pradera, se
+    // abre sobre ella durante el silencio (D-183, D-211). s de esa apertura. PROVISIONAL.
+    aperturaJefe: 0.8,
   },
 
   // ─── Hito 3: arte del vertical slice. Solo render: nada de esto cambia el gameplay. ───
@@ -1407,26 +1478,75 @@ export const CONFIG = {
         opacidad: 0.55,
       },
       brillo: { veta: 1.25, vetaSuelo: 0.75, esquirla: 1.8 }, // multiplican CONFIG.paleta.corrupcion × corrupcion de la zona
+      // D-204: la pradera está en la cima del monte, como un olimpo en ruinas. Todo es decorado fuera del claro.
+      cima: {
+        borde: 9, // m entre el borde del claro y el borde del risco (meseta = radio del claro + borde)
+        caida: 7, // m que baja el risco justo pasado el borde de la meseta
+        profundidad: 46, // m bajo la pradera hasta el fondo del valle
+        // m: anillo de columnas rotas (distancia por fuera del claro, alto al fondo, tocones del lado de la cámara)
+        ruinas: {
+          distancia: 3.2,
+          columnas: 18,
+          alto: [2.2, 5.2],
+          altoCerca: 1.1,
+          radio: 0.55,
+        },
+        arco: { distancia: 4.5, ancho: 5.2, alto: 5.6 }, // m: arco de llegada detrás de Sael y Odo (+z)
+        nubes: { n: 26, radio: [40, 120], altura: [-20, -12] }, // mar de nubes bajo la cima (m)
+        // Malla del suelo de la cima: lado (m) y celdas por lado (más celdas = risco más fino, más triángulos).
+        suelo: { tam: 150, segmentos: 75 },
+        // m: por debajo de esta altura el suelo es roca (color de risco y sin trigo sembrado encima).
+        roca: -0.6,
+        // Fondo del valle: disco de radio (m) con gajos y anillos. Los anillos parten el disco en caras
+        // pequeñas para que se vean las parcelas (más anillos = parcelas más finas, más triángulos).
+        valle: { radio: 190, segmentos: 48, anillos: 12 },
+      },
+    },
+    // Escena del recorrido: lobby al pie del Templo Ancla y pasillo de subida entre ruinas (render/templo.js,
+    // render/recorrido.js). Solo dibujo: la física sigue plana (D-210). Todo PROVISIONAL, ajustado con captura.
+    templo: {
+      bordeEscalones: 1.5, // m por fuera del borde del pasillo en que los peldaños se funden en rampa (altura.js)
+      cinta: { paso: 0.5, margen: 0.8, columnas: 6, faldon: 5 }, // suelo del pasillo: m entre filas, m extra por lado, losas a lo ancho, m de cornisa hacia abajo
+      terreno: { paso: 2.5, margen: 75, delante: 45, detras: 70 }, // m de malla; m alrededor de la ruta; m hacia la cámara y más allá de la cima
+      ladera: { sube: 10, ancho: 24 }, // izquierda de la subida: el monte sube estos m en estos m
+      valle: { fondo: 12, ancho: 20, ruido: 0.9 }, // derecha: cae hasta `fondo` m bajo el lobby; ruido en m
+      muretes: { cada: 1.7, huecos: 0.3, alto: [0.35, 1.15], grueso: 0.6 }, // m; fracción de huecos; m; m
+      lobby: { muros: 22, urna: [-10.8, -9.5] }, // tramos de muro en ruinas alrededor del claro; m (x, z) del altar
+      columnas: { alto: [3.4, 5.2], lados: 10 }, // m (rotas a distinta altura); caras del fuste
+      arco: { alto: 6.4, grueso: 1.3 }, // m
+      mural: { ancho: 3.4, alto: 2.6, separa: 1.1, brillo: 0.9, cerca: 7 }, // m; m del borde; emisión al pasar; m de s
+      lejos: { arboles: 260, casas: 26 }, // decorado del valle (instancias)
+      // Caída (D-205): trauma de cámara al aterrizar, motas de polvo y lascas por jugador, empuje del polvo y
+      // fracción de la altura de caída que sigue la cámara (0 = mira al suelo y entran desde arriba).
+      caida: {
+        duracionSacudida: 1.5, // s que tarda en apagarse el temblor del aterrizaje (D-205)
+        sacudida: 0.55, // trauma de cámara 0..1 al aterrizar (más = temblor más fuerte)
+        polvo: 22, // motas de polvo por jugador
+        trozos: 5, // lascas de piedra por jugador
+        fuerza: 2.2, // empuje del polvo (más = nube más ancha)
+        camara: 0.55, // fracción de la altura de caída que sigue la cámara (0 = se queda abajo)
+      },
+      muneco: 0.6, // escala del muñeco del lobby respecto de `render.muneco.escala` (práctica opcional, D-208)
+      // Cámara del pasillo: m de ruta por delante de la pareja que entran en el encuadre; m antes del arco en
+      // que el arco también entra, y su radio de encuadre (m).
+      camara: { adelante: 6, arco: 24, arcoRadio: 3 },
+      menu: { s: 12, radio: 5 }, // encuadre del menú (D-214): punto de la escalinata (m de ruta) que entra detrás
     },
     jefe: {
       flash: 0.6, // emisión blanca al recibir un corte fuerte (≤ 3/s)
       golpe: 0.33, // s del golpe en los clips (telegrafía = 0..1 s del clip)
     },
-    // Puesto 23 (render/puesto.js): carrito de completos al borde de la arena. Colores sin rojo (D-188).
+    // Furgón (render/puesto.js): tienda de completos al borde de la arena. Colores sin rojo (D-188).
     puesto: {
-      anguloDeg: 22,
-      margen: 1.6, // posición: ángulo (0° = +x, −90° = fondo) y m por fuera del borde
-      mirarA: [0, 12], // punto (x, z en m) al que mira el frente del carrito
+      mirarA: [0, -23], // punto (x, z en m) al que mira el frente del carrito
       escala: 1.5,
-      letreroAltura: 1.9,
-      letreroDelante: 1.4, // m: el letrero flota delante del carro, sobre el trigo alto
-      carro: 0xeadfc6,
-      borde: 0x7d5a3a,
+      carro: 0x326950,
+      borde: 0xf9eaca,
       rueda: 0x2e2a28,
-      toldoA: 0xf3ecdc,
-      toldoB: 0x3d82c4,
-      letrero: 0x1b211d,
-      letreroTexto: 0xf2cd75,
+      vidrio: 0x48656b,
+      pan: 0xe8a45b,
+      palta: 0x91af45,
+      vienesa: 0x9b5b38,
     },
     // Muñeco de práctica (render/muneco-arte.js): escala del modelo de pilar, vaivén y caída.
     muneco: {
@@ -1438,7 +1558,66 @@ export const CONFIG = {
       recuperacion: 3.5,
       caida: 0.8,
     },
-    presentacion: { distancia: 7.5, altura: 2.4, giro: 0.7, entrada: 0.62 }, // cámara del nombre del jefe (D-064)
+    // Cámara del nombre del jefe (D-064). Presentación corta (reintentos): plano bajo delante del jefe que gira
+    // `giro` rad y se funde con el encuadre de juego desde k = `entrada` (k = avance 0..1 de la presentación).
+    presentacion: {
+      distancia: 7.5, // m del jefe al plano bajo
+      altura: 2.4, // m de la cámara al empezar (sube 1,5 m mientras dura)
+      giro: 0.7, // rad que rodea al jefe
+      entrada: 0.62, // k desde el que se abre al encuadre de juego
+      // D-211: cinemática de entrada (solo la primera vez; la pide la integración con `vista.cinematica = true`).
+      // Empuje lento desde un plano medio hasta la cara de Mirra con leve giro → sostén mientras sale el nombre →
+      // se abre al encuadre de juego. Los tramos son fracciones k de la presentación (gameplay fija su duración).
+      cinematica: {
+        empuje: 0.45, // k en que termina el acercamiento (más alto = empuje más lento)
+        sosten: 0.72, // k en que termina el sostén y empieza a abrirse al encuadre de juego
+        distanciaMedio: 15, // m de la cámara a la cara al empezar (plano medio: se ve el cuerpo entero)
+        distanciaCerca: 4.8, // m al terminar el empuje (plano cercano: cara y copa llenan el cuadro)
+        alturaMedio: 1.8, // m sobre el suelo al empezar: contrapicado, el jefe se ve enorme
+        alturaCerca: 2.5, // m al terminar el empuje (casi a la altura de la cara)
+        giro: 0.5, // rad que rodea durante el empuje (0 = empuje recto)
+        deriva: 0.35, // m que sigue acercándose durante el sostén (sin congelarse del todo)
+        cara: { adelante: 0.9, altura: 0.8 }, // punto mirado: m delante del tronco y fracción de la altura del jefe
+        // Movimiento reducido (D-112): plano fijo sin empuje ni giro, y apertura suave desde `entrada`.
+        reducido: { distancia: 8.5, altura: 2.2 },
+      },
+    },
+    // Enemigos de pasillo (render/enemigos-arte.js, D-140, D-209): mortales tocados por polvo de esquirla del
+    // dios de la zona. Segador = hueco con hoz (tajo en arco); brincador = encorvado como langosta (embiste).
+    // Valores de partida para ajustar con captura. Colores: tokens de la paleta de la zona y de CONFIG.render.materiales.
+    enemigos: {
+      max: 12, // pool pre-asignado (regla 6): enemigos dibujados a la vez como mucho
+      escala: 1.25, // tamaño visual del modelo (~1,7 m de alto el segador; la colisión sigue en gameplay)
+      destello: 0.16, // s que dura el destello blanco al recibir un corte (golpeT)
+      flash: 0.9, // emisión blanca máxima del destello (0 = sin destello)
+      tinteReducido: 0.25, // con flashes apagados (D-112): aclarado estable en vez de destello
+      retroceso: 0.35, // rad que se echa atrás al recibir un corte
+      vetas: { brillo: 1.2, telegrafia: 2.4 }, // emisión de las vetas ámbar en reposo y al final de la telegrafía
+      quieto: { vaiven: 0.05, velocidad: 0.9 }, // rad y 1/s del balanceo en reposo
+      acecha: { paso: 7.5, rebote: 0.07, inclinacion: 0.16 }, // rad/s del ciclo, m de rebote, rad hacia delante
+      segador: {
+        guardia: 0.55, // rad extra que lleva la hoz hacia atrás al final de la telegrafía (más allá del arco)
+        agacharse: 0.18, // m que baja el cuerpo al cargar el tajo
+        temblor: 0.035, // rad de temblor al final de la telegrafía (anticipación)
+      },
+      brincador: {
+        agacharse: 0.32, // m que baja el cuerpo al cargar la embestida
+        estirar: 0.3, // estiramiento (squash & stretch) en la embestida
+        salto: 0.28, // m que se despega del suelo al embestir
+        temblor: 0.05, // m de temblor al final de la telegrafía
+      },
+      muere: { hundir: 0.9, inclinar: 1.2, pajaN: 14, polvoN: 10 }, // m que se hunde, rad que se ladea, partículas
+      // m sobre el suelo de la telegrafía; segmentos del arco. `anillos` (arco) y `tramos` [a lo largo, a lo ancho]
+      // (embestida): subdivisiones de la marca para que cada vértice se apoye en la altura visual del suelo
+      // (rampas y escalones). Más = sigue mejor el relieve, más vértices que recolocar por cuadro mientras se ve.
+      marca: {
+        alto: 0.03,
+        relleno: 0.04,
+        segmentos: 28,
+        anillos: 6,
+        tramos: [12, 2],
+      },
+    },
   },
   feel: {
     // D-080/D-112: se pueden reducir o apagar. Respeta prefers-reduced-motion y ?reducir.
@@ -1489,8 +1668,8 @@ export const CONFIG = {
           cieloAlto: 0x7fb2e0,
           cieloHorizonte: 0xffd6a0,
           niebla: 0xf3dcc0,
-          nieblaCerca: 30,
-          nieblaLejos: 95,
+          nieblaCerca: 36, // m: más lejos que en las arenas: el valle se ve abajo (D-204)
+          nieblaLejos: 115,
           sol: 0xffd49a,
           solIntensidad: 3.9,
           solElevacion: 30,
@@ -1510,8 +1689,8 @@ export const CONFIG = {
           cieloAlto: 0x4a5a8e,
           cieloHorizonte: 0xff9e70,
           niebla: 0xc9a59a,
-          nieblaCerca: 22,
-          nieblaLejos: 72,
+          nieblaCerca: 28,
+          nieblaLejos: 90,
           sol: 0xffa060,
           solIntensidad: 3.0,
           solElevacion: 12,

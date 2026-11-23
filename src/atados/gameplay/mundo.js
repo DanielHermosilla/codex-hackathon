@@ -34,6 +34,7 @@ import {
  * @property {number[]} [odo]
  * @property {import('./tipos.js').Pilar[]} [pillars]
  * @property {number} [arenaRadius]
+ * @property {import('./tipos.js').Limite} [limite]  borde distinto del círculo (ruta del recorrido)
  * @property {{ x?: number, z?: number, r?: number }} [dummy]
  */
 
@@ -70,6 +71,9 @@ export function createWorld(cfg, opts = {}) {
     chain: createChain(sx, sz, ox, oz, cfg),
     pillars: (opts.pillars ?? G.pillars).map((p) => ({ ...p })),
     arenaRadius: opts.arenaRadius ?? G.arenaRadius,
+    // Límite transitable distinto del círculo de la arena (p. ej. el lobby y el pasillo del recorrido):
+    // limite(pos, margen) mete `pos` dentro y devuelve true si lo movió. null = círculo de arenaRadius.
+    limite: opts.limite ?? null,
     dummy: {
       x: G.dummy.x,
       z: G.dummy.z,
@@ -149,7 +153,11 @@ function collidePoint(w, pos, cfg) {
   for (const P of w.pillars)
     moved = pushOutOfCircle(pos, P.x, P.z, P.r + pr) || moved;
   moved = pushOutOfCircle(pos, w.dummy.x, w.dummy.z, w.dummy.r + pr) || moved; // el cuerpo solo empuja (D-152)
-  moved = keepInsideCircle(pos, w.arenaRadius - pr) || moved;
+  // Borde: la ruta del recorrido si existe; si no, el círculo de la arena.
+  moved =
+    (w.limite
+      ? w.limite(pos, pr)
+      : keepInsideCircle(pos, w.arenaRadius - pr)) || moved;
   return moved;
 }
 

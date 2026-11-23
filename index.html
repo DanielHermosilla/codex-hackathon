@@ -6,7 +6,17 @@
     <meta name="theme-color" content="#191c19" />
     <title>AtaDos · Geek Labs</title>
   </head>
-  <body>
+  <body data-screen="menu">
+    <script>
+      if (location.protocol === "file:") {
+        document.addEventListener("DOMContentLoaded", () => {
+          const aviso = document.createElement("p");
+          aviso.textContent =
+            "Para jugar, abre Jugar AtaDos.cmd en esta misma carpeta. Se abrirá el juego en tu navegador.";
+          document.body.replaceChildren(aviso);
+        });
+      }
+    </script>
     <header class="mast">
       <div class="studio">
         <i class="brand-mark" aria-hidden="true"></i> Geek Labs
@@ -42,9 +52,10 @@
           <p id="objective"></p>
         </div>
         <div id="mural" hidden></div>
+        <div id="tienda"></div>
         <div class="veil" id="overlay">
           <div class="panel">
-            <div class="eyebrow" id="caption">El trigal de Mirra</div>
+            <div class="eyebrow" id="caption">El Templo Ancla</div>
             <h1 id="title">Ata<span>Dos</span></h1>
             <p id="intro">
               Sael y Odo robaron la Brasa. Ahora, su única arma contra los
@@ -61,7 +72,10 @@
             <div class="actions">
               <button class="gold" id="play" type="button">
                 Jugar <b aria-hidden="true">→</b></button
-              ><button class="gold" id="primary" type="button" hidden></button>
+              ><button class="gold" id="continuar-puesto" type="button" hidden>
+                Continuar al carro de completos
+              </button>
+              <button class="gold" id="primary" type="button" hidden></button>
               <button id="restart" type="button" hidden>Reintentar</button
               ><button id="menu" type="button" hidden>Volver al inicio</button>
             </div>
@@ -84,7 +98,6 @@
           <p class="name">Esquivar</p>
           <span id="dash-help"><kbd>Espacio</kbd> Ambos</span>
         </div>
-        <button id="read-mural" type="button" hidden>Leer el cartel</button>
       </div>
       <dialog id="controls">
         <form method="dialog">
@@ -111,6 +124,11 @@
             Sael esquiva con Espacio y se ancla con Shift izquierdo. Odo esquiva
             con Shift derecho y se ancla con Enter. En dos mandos, cada jugador
             usa el stick izquierdo, A y el gatillo derecho.
+          </dd>
+          <dt>Carro de completos</dt>
+          <dd>
+            Después de vencer a Mirra, continúa al siguiente pasillo. Acércate
+            al furgón y pulsa P para ver la carta. Esc te devuelve al juego.
           </dd>
           <dt>Pausa</dt>
           <dd>Esc en el teclado o Start en el mando.</dd>

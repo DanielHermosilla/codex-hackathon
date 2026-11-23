@@ -27,10 +27,20 @@ const hash = (a, b) => {
   return s - Math.floor(s);
 };
 
+// `alturaSuelo(x, z)` = altura visual del suelo (m) en cada nodo (rampas y peldaños del recorrido, D-210).
+// Por defecto 0: en las arenas planas la cadena se dibuja igual que siempre.
 /**
- * @param {{ scene: THREE.Scene, cfg: import('./tipos.js').Cfg, renderer: THREE.WebGLRenderer, keep: import('./tipos.js').Keep, world0: import('./tipos.js').Mundo }} args
+ * @param {{ scene: THREE.Scene, cfg: import('./tipos.js').Cfg, renderer: THREE.WebGLRenderer, keep: import('./tipos.js').Keep, world0: import('./tipos.js').Mundo, alturaSuelo?: (x: number, z: number) => number }} args
  */
-export function crearCadenaArte({ scene, cfg, renderer, keep, world0 }) {
+export function crearCadenaArte({
+  scene,
+  cfg,
+  renderer,
+  keep,
+  world0,
+  alturaSuelo,
+}) {
+  const suelo = alturaSuelo ?? (() => 0); // en una arena plana se conserva el trazado original
   const C = cfg.paleta.cadena;
   const G = cfg.paleta.gameplay;
   const X = cfg.paleta.corrupcion;
@@ -54,6 +64,9 @@ export function crearCadenaArte({ scene, cfg, renderer, keep, world0 }) {
 
   const linkGeo = keep(new THREE.TorusGeometry(0.5, 0.17, 4, 6));
   linkGeo.scale(1.25, 0.8, 1); // óvalo: largo en x
+  linkGeo.computeBoundingBox();
+  const mitad = new THREE.Vector3(); // semiejes reales del eslabón (incluido el grosor del tubo)
+  linkGeo.boundingBox?.getSize(mitad).multiplyScalar(0.5);
   const runaGeo = keep(new THREE.OctahedronGeometry(0.5, 0));
   runaGeo.scale(0.55, 0.22, 0.32);
   const metalMat = keep(
@@ -130,14 +143,20 @@ export function crearCadenaArte({ scene, cfg, renderer, keep, world0 }) {
     const h = cfg.chain.height,
       sag = cfg.chain.sag;
     // Altura de cada nodo simulado: comba si está floja (la simulación es 2D, ADR-001).
+    // Con suelo en pendiente, la cadena va en línea recta de mano a mano (altura de los extremos) y nunca
+    // baja de su suelo: tensa sobre peldaños se apoya en sus bordes en vez de atravesarlos.
+    const g0 = suelo(ch.x[0], ch.z[0]); // m: suelo bajo Sael
+    const gN = suelo(ch.x[n], ch.z[n]); // m: suelo bajo Odo
     for (let i = 0; i <= n; i++) {
       const tL = i > 0 ? ch.segT[i - 1] : ch.segT[0];
       const tR = i < n ? ch.segT[i] : ch.segT[n - 1];
       const t = (tL + tR) / 2;
-      let y = h - sag * (1 - t) * Math.sin((Math.PI * i) / n);
-      if (i === 0 && !w.players[0].alive) y = 0.3;
-      if (i === n && !w.players[1].alive) y = 0.3;
-      pY[i] = Math.max(0.06, y);
+      const gi = i === 0 ? g0 : i === n ? gN : suelo(ch.x[i], ch.z[i]); // suelo bajo este nodo
+      const base = g0 + ((gN - g0) * i) / n; // recta entre los suelos de los extremos
+      let y = base + h - sag * (1 - t) * Math.sin((Math.PI * i) / n);
+      if (i === 0 && !w.players[0].alive) y = g0 + 0.3;
+      if (i === n && !w.players[1].alive) y = gN + 0.3;
+      pY[i] = Math.max(gi + 0.06, y); // 0.06 m: el eslabón apoyado no se hunde en el suelo
     }
     // Subdivisión suave (Catmull-Rom uniforme) de los nodos simulados.
     for (let i = 0; i < n; i++) {
@@ -151,6 +170,9 @@ export function crearCadenaArte({ scene, cfg, renderer, keep, world0 }) {
         px[k] = catmull(ch.x[i0], ch.x[i1], ch.x[i2], ch.x[i3], u);
         pz[k] = catmull(ch.z[i0], ch.z[i1], ch.z[i2], ch.z[i3], u);
         py[k] = catmull(pY[i0], pY[i1], pY[i2], pY[i3], u);
+        // Catmull-Rom puede bajar del borde del peldaño entre dos nodos que sí estaban apoyados.
+        if (alturaSuelo)
+          py[k] = Math.max(py[k], alturaSuelo(px[k], pz[k]) + 0.06);
         pt[k] = ch.segT[i];
       }
     }
@@ -191,6 +213,33 @@ export function crearCadenaArte({ scene, cfg, renderer, keep, world0 }) {
       const s = Math.max(seg * 0.8, Math.min(seg * 1.2, len)) * 1.0;
       d.scale.set(s, s, s);
       d.updateMatrix();
+      if (alturaSuelo) {
+        // La matriz incluye giro, vibración y escala. Comprobamos también los extremos de la huella final:
+        // el centro puede estar en un escalón bajo y el borde del metal entrar en el siguiente.
+        const m = d.matrix.elements;
+        const radioX =
+          Math.abs(m[0]) * mitad.x +
+          Math.abs(m[4]) * mitad.y +
+          Math.abs(m[8]) * mitad.z;
+        const radioY =
+          Math.abs(m[1]) * mitad.x +
+          Math.abs(m[5]) * mitad.y +
+          Math.abs(m[9]) * mitad.z;
+        const radioZ =
+          Math.abs(m[2]) * mitad.x +
+          Math.abs(m[6]) * mitad.y +
+          Math.abs(m[10]) * mitad.z;
+        const { x, z } = d.position;
+        const apoyo = Math.max(
+          alturaSuelo(x, z),
+          alturaSuelo(x - radioX, z - radioZ),
+          alturaSuelo(x - radioX, z + radioZ),
+          alturaSuelo(x + radioX, z - radioZ),
+          alturaSuelo(x + radioX, z + radioZ),
+        );
+        d.position.y = Math.max(d.position.y, apoyo + radioY);
+        d.matrix.setPosition(d.position);
+      }
       metal.setMatrixAt(k, d.matrix);
       if (efecto === "electrica") col.copy(cElec);
       else if (efecto === "apagada") col.copy(cApag);
