@@ -11,12 +11,14 @@ import { DecalGeometry } from "three/addons/geometries/DecalGeometry.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { hornearEstatico, recolorear } from "./modelos.js";
 import { mezclarHex } from "./paleta.js";
-
-/** @param {number} x @param {number} z */
-const hash = (x, z) => {
-  const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453;
-  return s - Math.floor(s);
-};
+import {
+  geometriaEspiga,
+  geometriaFloresSecas,
+  geometriaRastrojo,
+  hashTrigal as hash,
+  texturaTrigal,
+  vestirPiedra,
+} from "./trigal-detalle.js";
 /** @param {number} a @param {number} b @param {number} v */
 const smooth = (a, b, v) => {
   const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
@@ -93,13 +95,13 @@ export function alturaMallaDe(altura, tam, segs) {
  * @param {CfgTrigal} T
  * @param {number} R m: radio del claro
  * @param {(x: number, z: number) => number} alturaMalla
+ * @param {number} [NF] número de instancias de trigo reservadas
  */
-export function sembrarFuera(T, R, alturaMalla) {
-  const NF = T.fuera.matas;
+export function sembrarFuera(T, R, alturaMalla, NF = T.fuera.matas) {
   const RM = R + T.cima.borde; // m: radio de la meseta
   const out = new Float32Array(NF * 4);
   let n = 0;
-  for (let i = 0; n < NF && i < NF * 3; i++) {
+  for (let i = 0; n < NF && i < NF * 5; i++) {
     const a = hash(i, 11) * Math.PI * 2,
       r =
         R +
@@ -109,6 +111,9 @@ export function sembrarFuera(T, R, alturaMalla) {
       z = Math.sin(a) * r;
     const y = alturaMalla(x, z);
     if (y < T.cima.roca) continue; // sobre la roca del risco no crece trigo
+    const cresta = Math.sin(x * 0.7 + Math.sin(z * 0.42) * 2); // lomas densas de trigo separadas por lomos bajos
+    if (hash(i, 18) < (1 - cresta) * 0.3) continue;
+    if (z > R && Math.abs(x) < 1.75 && hash(i, 19) < 0.96) continue; // paso entre el arco y el claro
     out[n * 4] = x;
     out[n * 4 + 1] = y;
     out[n * 4 + 2] = z;
@@ -263,7 +268,7 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
   const alturaCima = alturaCimaDe(R, C);
   const alturaMalla = alturaMallaDe(alturaCima, C.suelo.tam, C.suelo.segmentos);
 
-  // ─── Suelo low-poly: claro llano, meseta, risco y ladera del monte; color por cara ───
+  // ─── Suelo: claro y meseta con manchas suaves, risco y ladera facetados ───
   const sueloGeo = keep(
     new THREE.PlaneGeometry(
       C.suelo.tam,
@@ -273,13 +278,24 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
     ).toNonIndexed(),
   );
   sueloGeo.rotateX(-Math.PI / 2);
+  const sueloPesos = new Float32Array(sueloGeo.attributes.position.count * 3);
   {
-    const pos = sueloGeo.attributes.position;
+    const { position: pos, uv } = sueloGeo.attributes;
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i),
         z = pos.getZ(i),
         d = Math.hypot(x, z);
       pos.setY(i, alturaCima(x, z, d));
+      // El mosaico se repite cada cinco metros y comprime el grano en diagonal.
+      uv.setXY(i, (x + z) * 0.14, (z - x) * 0.17);
+      // Las caras comparten el tono de cada vértice y las manchas cruzan las diagonales.
+      const veta = Math.sin(x * 0.33 + Math.cos(z * 0.28)) * Math.sin(z * 0.38);
+      const mancha =
+        Math.sin(x * 0.23 + Math.sin(z * 0.17) * 2) *
+        Math.sin(z * 0.19 + Math.cos(x * 0.13) * 2);
+      sueloPesos[i * 3] = 0.47 + 0.31 * veta;
+      sueloPesos[i * 3 + 1] = Math.max(0, mancha - 0.15) * 0.56;
+      sueloPesos[i * 3 + 2] = smooth(R + 0.25, R + 2.8, d) * 0.62;
     }
     sueloGeo.computeVertexNormals();
     sueloGeo.setAttribute(
@@ -287,34 +303,20 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
       new THREE.Float32BufferAttribute(new Float32Array(pos.count * 3), 3),
     );
   }
+  const tierra = keep(texturaTrigal("suelo"));
   const suelo = new THREE.Mesh(
     sueloGeo,
-    std(0xffffff, { vertexColors: true, roughness: 1 }),
+    std(0xffffff, {
+      vertexColors: true,
+      map: tierra, // El color conserva el grano del suelo sin recalcular su relieve por píxel.
+      roughness: 1,
+    }),
   );
   suelo.receiveShadow = true;
   suelo.renderOrder = -3;
   scene.add(suelo);
 
-  // ─── Trigo: espiga low-poly (tallo + espiga + dos hojas), altura normalizada 1 ───
-  const espigaGeo = (() => {
-    const tallo = new THREE.ConeGeometry(0.04, 1, 3, 1, true);
-    tallo.translate(0, 0.5, 0);
-    const espiga = new THREE.OctahedronGeometry(0.075, 0);
-    espiga.scale(0.9, 2.6, 0.9);
-    espiga.translate(0.015, 0.93, 0);
-    const h1 = new THREE.ConeGeometry(0.05, 0.55, 3, 1, true);
-    h1.rotateZ(0.5);
-    h1.translate(0.1, 0.32, 0);
-    const h2 = new THREE.ConeGeometry(0.045, 0.45, 3, 1, true);
-    h2.rotateZ(-0.6);
-    h2.rotateY(2);
-    h2.translate(-0.05, 0.28, 0.07);
-    const g = mergeGeometries([tallo, espiga, h1, h2].map((x) => sinIndice(x)));
-    [tallo, espiga, h1, h2].forEach((x) => x.dispose());
-    g.computeVertexNormals();
-    return keep(g);
-  })();
-  // Viento: el vértice se desplaza según su altura y la posición de la instancia.
+  // ─── Gramíneas: la ráfaga viaja por el campo y dobla las puntas en el mismo sentido ───
   /** @param {THREE.MeshStandardMaterial} mat */
   const conViento = (mat) => {
     mat.onBeforeCompile = (
@@ -331,98 +333,199 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
           `#include <begin_vertex>
           #ifdef USE_INSTANCING
             vec2 ip = instanceMatrix[3].xz;
-            float wv = sin(uViento + ip.x * 0.35 + ip.y * 0.21) + 0.45 * sin(uViento * 2.3 + ip.x * 0.9);
-            transformed.x += wv * ${T.viento.fuerza.toFixed(3)} * position.y * position.y * 2.0;
-            transformed.z += wv * ${(T.viento.fuerza * 0.5).toFixed(3)} * position.y * position.y * 2.0;
+            vec2 rumbo = vec2(0.91, 0.42);
+            float onda = uViento - dot(ip, rumbo) * 0.53;
+            float rafaga = sin(onda) + 0.35 * sin(uViento * 2.6 + ip.y * 1.1);
+            float flexion = (rafaga + 0.24) * ${T.viento.fuerza.toFixed(3)} * position.y * position.y * 2.2;
+            transformed.x += flexion * dot(normalize(instanceMatrix[0].xz + vec2(0.0001, 0.0)), rumbo);
+            transformed.z += flexion * dot(normalize(instanceMatrix[2].xz + vec2(0.0, 0.0001)), rumbo);
           #endif`,
         );
     };
     mat.customProgramCacheKey = () => "trigo-viento";
     return mat;
   };
-  const trigoMatDentro = conViento(
-    std(0xffffff, { depthWrite: false, side: THREE.DoubleSide }),
+  const rastrojoMat = conViento(
+    std(0xffffff, {
+      depthWrite: false,
+      side: THREE.DoubleSide,
+      vertexColors: true,
+    }),
   );
-  const trigoMatFuera = conViento(std(0xffffff, { side: THREE.DoubleSide }));
+  const trigoMatFuera = conViento(
+    std(0xffffff, { side: THREE.DoubleSide, vertexColors: true }),
+  );
   const d = new THREE.Object3D();
   const col = new THREE.Color();
 
   // Dentro del claro: matas bajas, posiciones fijas (se siegan por franjas en la fase 2).
   const ND = T.dentro.matas;
-  const dentro = new THREE.InstancedMesh(espigaGeo, trigoMatDentro, ND);
+  const dentro = new THREE.InstancedMesh(
+    keep(geometriaRastrojo()),
+    rastrojoMat,
+    ND,
+  );
   dentro.renderOrder = -2; // tras el suelo, antes que todo lo opaco (no escribe profundidad)
   dentro.receiveShadow = true;
-  const dPos = new Float32Array(ND * 4); // x, z, altura, giro
+  dentro.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  const dPos = new Float32Array(ND * 5); // x, z, altura, giro y cota de la raíz
   for (let i = 0; i < ND; i++) {
-    // Mechones: cada 5 matas comparten centro (se lee como rastrojo con matas, no como ruido).
-    const m = Math.floor(i / 5);
+    const j = i * 5;
+    // Los grupos de tres dejan tierra a la vista y conservan más rastrojo en la orilla.
+    const m = Math.floor(i / 3);
     const a = hash(m, 1) * Math.PI * 2,
-      r = Math.sqrt(hash(m, 2)) * (R - 0.4);
+      r = Math.pow(hash(m, 2), 0.39) * (R - 0.55);
     const da = hash(i, 8) * Math.PI * 2,
-      dr = 0.08 + hash(i, 9) * 0.28;
-    dPos[i * 4] = Math.cos(a) * r + Math.cos(da) * dr;
-    dPos[i * 4 + 1] = Math.sin(a) * r + Math.sin(da) * dr;
-    dPos[i * 4 + 2] =
-      T.dentro.altura[0] +
-      hash(i, 3) * (T.dentro.altura[1] - T.dentro.altura[0]);
-    dPos[i * 4 + 3] = hash(i, 4) * 6.28;
-    dentro.setColorAt(i, col.setScalar(0.78 + hash(i, 5) * 0.35));
+      dr = 0.07 + hash(i, 9) * 0.5;
+    dPos[j] = Math.cos(a) * r + Math.cos(da) * dr;
+    dPos[j + 1] = Math.sin(a) * r + Math.sin(da) * dr;
+    dPos[j + 2] =
+      (T.dentro.altura[0] +
+        hash(i, 3) * (T.dentro.altura[1] - T.dentro.altura[0])) *
+      (0.44 + 0.56 * smooth(R * 0.12, R * 0.78, r));
+    dPos[j + 3] = hash(i, 4) * 6.28;
+    dPos[j + 4] = alturaMalla(dPos[j], dPos[j + 1]) - 0.012; // La siega reutiliza la cota.
+    const tono = 0.7 + hash(i, 5) * 0.42;
+    dentro.setColorAt(
+      i,
+      col.setRGB(tono, tono * (0.86 + hash(i, 10) * 0.15), tono * 0.86),
+    );
   }
   scene.add(dentro);
 
   // Fuera: trigo alto hasta el horizonte (estático salvo el viento).
-  const NF = T.fuera.matas;
-  const fuera = new THREE.InstancedMesh(espigaGeo, trigoMatFuera, NF);
+  const NF = T.fuera.matas; // La mata más ancha cubre el terreno con la densidad original.
+  const fuera = new THREE.InstancedMesh(
+    keep(geometriaEspiga()),
+    trigoMatFuera,
+    NF,
+  );
   fuera.receiveShadow = true;
   {
     // Sobre la malla del suelo (no a altura fija): junto al risco el terreno ya empieza a caer.
-    const sembradas = sembrarFuera(T, R, alturaMalla);
+    const sembradas = sembrarFuera(T, R, alturaMalla, NF);
     let n = 0;
     for (let k = 0; k < sembradas.length; k += 4) {
       const x = sembradas[k],
         y = sembradas[k + 1],
         z = sembradas[k + 2],
         i = sembradas[k + 3]; // semilla del ruido de esta mata
+      const lomo = Math.sin(x * 0.7 + Math.sin(z * 0.42) * 2);
       const h =
-        T.fuera.altura[0] +
-        hash(i, 13) * (T.fuera.altura[1] - T.fuera.altura[0]);
+        (T.fuera.altura[0] +
+          hash(i, 13) * (T.fuera.altura[1] - T.fuera.altura[0])) *
+        (0.83 + 0.22 * lomo + 0.18 * smooth(R, R + 3, Math.hypot(x, z)));
       d.position.set(x, y - 0.02, z); // 2 cm enterrada: la base no flota en las caras inclinadas
       d.rotation.set(
         (hash(i, 14) - 0.5) * 0.3,
         hash(i, 15) * 6.28,
         (hash(i, 16) - 0.5) * 0.3,
       );
-      d.scale.set(h * 1.6, h, h * 1.6);
+      d.scale.set(h * 1.45, h, h * 1.45);
       d.updateMatrix();
       fuera.setMatrixAt(n, d.matrix);
-      fuera.setColorAt(n, col.setScalar(0.8 + hash(i, 17) * 0.32));
+      const tono = 0.65 + hash(i, 17) * 0.49 + lomo * 0.07;
+      fuera.setColorAt(
+        n,
+        col.setRGB(tono, tono * (0.91 + hash(i, 28) * 0.14), tono * 0.94),
+      );
       n++;
     }
     fuera.count = n;
   }
   scene.add(fuera);
 
-  // ─── Lindes: piedras bajas alrededor del claro (un draw call) ───
-  const piedraGeo = keep(new THREE.DodecahedronGeometry(0.42, 0));
-  const NP = Math.round((Math.PI * 2 * R) / 0.62);
-  const piedras = new THREE.InstancedMesh(piedraGeo, std(0xffffff), NP);
-  for (let i = 0; i < NP; i++) {
-    const a = (i / NP) * Math.PI * 2,
-      r = R + 0.35 + (hash(i, 21) - 0.5) * 0.25;
-    d.position.set(Math.cos(a) * r, 0.08, Math.sin(a) * r);
-    d.rotation.set(hash(i, 22) * 3, hash(i, 23) * 3, hash(i, 24) * 3);
-    const s = 0.7 + hash(i, 25) * 0.6;
-    d.scale.set(s * 1.2, s * 0.6, s);
+  // Las inflorescencias secas viven en grupos bajos entre el pedregal y el trigo.
+  const floresMat = conViento(
+    std(0xffffff, { side: THREE.DoubleSide, vertexColors: true }),
+  );
+  const flores = new THREE.InstancedMesh(
+    keep(geometriaFloresSecas()),
+    floresMat,
+    320,
+  );
+  for (let i = 0; i < flores.count; i++) {
+    const grupo = Math.floor(i / 4);
+    const a = hash(grupo, 181) * Math.PI * 2;
+    const r = R + 0.85 + hash(grupo, 182) * 3.2;
+    const x = Math.cos(a) * r + hash(i, 183) - 0.5;
+    const z = Math.sin(a) * r + hash(i, 184) - 0.5;
+    const h = 0.38 + hash(i, 185) * 0.52;
+    d.position.set(x, alturaMalla(x, z) - 0.02, z);
+    d.rotation.set(0, hash(i, 186) * Math.PI * 2, 0);
+    d.scale.setScalar(h);
     d.updateMatrix();
-    piedras.setMatrixAt(i, d.matrix);
-    piedras.setColorAt(i, col.setScalar(0.8 + hash(i, 26) * 0.35));
+    flores.setMatrixAt(i, d.matrix);
+    flores.setColorAt(i, col.setScalar(0.71 + hash(i, 187) * 0.36));
   }
+  flores.receiveShadow = true;
+  scene.add(flores);
+
+  // ─── Lindes: borde de piedra gastado y fragmentos sueltos (un draw call) ───
+  const piedraGeo = keep(new THREE.DodecahedronGeometry(0.42, 0));
+  {
+    const pos = piedraGeo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i),
+        y = pos.getY(i),
+        z = pos.getZ(i);
+      const corte = hash(x * 13 + y, z * 19);
+      pos.setXYZ(
+        i,
+        x * (0.84 + corte * 0.36),
+        Math.min(0.24, y) + corte * 0.075,
+        z,
+      );
+    }
+    piedraGeo.computeVertexNormals();
+    vestirPiedra(piedraGeo, 1);
+  }
+  const estratos = keep(texturaTrigal("piedra"));
+  const piedraMat = std(0xffffff, {
+    vertexColors: true,
+    map: estratos,
+    bumpMap: estratos,
+    bumpScale: 0.1,
+  });
+  const NP = Math.round((Math.PI * 2 * R) / 0.62);
+  const piedras = new THREE.InstancedMesh(piedraGeo, piedraMat, NP * 3);
+  let nPiedras = 0;
+  for (let i = 0; i < NP; i++) {
+    const a = ((i + hash(i, 21) * 0.6) / NP) * Math.PI * 2;
+    if (Math.sin(a) > 0 && Math.abs(Math.cos(a) * R) < 1.4) continue; // deja el paso del arco
+    const despejado = hash(i, 27) < 0.13;
+    const cantidad = despejado ? 1 : 2 + Math.floor(hash(i, 28) * 2);
+    for (let k = 0; k < cantidad; k++) {
+      const j = i * 3 + k;
+      const r = R + 0.27 + k * 0.45 + hash(j, 24) * (k ? 1.25 : 0.38);
+      const x = Math.cos(a) * r;
+      const z = Math.sin(a) * r;
+      const s = (0.75 + hash(j, 25) * 0.65) * (k || despejado ? 0.43 : 1);
+      d.position.set(x, alturaMalla(x, z) + 0.04, z);
+      d.rotation.set(
+        (hash(j, 22) - 0.5) * 0.85,
+        hash(j, 23) * 6.28,
+        (hash(j, 29) - 0.5) * 0.65,
+      );
+      d.scale.set(s * 1.25, s * 0.67, s);
+      d.updateMatrix();
+      piedras.setMatrixAt(nPiedras, d.matrix);
+      piedras.setColorAt(nPiedras, col.setScalar(0.72 + hash(j, 26) * 0.45));
+      nPiedras++;
+    }
+  }
+  piedras.count = nPiedras;
   piedras.receiveShadow = true;
   scene.add(piedras);
   // ─── Ruinas del olimpo (D-204): columnas rotas y muros en el borde, y el arco de llegada ───
-  // Una sola malla (un draw call) con gris por vértice: el color de la piedra sale de la paleta.
+  // Una sola malla con capas minerales. La costra horneada por vértice queda encima de la piedra.
   // Del lado de la cámara (+z) solo quedan tocones bajos (`altoCerca`) para no tapar a la pareja.
-  const ruinaMat = std(0xffffff, { vertexColors: true });
+  const ruinaMat = std(0xffffff, {
+    vertexColors: true,
+    map: estratos,
+    bumpMap: estratos,
+    bumpScale: 0.13,
+  });
   const RU = C.ruinas,
     AR = C.arco;
   let /** @type {THREE.Mesh} */ arcoSalida; // mismo arco de piedra que la entrada, visible al vencer a Mirra
@@ -430,13 +533,11 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
   {
     /** @type {THREE.BufferGeometry[]} */
     const piezas = [];
-    /** Añade una pieza con un gris (0..1) que multiplica el color de la piedra. @param {THREE.BufferGeometry} g @param {number} gris */
+    /** Añade una pieza con desgaste en las caras superiores. @param {THREE.BufferGeometry} g @param {number} gris */
     const poner = (g, gris) => {
       const q = sinIndice(g);
       g.dispose();
-      const n = q.attributes.position.count;
-      const c = new Float32Array(n * 3).fill(gris);
-      q.setAttribute("color", new THREE.Float32BufferAttribute(c, 3));
+      vestirPiedra(q, gris);
       piezas.push(q);
     };
     const NC = RU.columnas;
@@ -455,16 +556,47 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
       const h = cerca
         ? RU.altoCerca * (0.5 + hash(i, 73) * 0.5)
         : RU.alto[0] + hash(i, 73) * (RU.alto[1] - RU.alto[0]);
-      const gris = 0.82 + hash(i, 74) * 0.22;
-      // Basa cuadrada, fuste de 8 caras y, en las altas, un capitel ladeado (rota, no derrumbada).
-      const basa = new THREE.BoxGeometry(RU.radio * 2.5, 0.35, RU.radio * 2.5);
-      basa.translate(x, 0.17, z);
-      poner(basa, gris * 0.92);
-      const fuste = new THREE.CylinderGeometry(RU.radio * 0.85, RU.radio, h, 8);
-      fuste.rotateZ((hash(i, 75) - 0.5) * 0.06);
-      fuste.translate(x, 0.35 + h / 2, z);
-      poner(fuste, gris);
-      if (!cerca && hash(i, 76) > 0.45) {
+      const gris = 0.8 + hash(i, 74) * 0.25;
+      const y = alturaMalla(x, z);
+      // Plinto escalonado y tambores con juntas estrechas. El corte de arriba deja aristas.
+      for (const [ancho, alto, centro] of [
+        [2.9, 0.22, 0.07],
+        [2.44, 0.18, 0.25],
+      ]) {
+        const basa = new THREE.BoxGeometry(
+          RU.radio * ancho,
+          alto,
+          RU.radio * ancho,
+        );
+        basa.rotateY(a * 0.38);
+        basa.translate(x, y + centro, z);
+        poner(basa, gris * 0.91);
+      }
+      const tambores = Math.ceil(h / 0.75);
+      const altoTambor = h / tambores;
+      const tieneCapitel = !cerca && hash(i, 76) > 0.45;
+      for (let j = 0; j < tambores; j++) {
+        const radio = RU.radio * (1 - (j / tambores) * 0.15);
+        const fuste = new THREE.CylinderGeometry(
+          radio - 0.01,
+          radio,
+          altoTambor - 0.015,
+          9,
+        );
+        if (j === tambores - 1 && !tieneCapitel) {
+          const pos = fuste.attributes.position;
+          for (let v = 0; v < pos.count; v++) {
+            if (pos.getY(v) <= 0) continue;
+            const corte = hash(pos.getX(v) * 9 + i, pos.getZ(v) * 14);
+            pos.setY(v, pos.getY(v) - 0.24 * corte);
+          }
+          fuste.computeVertexNormals();
+        }
+        fuste.rotateY(hash(i, 75) * 0.7);
+        fuste.translate(x, y + 0.34 + (j + 0.5) * altoTambor, z);
+        poner(fuste, gris * (0.89 + hash(i, j + 177) * 0.14));
+      }
+      if (tieneCapitel) {
         const capitel = new THREE.BoxGeometry(
           RU.radio * 2.6,
           0.45,
@@ -472,7 +604,7 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
         );
         capitel.rotateY(a);
         capitel.rotateZ((hash(i, 77) - 0.5) * 0.25);
-        capitel.translate(x, 0.35 + h + 0.2, z);
+        capitel.translate(x, y + 0.35 + h + 0.17, z);
         poner(capitel, gris * 0.95);
       }
       // Tambor caído junto a la columna (piedra tumbada entre el trigo).
@@ -487,7 +619,11 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
         tambor.rotateY(hash(i, 79) * Math.PI);
         const ox = (hash(i, 80) - 0.5) * 2.4,
           oz = (hash(i, 81) - 0.5) * 2.4;
-        tambor.translate(x + ox, RU.radio * 0.85, z + oz);
+        tambor.translate(
+          x + ox,
+          alturaMalla(x + ox, z + oz) + RU.radio * 0.65,
+          z + oz,
+        );
         poner(tambor, gris * 0.88);
       }
       // Lienzo de muro roto hasta la columna siguiente, solo al fondo (no tapa nada).
@@ -502,20 +638,34 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
         const px = x + (dx / dl) * RU.radio * 1.2,
           pz = z + (dz / dl) * RU.radio * 1.2;
         const largo = dl - RU.radio * 2.4;
-        const alto = 0.9 + hash(i, 83) * 1.6;
-        // Dos bloques de distinta altura: el muro se lee mordido, no entero.
-        for (const [t0, t1, f] of [
-          [0, 0.55, 1],
-          [0.55, 1, 0.45 + hash(i, 84) * 0.4],
-        ]) {
-          const l = largo * (t1 - t0);
-          const m = new THREE.BoxGeometry(l, alto * f, 0.55);
-          const tm = ((t0 + t1) / 2) * largo; // m desde el primer extremo hasta el centro del bloque
-          const cx = px + (dx / dl) * tm,
-            cz = pz + (dz / dl) * tm;
-          m.rotateY(-Math.atan2(dz, dx));
-          m.translate(cx, (alto * f) / 2, cz);
-          poner(m, gris * 0.9);
+        const filas = 3 + Math.floor(hash(i, 83) * 3);
+        const base = alturaMalla(px, pz) - 0.11;
+        // Hiladas incompletas, con huecos y sillares de distinto ancho.
+        for (let fila = 0; fila < filas; fila++) {
+          const ancho = 0.62 + hash(i, fila + 201) * 0.54;
+          const tramo = largo * (1 - fila * 0.13);
+          for (
+            let inicio = -ancho * (fila % 2) * 0.5;
+            inicio < tramo;
+            inicio += ancho
+          ) {
+            const desde = Math.max(0, inicio);
+            const hasta = Math.min(tramo, inicio + ancho);
+            if (hasta - desde < 0.22) continue;
+            const semilla = hash(i + fila * 17, desde + 46);
+            const m = new THREE.BoxGeometry(
+              hasta - desde - 0.038,
+              0.39,
+              0.54 + semilla * 0.17,
+            );
+            const tm = (desde + hasta) / 2;
+            const cx = px + (dx / dl) * tm;
+            const cz = pz + (dz / dl) * tm;
+            m.rotateZ((semilla - 0.5) * 0.1);
+            m.rotateY(-Math.atan2(dz, dx));
+            m.translate(cx, base + (fila + 0.5) * 0.41, cz);
+            poner(m, gris * (0.81 + semilla * 0.2));
+          }
         }
       }
     }
@@ -816,7 +966,7 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
       }
       c.needsUpdate = true;
     }
-    // Suelo por cara
+    // Los pesos se calculan al crear el suelo. Aquí solo se mezclan los tonos de cada fase.
     {
       const pos = sueloGeo.attributes.position,
         c = sueloGeo.attributes.color;
@@ -826,31 +976,27 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
       cN.setHex(p.niebla);
       cV.setHex(mezclarHex(p.vegetacion, p.suelo, 0.45));
       cO.setHex(mezclarHex(p.sueloAlt, p.madera, 0.35));
-      for (let f = 0; f < pos.count; f += 3) {
-        const x = pos.getX(f),
-          z = pos.getZ(f),
-          dd = Math.hypot(x, z);
-        cTmp.copy(cA).lerp(cB, hash(x * 0.37, z * 0.53));
-        // Manchas grandes de rastrojo más oscuro (ruido de baja frecuencia) para romper el monocromo.
-        const mancha =
-          Math.sin(x * 0.23 + Math.sin(z * 0.17) * 2) *
-          Math.sin(z * 0.19 + Math.cos(x * 0.13) * 2);
-        if (mancha > 0.25) cTmp.lerp(cO, Math.min(0.55, (mancha - 0.25) * 1.2));
-        if (dd > R + 0.8) cTmp.lerp(cV, 0.6); // fuera del claro: tierra de trigal
+      for (let i = 0; i < pos.count; i++) {
         // Risco y ladera: roca que se oscurece y se funde con la niebla al bajar.
-        const y = pos.getY(f);
+        const y = pos.getY(i);
+        const peso = i * 3;
         if (y < C.roca) {
-          cTmp.copy(cR).multiplyScalar(0.82 + hash(x * 0.7, z * 0.3) * 0.3);
+          cTmp.copy(cR).multiplyScalar(0.85 + sueloPesos[peso] * 0.27);
           cTmp.lerp(cN, Math.min(0.6, -y / C.profundidad));
+        } else {
+          cTmp.copy(cA).lerp(cB, sueloPesos[peso]);
+          cTmp.lerp(cO, sueloPesos[peso + 1]);
+          cTmp.lerp(cV, sueloPesos[peso + 2]);
         }
-        for (let j = 0; j < 3; j++) c.setXYZ(f + j, cTmp.r, cTmp.g, cTmp.b);
+        c.setXYZ(i, cTmp.r, cTmp.g, cTmp.b);
       }
       c.needsUpdate = true;
     }
-    trigoMatDentro.color.setHex(mezclarHex(p.vegetacion, p.suelo, 0.25));
+    rastrojoMat.color.setHex(mezclarHex(p.vegetacion, p.suelo, 0.18));
     trigoMatFuera.color.setHex(p.vegetacion);
-    piedras.material.color.setHex(mezclarHex(p.sueloAlt, p.niebla, 0.3));
-    ruinaMat.color.setHex(mezclarHex(p.sueloAlt, p.niebla, 0.45)); // mármol gastado y polvoriento
+    floresMat.color.setHex(mezclarHex(p.vegetacion, p.particula, 0.52));
+    piedraMat.color.setHex(mezclarHex(p.sueloAlt, p.niebla, 0.23));
+    ruinaMat.color.setHex(mezclarHex(p.sueloAlt, p.niebla, 0.39)); // piedra gastada y polvorienta
     nubeMat.color.setHex(mezclarHex(p.niebla, 0xffffff, 0.5)); // < 1: no pasa el umbral del bloom
     // Valle: parcelas entre trigo y tierra, fundidas con la niebla hacia el borde del disco.
     cA.setHex(mezclarHex(p.vegetacion, p.niebla, 0.6));
@@ -905,8 +1051,9 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
   function colocarDentro(soloCambiosDeSuelo = false) {
     let cambiado = false;
     for (let i = 0; i < ND; i++) {
-      const x = dPos[i * 4],
-        z = dPos[i * 4 + 1];
+      const j = i * 5;
+      const x = dPos[j],
+        z = dPos[j + 1];
       let oculta = 0;
       for (const p of peligrosSuelo) {
         if ((x - p.x) ** 2 + (z - p.z) ** 2 < p.r * p.r) {
@@ -922,14 +1069,14 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
       // La siega avanza a lo largo de la franja (perpendicular a la dirección de las bandas).
       const avance = (-x * dirZ + z * dirX) / (R * 2) + 0.5;
       const cortado = banda && siega >= avance;
-      const h = cortado ? F.altura : dPos[i * 4 + 2];
-      d.position.set(x, -0.01, z);
+      const h = cortado ? Math.min(F.altura, dPos[j + 2] * 0.55) : dPos[j + 2];
+      d.position.set(x, dPos[j + 4], z);
       d.rotation.set(
         (hash(i, 6) - 0.5) * 0.4,
-        dPos[i * 4 + 3],
+        dPos[j + 3],
         (hash(i, 7) - 0.5) * 0.4,
       );
-      d.scale.set(h * 1.5 + 0.12, h, h * 1.5 + 0.12);
+      d.scale.set(h * 1.6 + 0.15, h, h * 1.6 + 0.15);
       // El trigo reaparece al evaporarse el charco de ácido.
       if (oculta) d.scale.setScalar(0);
       d.updateMatrix();
@@ -1025,6 +1172,7 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
     dispose() {
       dentro.dispose();
       fuera.dispose();
+      flores.dispose();
       piedras.dispose();
       esp.dispose();
     },

@@ -1,5 +1,11 @@
 // Embarcadero al salir del trigal. Los tablones llevan hasta el muelle de Ondar.
 import * as THREE from "three";
+import {
+  crearLetreroMuelle,
+  geometriaAmarras,
+  geometriaEspuma,
+  geometriaJuncos,
+} from "./muelle-detalle.js";
 
 /** @param {{scene: THREE.Scene, cfg: import('./tipos.js').Cfg, keep: import('./tipos.js').Keep}} args */
 export function crearSalidaTrigal({ scene, cfg, keep }) {
@@ -27,12 +33,18 @@ export function crearSalidaTrigal({ scene, cfg, keep }) {
   /** @type {Pieza[]} */
   const postes = [];
   /** @type {Pieza[]} */
+  const vetas = [];
+  /** @type {Pieza[]} */
   const rocas = [];
+  /** @type {Pieza[]} */
+  const juncos = [];
+  /** @type {Pieza[]} */
+  const boyas = [];
 
   // Una llamada de dibujo por tipo de pieza. Transformaciones y colores quedan fijos desde el montaje.
-  /** @param {THREE.BufferGeometry} forma @param {Pieza[]} piezas @param {boolean} sombras */
-  function montar(forma, piezas, sombras) {
-    const lote = keep(new THREE.InstancedMesh(forma, material, piezas.length));
+  /** @param {THREE.BufferGeometry} forma @param {Pieza[]} piezas @param {boolean} sombras @param {THREE.MeshStandardMaterial} [pintura] */
+  function montar(forma, piezas, sombras, pintura = material) {
+    const lote = keep(new THREE.InstancedMesh(forma, pintura, piezas.length));
     piezas.forEach((p, i) => {
       matriz.position.set(p.x, p.y, p.z);
       matriz.scale.set(p.ancho, p.alto, p.fondo);
@@ -77,6 +89,20 @@ export function crearSalidaTrigal({ scene, cfg, keep }) {
         color: pal.suelo,
         luz: 0.87 + 0.18 * (0.5 + 0.5 * Math.sin(i * 2.9 + a)),
       });
+      // Fibras largas y marcas de desgaste a un par de milímetros sobre el tablón.
+      for (let veta = 0; veta < 3; veta++) {
+        const t = 0.5 + 0.5 * Math.sin(i * 2.41 + a * 1.21 + veta * 3.7);
+        vetas.push({
+          x: a + (b - a) * (0.24 + t * 0.52),
+          y: 0.001,
+          z: z + (veta - 1) * paso * 0.23,
+          ancho: (b - a) * (0.11 + t * 0.16),
+          alto: 0.002,
+          fondo: 0.018 + t * 0.021,
+          color: veta === 1 ? 0xb19370 : pal.sueloAlt,
+          luz: 0.91 + 0.14 * t,
+        });
+      }
     }
   }
 
@@ -198,9 +224,102 @@ export function crearSalidaTrigal({ scene, cfg, keep }) {
       giro: i * 1.4,
     });
   }
+
+  /** @type {{ poste: THREE.Vector3, boya: THREE.Vector3 }[]} */
+  const amarres = [];
+  /** @type {{ x: number, z: number, giro: number }[]} */
+  const bancos = [];
+  for (const lado of [-1, 1]) {
+    // Los bancos someros quedan pegados al muelle, siempre fuera del tablón transitable.
+    for (let banco = 0; banco < 6; banco++) {
+      const x = lado * (medio + 2.75 + 1.3 * Math.sin(banco * 2.7 + lado));
+      const z = tramo.zInicio - (largo * (banco + 0.4)) / 6;
+      bancos.push({ x, z, giro: banco * 2.17 + lado });
+      for (let i = 0; i < 6; i++) {
+        const a = i * 2.399 + banco;
+        const ancho = 0.53 + 0.38 * (0.5 + 0.5 * Math.cos(i * 2.17 + banco));
+        const px = x + Math.cos(a) * (0.45 + i * 0.14);
+        const pz = z + Math.sin(a) * (0.45 + i * 0.14);
+        rocas.push({
+          x: px,
+          y: -1.95,
+          z: pz,
+          ancho,
+          alto: ancho * 0.7,
+          fondo: ancho * 1.44,
+          color: i % 3 === 0 ? 0x566142 : pal.piedra,
+          giro: a,
+          luz: 0.76 + 0.05 * i,
+        });
+        juncos.push({
+          x: px,
+          y: -1.58,
+          z: pz,
+          ancho: 0.72 + 0.12 * i,
+          alto: ancho * 1.28,
+          fondo: 0.85,
+          color: i % 3 === 1 ? 0xe1ce96 : 0xffffff,
+          giro: a + lado,
+        });
+      }
+    }
+    // Boyas de señal y sus cuerdas siguiendo el exterior de los pilotes existentes.
+    for (const fila of [1, 3]) {
+      const z = tramo.zInicio - (largo * fila) / 4;
+      const x = lado * (medio + 1.55);
+      const desfase = fila === 1 ? -1.35 : 1.22;
+      boyas.push({
+        x,
+        y: -1.5,
+        z: z + desfase,
+        ancho: 0.77,
+        alto: 0.77,
+        fondo: 0.77,
+        color: fila === 1 ? 0xbe604b : 0xbb9655,
+      });
+      postes.push({
+        x,
+        y: -1.27,
+        z: z + desfase,
+        ancho: 0.43,
+        alto: 0.16,
+        fondo: 0.43,
+        color: 0xb6a68e,
+      });
+      amarres.push({
+        poste: new THREE.Vector3(lado * (medio + 0.43), 0.45, z),
+        boya: new THREE.Vector3(x, -1.17, z + desfase),
+      });
+    }
+  }
   montar(cubo, tablas, true);
+  montar(cubo, vetas, false); // Las marcas planas de la madera reciben sombra sin proyectarla.
   montar(poste, postes, true);
   montar(roca, rocas, false);
+  montar(keep(new THREE.SphereGeometry(0.5, 9, 6)), boyas, false);
+  montar(
+    keep(geometriaJuncos()),
+    juncos,
+    false,
+    keep(
+      new THREE.MeshStandardMaterial({
+        vertexColors: true,
+        side: THREE.DoubleSide,
+        roughness: 1,
+      }),
+    ),
+  );
+  const cuerdas = new THREE.Mesh(
+    keep(geometriaAmarras(amarres)),
+    keep(new THREE.MeshStandardMaterial({ color: 0xb9a181, roughness: 1 })),
+  );
+  cuerdas.receiveShadow = true;
+  raiz.add(cuerdas);
+  const letrero = crearLetreroMuelle(keep);
+  // Los postes se apoyan en el borde del tablón, fuera del ancho físico del muelle.
+  letrero.position.set(medio + 0.18, 0, tramo.zInicio - 3.3);
+  letrero.rotation.y = -Math.PI / 2;
+  raiz.add(letrero);
 
   // Agua facetada. El color y las ondas se calculan una vez: el movimiento reducido también conserva la calma.
   const aguaGeo = keep(
@@ -232,6 +351,18 @@ export function crearSalidaTrigal({ scene, cfg, keep }) {
   );
   agua.position.z = centro;
   raiz.add(agua);
+  const espuma = new THREE.Mesh(
+    keep(geometriaEspuma(bancos)),
+    keep(
+      new THREE.MeshBasicMaterial({
+        color: 0xb3ccbf,
+        transparent: true,
+        opacity: 0.5,
+        depthWrite: false,
+      }),
+    ),
+  );
+  raiz.add(espuma);
 
   return {
     dispose() {

@@ -15,7 +15,9 @@ import {
   puntoRuta,
 } from "../gameplay/ruta.js";
 import { alturaRuta, bordesEscalones } from "./altura.js";
+import { crearDetalleTemplo } from "./detalle-templo.js";
 import { mezclarHex } from "./paleta.js";
+import { crearVestigiosTemplo } from "./vestigios-templo.js";
 
 /** @param {number} x @param {number} z */
 const hash = (x, z) => {
@@ -41,6 +43,51 @@ const ruido = (x, z) => {
     d = hash(ix + 1, iz + 1);
   return a + (b - a) * ux + (c - a) * uz + (a - b - c + d) * ux * uz;
 };
+
+/** Aplica pátina y grano a la roca en metros, también en las piezas instanciadas.
+ * @param {THREE.MeshStandardMaterial} mat */
+function piedraTallada(mat) {
+  mat.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        "#include <common>",
+        "#include <common>\nvarying vec3 piedraMundo;",
+      )
+      .replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>
+        vec4 piedraLocal = vec4(transformed, 1.0);
+        #ifdef USE_INSTANCING
+          piedraLocal = instanceMatrix * piedraLocal;
+        #endif
+        piedraMundo = (modelMatrix * piedraLocal).xyz;`,
+      );
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        "#include <common>",
+        `#include <common>
+        varying vec3 piedraMundo;
+        float granoPiedra(vec2 p) {
+          vec2 i = floor(p);
+          vec2 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          vec4 puntos = vec4(dot(i, vec2(127.1, 311.7))) + vec4(0.0, 127.1, 311.7, 438.8);
+          vec4 valores = fract(sin(puntos) * 43758.5453);
+          return mix(mix(valores.x, valores.y, f.x), mix(valores.z, valores.w, f.x), f.y);
+        }`,
+      )
+      .replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>
+        vec2 veta = piedraMundo.xz + piedraMundo.y * vec2(0.31, 0.65);
+        float patina = granoPiedra(veta * 1.28);
+        float poro = granoPiedra(veta * 15.0);
+        float mancha = smoothstep(0.4, 0.72, patina);
+        diffuseColor.rgb *= (0.88 + poro * 0.18) * mix(vec3(1.08, 1.05, 1.02), vec3(0.82, 0.88, 0.83), mancha);`,
+      );
+  };
+  return mat;
+}
 
 /**
  * @param {{
@@ -201,6 +248,49 @@ export function crearTemplo({ scene, cfg, keep, alturaSuelo }) {
   );
   terr.receiveShadow = true;
   scene.add(terr);
+  const origenX = (x0 + x1 - nx * TT.paso) / 2;
+  const origenZ = (z0 + z1 - nz * TT.paso) / 2;
+  const verticesTerreno = terrGeo.attributes.position;
+  /** Interpola el triángulo dibujado para apoyar la vegetación incluso donde cae la ladera.
+   * @param {number} x @param {number} z */
+  function superficie(x, z) {
+    const gx = (x - origenX) / TT.paso;
+    const gz = (z - origenZ) / TT.paso;
+    const ix = Math.max(0, Math.min(nx - 1, Math.floor(gx)));
+    const iz = Math.max(0, Math.min(nz - 1, Math.floor(gz)));
+    const u = THREE.MathUtils.clamp(gx - ix, 0, 1);
+    const v = THREE.MathUtils.clamp(gz - iz, 0, 1);
+    const base = (iz * nx + ix) * 6; // caras (a,b,d) y (b,c,d)
+    const b = verticesTerreno.getY(base + 1);
+    const d = verticesTerreno.getY(base + 2);
+    if (u + v <= 1) {
+      const a = verticesTerreno.getY(base);
+      return a + (d - a) * u + (b - a) * v;
+    }
+    const c = verticesTerreno.getY(base + 4);
+    return c + (b - c) * (1 - u) + (d - c) * (1 - v);
+  }
+  const detalle = crearDetalleTemplo({
+    scene,
+    keep,
+    ruta,
+    ancho: W,
+    centro: lc,
+    radio: Lr,
+    umbral: umbralS,
+    terreno: superficie,
+    suelo: alturaSuelo,
+  });
+  const vestigios = crearVestigiosTemplo({
+    scene,
+    keep,
+    ruta,
+    ancho: W,
+    umbral: umbralS,
+    terreno: superficie,
+    centro: lc,
+    radio: Lr,
+  });
   // Fondo del valle: plano enorme bajo la malla para que el horizonte no se corte (se pierde en la niebla).
   const fondoMat = std(0xffffff, { roughness: 1 });
   const fondo = new THREE.Mesh(
@@ -214,12 +304,14 @@ export function crearTemplo({ scene, cfg, keep, alturaSuelo }) {
   // ─── Cinta de losas del pasillo: sigue las rampas y corta los peldaños en vertical ───
   const cintaGeo = keep(construirCinta());
   // Desplazada hacia la cámara: donde coincide con el claro (s < 2) gana la cinta, sin parpadeo.
-  const cintaMat = std(0xffffff, {
-    vertexColors: true,
-    polygonOffset: true,
-    polygonOffsetFactor: -1,
-    polygonOffsetUnits: -1,
-  });
+  const cintaMat = piedraTallada(
+    std(0xffffff, {
+      vertexColors: true,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    }),
+  );
   const cinta = new THREE.Mesh(cintaGeo, cintaMat);
   cinta.receiveShadow = true;
   scene.add(cinta);
@@ -366,7 +458,7 @@ export function crearTemplo({ scene, cfg, keep, alturaSuelo }) {
 
   // ─── Claro del lobby: disco de losas en anillos con una rosa de piedra clara en el centro ───
   const claroGeo = keep(construirClaro());
-  const claroMat = std(0xffffff, { vertexColors: true });
+  const claroMat = piedraTallada(std(0xffffff, { vertexColors: true }));
   const claro = new THREE.Mesh(claroGeo, claroMat);
   claro.receiveShadow = true;
   scene.add(claro);
@@ -820,7 +912,9 @@ export function crearTemplo({ scene, cfg, keep, alturaSuelo }) {
   const piedraGeo = keep(mergeGeometries(piezas));
   piezas.forEach((g) => g.dispose());
   piedraGeo.computeVertexNormals();
-  const piedraMat = std(0xffffff, { vertexColors: true, roughness: 0.88 });
+  const piedraMat = piedraTallada(
+    std(0xffffff, { vertexColors: true, roughness: 0.88 }),
+  );
   const piedra = new THREE.Mesh(piedraGeo, piedraMat);
   piedra.castShadow = true;
   piedra.receiveShadow = true;
@@ -862,7 +956,7 @@ export function crearTemplo({ scene, cfg, keep, alturaSuelo }) {
   }
   const muroGeo = keep(new THREE.BoxGeometry(1, 1, 1));
   muroGeo.translate(0, 0.5, 0);
-  const muroMat = std(0xffffff, { roughness: 0.9 });
+  const muroMat = piedraTallada(std(0xffffff, { roughness: 0.9 }));
   const nMuros = muros.length / 6;
   const muretes = new THREE.InstancedMesh(
     muroGeo,
@@ -1089,8 +1183,8 @@ export function crearTemplo({ scene, cfg, keep, alturaSuelo }) {
     tonoTerreno(1, p.sueloAlt);
     tonoTerreno(2, mezclarHex(p.piedra, p.sueloAlt, 0.45));
     tonoTerreno(3, mezclarHex(p.piedra, p.suelo, 0.25));
-    tonoTerreno(4, mezclarHex(p.vegetacion, p.sueloAlt, 0.3));
-    tonoTerreno(5, mezclarHex(p.vegetacion, p.suelo, 0.55));
+    tonoTerreno(4, mezclarHex(p.vegetacion, p.sueloAlt, 0.17));
+    tonoTerreno(5, mezclarHex(p.vegetacion, p.suelo, 0.36));
     tonoTerreno(6, mezclarHex(p.vegetacion, p.sueloAlt, 0.15));
     tonoTerreno(7, mezclarHex(p.suelo, p.piedra, 0.2));
     tonoTerreno(8, mezclarHex(p.vegetacion, p.particula, 0.2));
@@ -1105,6 +1199,7 @@ export function crearTemplo({ scene, cfg, keep, alturaSuelo }) {
       m.mat.color.setHex(mezclarHex(p.piedra, 0xffffff, 0.15));
     cipresMat.color.setHex(mezclarHex(p.vegetacion, p.sueloAlt, 0.55));
     casaMat.color.setHex(mezclarHex(p.piedra, p.suelo, 0.3));
+    detalle.aplicarPaleta(p);
   }
 
   return {
@@ -1114,9 +1209,11 @@ export function crearTemplo({ scene, cfg, keep, alturaSuelo }) {
      * @param {number} camX @param {number} camZ  m: centro de la vista (el cielo la sigue)
      * @param {number} s  m de ruta del jugador más adelantado (enciende los murales cercanos)
      * @param {number} dt
+     * @param {boolean} reducido
      */
-    sync(camX, camZ, s, dt) {
+    sync(camX, camZ, s, dt, reducido) {
       cielo.position.set(camX, 0, camZ);
+      detalle.avanzar(dt, reducido);
       for (const m of murales) {
         const objetivo =
           T.mural.brillo * (1 - smooth(0, T.mural.cerca, Math.abs(s - m.s)));
@@ -1125,6 +1222,8 @@ export function crearTemplo({ scene, cfg, keep, alturaSuelo }) {
       }
     },
     dispose() {
+      vestigios.dispose();
+      detalle.dispose();
       muretes.dispose();
       cipreses.dispose();
       casas.dispose();

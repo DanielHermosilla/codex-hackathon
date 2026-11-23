@@ -191,95 +191,10 @@ test("el único carro llega a la arena con el premio y las compras duran hasta e
   expect(
     await page.evaluate(() => window.__game.state.players.map((p) => p.hp)),
   ).toEqual([1250, 1250]);
-  await page.keyboard.press("p");
-  await expect(saldo).toHaveText("0 pesos");
-  await carta.getByRole("button", { name: "Volver al juego" }).click();
-  await caminarHasta(page, { x: 0, z: 8 });
-  await expect(aviso).toBeHidden();
-  await page.keyboard.press("p");
-  await expect(carta).toBeHidden();
-
-  // Rodean el carro por el espacio entre su costado izquierdo y los pilares de Mirra.
-  await caminarHasta(page, { x: -5.3, z: 7 });
-  await caminarHasta(page, { x: -5.3, z: -5 });
-  await caminarHasta(page, { x: 0, z: -6 });
-  await page.keyboard.down("KeyW"); // Sael y Odo avanzan con sus teclas reales
-  await page.keyboard.down("ArrowUp");
-  await page.evaluate(() => {
-    window.__game.step(400);
-    // Aunque el montaje termine después, salir de la ventana deja el juego en pausa.
-    window.dispatchEvent(new window.Event("blur"));
-  });
-  await page.keyboard.up("KeyW");
-  await page.keyboard.up("ArrowUp");
-  await page.waitForFunction(
-    () =>
-      window.__game.etapa === "puesto" && window.__game.pantalla === "paused",
-  );
-  await page.getByRole("button", { name: "Continuar", exact: true }).click();
+  // La carta quedó abierta tras comprar y congeló el reloj. Ahora empieza la espera.
+  await page.evaluate(() => window.__game.step(179));
+  expect(await page.evaluate(() => window.__game.etapa)).toBe("victoria");
   await page.evaluate(() => window.__game.step(1));
-  await expect(aviso).toBeHidden();
-  const inicio = await page.evaluate(() => {
-    const [a, b] = window.__game.state.players;
-    return { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
-  });
-  // El segundo emplazamiento antiguo también está vacío.
-  await caminarHasta(page, { x: 2, z: -25 });
-  await page.keyboard.press("p");
-  await expect(carta).toBeHidden();
-  await expect(aviso).toBeHidden();
-  expect(await page.evaluate(() => window.__game.tienda)).toEqual({
-    carro: null,
-    saldo: 0,
-  });
-
-  // La llegada al dominio de Ondar se activa al caminar hasta el final del muelle.
-  await caminarHasta(page, { x: -1, z: -32.5 });
-  await expect(
-    page.getByRole("heading", { name: "Ondar el Ahogado" }),
-  ).toBeVisible();
-  await expect(page.locator("#intro")).toContainText("Aquí termina");
-  const volverAlMuelle = page.getByRole("button", {
-    name: "Volver al muelle",
-  });
-  // Si el modelo no carga al repetir Mirra, se conserva el destino y se puede volver al muelle.
-  await page.route("**/mirra.glb", (route) =>
-    route.fulfill({
-      contentType: "model/gltf-binary",
-      body: "modelo incompleto",
-    }),
-  );
-  await page.getByRole("button", { name: "Reintentar a Mirra" }).click();
-  await expect(page.locator("#intro")).toContainText(
-    "No se pudo cargar la pradera",
-  );
-  expect(await page.evaluate(() => window.__game.etapa)).toBe("destino");
-  await page.unroute("**/mirra.glb");
-  await expect(volverAlMuelle).toBeFocused();
-  await page.keyboard.press("d");
-  await expect(page.locator("#primary")).toBeFocused();
-  await page.keyboard.press("a");
-  await page.keyboard.press("Space");
-  // F puede reasignarse al movimiento y el botón sigue disponible para entrar en la sala.
-  const entrar = page.getByRole("button", {
-    name: "Entrar en la sala del Farolero",
-  });
-  await expect(entrar).toHaveAttribute("aria-keyshortcuts", "F");
-  await page.locator("#pause").click();
-  await page.getByRole("button", { name: "Ajustes", exact: true }).click();
-  const derecha = page.getByRole("button", { name: /Sael · Derecha/ });
-  await derecha.click();
-  await page.keyboard.press("KeyF");
-  await expect(derecha).toHaveText("F");
-  await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Continuar" }).click();
-  await caminarHasta(page, inicio);
-  await page.keyboard.down("KeyF");
-  await page.evaluate(() => window.__game.step(3));
-  await page.keyboard.up("KeyF");
-  expect(await page.evaluate(() => window.__game.etapa)).toBe("puesto");
-  await expect(entrar).not.toHaveAttribute("aria-keyshortcuts", "F");
-  await entrar.click();
   await page.waitForFunction(
     () =>
       window.__game.etapa === "epilogo" &&
@@ -321,7 +236,7 @@ test("el único carro llega a la arena con el premio y las compras duran hasta e
   expect(errores).toEqual([]);
 });
 
-test("se puede seguir sin comprar y reintentar la carga del muelle", async ({
+test("se puede reintentar la carga del epílogo después de comprar", async ({
   page,
 }) => {
   await page.goto("/?jefe=mirra&seed=17");
@@ -330,44 +245,38 @@ test("se puede seguir sin comprar y reintentar la carga del muelle", async ({
   await page.evaluate(() => {
     const g = window.__game;
     g.saltarPresentacion();
+    g.colocar({ sael: [-1.5, 2.8], odo: [1.5, 2.8], jefe: [-4, 0] });
     g.setVidaJefe(0);
     g.step(420);
   });
 
-  // Fuerza un fallo en el modelo de la nueva escena, después de cargar la pradera.
+  await page.keyboard.press("p");
+  const carta = page.getByRole("dialog", {
+    name: "Carro de completos de Bodoque",
+  });
+  const comprar = carta.getByRole("button", {
+    name: "Comprar · Completo italiano · 25 pesos",
+  });
+  await comprar.click();
+  await page.evaluate(() => window.__game.step(240));
+  expect(await page.evaluate(() => window.__game.etapa)).toBe("victoria");
+  await expect(carta).toBeVisible();
+
+  // El fallo sucede en la nueva sala. Al recuperar la red no hay que volver a comprar.
   const modelo = "**/sael.glb";
   await page.route(modelo, (ruta) => ruta.abort());
-  await page.getByRole("button", { name: "Continuar al muelle" }).click();
-  const continuar = page.getByRole("button", {
-    name: "Continuar",
-    exact: true,
-  });
+  await carta.getByRole("button", { name: "Volver al juego" }).click();
+  await page.evaluate(() => window.__game.step(180));
   await expect(page.locator("#intro")).toContainText(
-    "No se pudo cargar el muelle",
+    "No se pudo cargar la sala del Farolero",
   );
   await page.unroute(modelo);
-  await continuar.evaluate((boton) => {
-    boton.click();
-    // El siguiente cuadro aún no montó el puesto. F no puede abrir otra arena.
-    window.dispatchEvent(new window.KeyboardEvent("keydown", { code: "KeyF" }));
-    window.__game.step(1); // el paso reanuda el montaje del puesto con la red restaurada
-  });
-  await page.waitForFunction(
-    () =>
-      window.__game.escena === "puesto" && window.__game.pantalla === "playing",
-  );
-  expect(await page.evaluate(() => window.__game.tienda)).toEqual({
-    saldo: 25,
-    carro: null,
-  });
-  await expect(
-    page.getByRole("button", { name: "Entrar en la sala del Farolero" }),
-  ).toBeVisible();
-  await page.keyboard.press("KeyF");
+  await page.getByRole("button", { name: "Continuar", exact: true }).click();
   await page.waitForFunction(
     () =>
       window.__game.pantalla === "cinematica" && window.__game.combate === null,
   );
+  expect(await page.evaluate(() => window.__game.tienda.saldo)).toBe(0);
   await page.evaluate(() => window.__game.step(540));
   await expect(
     page.getByRole("heading", { name: "Continuará..." }),

@@ -802,6 +802,10 @@ a {
 /* En victoria queda espacio para la indicación de caminar encima del atajo. */
 #objective:has(+ #atajo-puesto:not([hidden])) {
   bottom: 4.5rem;
+}
+/* La compra en el carro también da una indicación cuando no hay botón de salida. */
+.stage:has(.lapida.con-carro:not(.oculto)) #objective,
+#objective:has(+ #atajo-puesto:not([hidden])) {
   font: 600 clamp(0.95rem, 1.6vw, 1.1rem)/1.25 var(--lectura);
 }
 

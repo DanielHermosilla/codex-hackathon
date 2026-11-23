@@ -1544,8 +1544,9 @@ export const CONFIG = {
 
   // Página: tiempos del flujo menú → caída → recorrido → Mirra (main.js). Solo presentación.
   ui: {
-    // El viaje del muelle al Farolero cierra la demo. Tiempos de la toma, en segundos simulados.
+    // La compra a Bodoque da paso al Farolero. Tiempos en segundos simulados.
     epilogo: {
+      esperaCompra: 3, // cuenta al cerrar la carta, que congela el juego mientras está abierta
       apertura: 0.8, // el fundido deja ver el umbral
       finMarcha: 5.7, // la pareja se planta frente al Farolero
       cierre: 6.8, // empieza a caer el telón

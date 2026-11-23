@@ -10,7 +10,9 @@ const origin = `http://127.0.0.1:${puerto}`;
 
 export default defineConfig({
   testDir: "./tests/browser",
-  workers: process.env.CI ? undefined : 1, // Las sesiones locales comparten la GPU.
+  // Cada escena usa WebGL. En CI, dos navegadores compiten por la CPU que dibuja con SwiftShader.
+  workers: 1,
+  timeout: process.env.CI ? 90000 : 30000, // El recorrido incluye la carga y el dibujo de varias salas.
   webServer: [
     {
       command: `npm run preview -- --host 127.0.0.1 --port ${puerto} --strictPort`,
