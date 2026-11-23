@@ -19,17 +19,3 @@ Consulta [colaboración](docs/collaboration.md) para las responsabilidades y [ar
 
 - En el movimiento o en otras reglas del juego, señala el acceso directo al DOM, al reloj real o al azar global cuando impida probar un resultado. Pasa el tiempo, la entrada o la semilla desde el código que coordina el cuadro.
 - Si un cambio añade controles sostenidos, comprueba qué sucede al salir de la pista o cambiar de ventana. Las teclas activas deben liberarse para evitar movimiento que el jugador ya no puede detener.
-
-## Material de AtaDos (`atados-info/`)
-
-Si algo de esta sección choca con las reglas de arriba, mandan las de arriba.
-
-- `atados-info/` reúne el diseño, las decisiones, las skills, el MCP y la investigación de AtaDos, un boss rush cooperativo en three.js con una cadena como arma. No es código jugable. Empieza por [atados-info/INVENTARIO.md](atados-info/INVENTARIO.md).
-- La fuente de verdad del diseño es `atados-info/diseno/DECISIONES.md` (IDs `D-NNN`). Si un doc de `atados-info/diseno/gdd/` o `atados-info/diseno/jefes/` la contradice, manda la decisión. Una decisión «reemplazada por D-NNN» ya no vale.
-- No inventes diseño de AtaDos. Si falta una decisión, pregunta al equipo y regístrala con la skill `registrar-decision` (`atados-info/herramientas/claude/skills/registrar-decision/`).
-- Las reglas técnicas del juego original están en `atados-info/herramientas/AGENTS-juego.md`. Son referencia: adáptalas al motor y a `checks.toml` de este repo. Aquí se valida con `python3 scripts/validate.py` y se usa npm, no `pnpm verify`.
-- Para reutilizar una skill de `atados-info/herramientas/claude/skills/`, cópiala a `.agents/skills/` respetando su licencia (`atados-info/herramientas/claude/skills/_LICENSES/`). Revisa que sus rutas y comandos existan aquí; si no, adáptalos.
-- Los hooks de AtaDos eran de Claude Code. `magic_numbers.py` ya está portado a `.codex/hooks/` y avisa de números sueltos en `src/`. El hook `guard.js` (bloquea editar `node_modules/`, `dist/` y `.github/`) no se portó: este repo ya protege ramas con `protect_branches.py` y GitHub.
-- MCP: `atados-info/herramientas/mcp.json` (Playwright para probar en navegador; Blender para modelos, necesita Blender abierto y telemetría apagada).
-- Para código sensible (física, daño, jefes, bucle del juego), pide una revisión adversarial con Codex antes de integrar.
-- `scripts/smoke.mjs` y `scripts/smoke-hud.mjs` son un smoke de navegador opcional, portado de AtaDos. No son una etapa de `checks.toml`.
