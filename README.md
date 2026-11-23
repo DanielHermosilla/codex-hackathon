@@ -29,3 +29,5 @@ PowerShell, macOS y Linux pueden ejecutar los comandos de npm. Para el flujo de 
 ## Trabajar con Codex
 
 Lee [Configurar Codex](docs/codex-setup.md) para activar los hooks del repositorio y comprobar las skills. [Arquitectura](docs/architecture.md) muestra dónde cambiar la pista y las reglas. [Colaboración](docs/collaboration.md) describe las ramas, el PR y las aprobaciones.
+
+El [diseño de AtaDos](docs/atados/) reúne las mecánicas, las fichas de jefes y las decisiones del prototipo.
