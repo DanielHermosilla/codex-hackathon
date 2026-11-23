@@ -63,7 +63,7 @@ export default {
     "“He climbed for gold. She, for her name. Fire rained down.”",
   "mural.urna": "“Seven sparks fell on seven gods. None on the thieves.”",
   "mural.mirra":
-    "“First came the locusts, then the dust. She who Nourished no longer gives: she devours.”",
+    "“First came the locusts, then the dust. Only hunger remains: she who Nourished now devours.”",
 
   // Tutorial cards (D-206, D-207): short title and one line. Third person so they work in solo and co-op;
   // the card adds the keys for the device in use.
