@@ -16,7 +16,6 @@ export default {
   "indicacion.munecoPilar":
     "Nice. Now wrap the chain around a pillar and sweep from there.",
   "indicacion.mirra": "Sweep the taut chain through Mirra.",
-  "indicacion.derrota": "Dash to retry.",
   "indicacion.siega": "Reap · get out of the scythe arc.",
   "indicacion.siega_doble": "Double reap · two passes: leave the arc.",
   "indicacion.grano": "Grain · find the gap between the marks.",
@@ -39,7 +38,6 @@ export default {
   "jefe.mirra.derrota": "“Thank you for the meal.”",
 
   "combate.saltar": "{dash} to skip",
-  "combate.reintentar": "{dash} to retry",
   "combate.reiniciaRush": "Hard mode: the rush starts over",
   "combate.derrota": "You both fell",
 
@@ -82,13 +80,38 @@ export default {
   "tarjeta.enredo.linea":
     "Circle a column: the chain wraps around it and stays taut for a sweep.",
 
+  "ajustes.titulo": "Settings",
+  "ajustes.volumen": "Master volume",
+  "ajustes.teclado": "Keyboard",
+  "ajustes.reset": "Reset keys",
+  "ajustes.ayuda": "How to play",
+  "ajustes.cadena":
+    "Move to opposite sides of the target and sweep the taut chain through it. Anchor one character so the other can swing around.",
+  "ajustes.mandos":
+    "In solo mode, Sael’s dodge moves both characters. On one controller, use both sticks, the triggers to anchor and A to dodge. With two controllers, each player uses the left stick, A and the right trigger.",
+  "ajustes.pausa":
+    "After defeating Mirra, approach the food cart and press P to open its menu. Esc or Start pauses the game.",
+  "ajustes.cerrar": "Close settings",
+  "ajustes.up": "Up",
+  "ajustes.left": "Left",
+  "ajustes.down": "Down",
+  "ajustes.right": "Right",
+  "ajustes.anchor": "Anchor",
+  "ajustes.dash": "Dodge",
+  "ajustes.captura": "Press a key. Esc cancels.",
+  "ajustes.instruccion": "Select a key to change it.",
+  "ajustes.reservada": "This key is reserved. Try another.",
+  "ajustes.ocupada": "Already in use. Try another key.",
+  "ajustes.asignada": "Key assigned: {tecla}.",
+  "ajustes.restablecidas": "Default keys restored.",
   "tecla.Space": "Space",
   "tecla.ShiftLeft": "Left Shift",
   "tecla.ShiftRight": "Right Shift",
   "tecla.ControlLeft": "Left Ctrl",
   "tecla.ControlRight": "Right Ctrl",
   "tecla.Enter": "Enter",
-  "tecla.NumpadEnter": "Enter",
+  "tecla.NumpadEnter": "Num Enter",
+  "tecla.numerica": "Num {n}",
   "tecla.Tab": "Tab",
   "tecla.Escape": "Esc",
   "tecla.stickIzq": "Left stick",

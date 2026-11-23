@@ -4,7 +4,15 @@
   font-weight: 400 900;
   font-display: swap;
 }
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("/atados/fonts/CormorantGaramond.woff2") format("woff2");
+  font-weight: 300 700;
+  font-display: swap;
+}
 :root {
+  --titulo: Cinzel, Georgia, serif;
+  --lectura: "Cormorant Garamond", Georgia, serif;
   color-scheme: dark;
   --ivory: #f5ecd7;
   --gold: #e8c57d;
@@ -66,14 +74,15 @@ a:hover {
 }
 /* Mientras se juega no se ven ni ocupan espacio: lo decide el atributo data-screen del body. */
 body[data-screen="playing"] .mast,
-body[data-screen="playing"] .lower {
+body[data-screen="playing"] .lower,
+body[data-screen="derrota"] .mast {
   display: none;
 }
 .studio {
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  font-family: Cinzel, Georgia, serif;
+  font-family: var(--titulo);
   font-weight: 650;
   letter-spacing: 0.16em;
   font-size: 0.95rem;
@@ -109,25 +118,21 @@ nav button {
   font-size: 0.82rem;
   min-height: 40px;
 }
-.audio-bars {
-  display: inline-flex;
-  height: 12px;
-  align-items: center;
-  gap: 2px;
+#settings {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--ivory);
 }
-.audio-bars i {
-  width: 2px;
-  background: var(--gold);
-  height: 70%;
+#settings svg {
+  width: 23px;
+  height: 23px;
 }
-.audio-bars i:nth-child(2) {
-  height: 100%;
-}
-.audio-bars i:last-child {
-  height: 40%;
-}
-[aria-pressed="false"] > .audio-bars {
-  opacity: 0.4;
+#settings:hover {
+  background: #e8c57d18;
+  color: var(--gold);
 }
 .stage {
   isolation: isolate;
@@ -171,6 +176,10 @@ nav button {
   letter-spacing: 0.17em;
   text-transform: uppercase;
 }
+.eyebrow,
+.lower .name {
+  font-family: var(--titulo);
+}
 .eyebrow {
   color: var(--gold);
   display: flex;
@@ -185,7 +194,7 @@ nav button {
 h1,
 h2,
 #target-name {
-  font-family: Cinzel, Georgia, serif;
+  font-family: var(--titulo);
 }
 h1 {
   font-weight: 500;
@@ -204,10 +213,13 @@ h1 span {
 }
 #intro {
   max-width: 26rem;
-  font-size: clamp(0.93rem, 1.2vw, 1.12rem);
-  line-height: 1.6;
+  font: 500 clamp(1.18rem, 1.7vw, 1.42rem)/1.3 var(--lectura);
+  text-wrap: pretty;
   color: #f0e9d7;
   margin: 0.65em 0 1.4em;
+}
+#intro:empty {
+  display: none;
 }
 #modes {
   display: inline-flex;
@@ -222,8 +234,8 @@ h1 span {
   pointer-events: auto;
 }
 #modes button {
-  padding: 7px 13px;
-  font-size: 0.85rem;
+  padding: 7px 14px;
+  font: 600 0.94rem/1.25 var(--titulo);
 }
 #modes [aria-pressed="true"] {
   background: #d5c7a8;
@@ -237,14 +249,30 @@ h1 span {
   margin-top: 1.1rem;
 }
 .actions > button {
-  font-size: 0.9rem;
+  font: 600 1rem/1.25 var(--titulo);
 }
-.gold {
+/* En pausa, las tres acciones comparten ancho y eje; el dorado indica cómo continuar. */
+.stage[data-screen="paused"] .actions {
+  display: grid;
+  width: max-content;
+  max-width: 100%;
+  gap: 6px;
+}
+.stage[data-screen="paused"] .actions > button {
+  min-height: 36px;
+  padding: 7px 14px;
+  font: 600 0.94rem/1.25 var(--titulo);
+  text-align: left;
+}
+.stage[data-screen="paused"] .actions > button:not(.gold):hover {
+  background: #f5ecd710;
+}
+.actions > .gold {
   padding: 0.82em 1.5em;
   background: var(--gold);
   color: #28271d;
-  font-family: Cinzel, Georgia, serif;
-  font-size: 1.05rem !important;
+  font-family: var(--titulo);
+  font-size: 1.05rem;
   font-weight: 700;
   box-shadow: inset 0 0 0 1px #ffe0a8;
 }
@@ -252,9 +280,32 @@ h1 span {
   color: #181d16;
   background: #f6d79a;
 }
-.gold b {
-  margin-left: 28px;
+/* El selector y Jugar comparten ambos bordes; la flecha se centra con la etiqueta. */
+.stage[data-screen="menu"] #modes,
+.stage[data-screen="menu"] .actions {
+  width: min(15rem, 100%);
 }
+#modes button {
+  flex: 1 0 auto;
+}
+#play {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65em;
+}
+#play:focus-visible {
+  outline-offset: -4px;
+  outline-color: var(--ink);
+}
+#play svg {
+  flex: none;
+}
+#title:focus {
+  outline: none;
+}
+
 #hud {
   position: absolute;
   inset: 0;
@@ -335,24 +386,46 @@ progress::-moz-progress-bar {
   right: 0;
   bottom: 0;
   z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: clamp(1rem, 4vw, 4.7rem);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 14rem));
+  justify-content: center;
+  align-items: start;
+  align-content: center;
+  gap: clamp(0.5rem, 2vw, 2rem);
+  text-align: center;
   padding: 10px clamp(14px, 4vw, 70px);
   min-height: 90px;
   color: var(--muted);
   background: linear-gradient(0deg, #151a17f2, #151a17b3);
   border-top: 1px solid #59533e;
 }
+.lower > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+}
+.lower .name {
+  width: 100%;
+}
+#dash-help {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0 0.55em;
+}
+#dash-help > span {
+  white-space: nowrap;
+}
 .lower > div > span {
   display: inline-block;
-  margin-right: 8px;
-  font-size: 0.78rem;
+  margin-inline: 3px;
+  font: 600 1rem/1.3 var(--lectura);
 }
 .name {
   margin: 0 0 6px;
   color: var(--ivory);
-  font-size: 0.68rem;
+  font-size: 0.78rem;
 }
 .name i {
   display: inline-block;
@@ -377,6 +450,170 @@ kbd {
   margin-right: 2px;
   border-radius: 3px;
   color: var(--ivory);
+}
+#controls {
+  width: min(410px, calc(100vw - 28px));
+  max-height: calc(100dvh - 32px);
+  overscroll-behavior: contain;
+  background: #1b211e;
+  color: var(--ivory);
+  padding: 22px clamp(20px, 4vw, 32px);
+  border: 1px solid #766c50;
+  box-shadow: 0 20px 80px #09100cb3;
+  scrollbar-width: thin;
+}
+#controls::backdrop {
+  background: #0c120fbd;
+}
+.settings-head,
+.keys-heading,
+.volume-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.settings-head {
+  margin-bottom: 22px;
+}
+.settings-head h2 {
+  font-size: 2rem;
+  margin: 0;
+  font-weight: 500;
+}
+#close-settings {
+  font: 300 1.7rem system-ui;
+  width: 40px;
+  height: 40px;
+  color: var(--muted);
+}
+#controls h3,
+.volume-heading label {
+  font: 600 1rem/1.3 var(--titulo);
+  margin: 0;
+}
+#volume-value {
+  font: 0.88rem system-ui;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+#volume {
+  appearance: none;
+  margin: 4px 0 16px;
+  padding: 0;
+  width: 100%;
+  height: 28px;
+  cursor: pointer;
+  background: transparent;
+}
+#volume::-webkit-slider-runnable-track {
+  height: 3px;
+  background: linear-gradient(
+    to right,
+    var(--gold) var(--nivel),
+    #565a4e var(--nivel)
+  );
+}
+#volume::-moz-range-track {
+  height: 3px;
+  background: #565a4e;
+}
+#volume::-moz-range-progress {
+  height: 3px;
+  background: var(--gold);
+}
+#volume::-webkit-slider-thumb {
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+#volume::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 0;
+}
+.keys-heading {
+  border-top: 1px solid #494b3e;
+  padding-top: 15px;
+}
+#reset-keys,
+#how-to {
+  font: 600 1rem/1.3 var(--lectura);
+  color: var(--muted);
+}
+#reset-keys {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 8px 0 8px 8px;
+}
+#bindings {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  table-layout: fixed;
+}
+#bindings thead th {
+  font:
+    600 0.78rem Cinzel,
+    Georgia,
+    serif;
+  padding-bottom: 6px;
+  letter-spacing: 0.08em;
+}
+#bindings .sael::before,
+#bindings .odo::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  display: inline-block;
+  transform: rotate(45deg);
+  margin: 0 6px 2px 0;
+  background: #f0e45a;
+}
+#bindings .odo::before {
+  background: #4fb0ff;
+}
+#bindings tbody th {
+  text-align: left;
+  font: 600 1.08rem/1.2 var(--lectura);
+}
+#bindings td {
+  text-align: center;
+  padding: 2px 4px;
+}
+#bindings button {
+  min-height: 32px;
+  width: 100%;
+  border: 1px solid #4b5146;
+  border-radius: 3px;
+  background: #242a24;
+  font: 0.85rem system-ui;
+}
+#bindings button:hover,
+#bindings button[aria-pressed="true"] {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+#key-status {
+  font-size: 0.78rem;
+  color: var(--gold);
+  margin: 12px 0 16px;
+  min-height: 1.25em;
+}
+#how-to {
+  border-top: 1px solid #494b3e;
+  padding-top: 12px;
+  line-height: 1.5;
+}
+#how-to summary {
+  cursor: pointer;
+  width: fit-content;
+  padding: 3px 0;
 }
 dialog {
   width: min(480px, 92vw);
@@ -437,12 +674,13 @@ a {
     background: linear-gradient(90deg, #151e19ee, #1e2922b5 58%, transparent);
   }
   .lower {
-    gap: 12px;
-    flex-wrap: wrap;
-    align-items: flex-start;
+    gap: 6px;
+    padding-inline: 8px;
   }
   .lower > div > span {
+    width: 100%;
     display: block;
+    margin: 0;
   }
   .studio {
     font-size: 0.78rem;
@@ -454,12 +692,18 @@ a {
     gap: 0.6rem;
   }
 }
-@media (max-height: 540px) and (min-width: 680px) {
+@media (max-height: 540px) and (orientation: landscape) {
   .mast {
     height: 42px;
   }
   .lower {
     min-height: 60px;
+    padding-block: 6px;
+  }
+  .lower > div > span {
+    width: auto;
+    display: inline-block;
+    margin-inline: 2px;
   }
   .veil {
     padding-block: 52px 70px; /* barras más bajas en pantallas bajas */
@@ -472,5 +716,27 @@ a {
   }
   .actions {
     margin-top: 0.5rem;
+  }
+}
+
+/* En ventanas muy bajas, el selector y Jugar comparten fila entre las dos barras. */
+@media (max-height: 360px) and (orientation: landscape) {
+  .veil {
+    padding-block: 48px 86px;
+  }
+  .stage[data-screen="menu"] .panel {
+    max-width: min(94%, 30rem);
+  }
+  #modes,
+  .stage[data-screen="menu"] .actions {
+    vertical-align: middle;
+  }
+  .stage[data-screen="menu"] .actions {
+    width: auto;
+    display: inline-flex;
+    margin: 0 0 0 0.5rem;
+  }
+  .stage[data-screen="menu"] #play {
+    padding: 0.5em 1em;
   }
 }

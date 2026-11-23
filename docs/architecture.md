@@ -9,7 +9,7 @@ La demo corre en un navegador de escritorio con teclado y WebGL 2. Usa JavaScrip
 | Las teclas, el reinicio o el ciclo de cuadros | [src/main.js](../src/main.js) |
 | La disposición y colores de la página | [index.html](../index.html) y [src/style.css](../src/style.css) |
 
-En la pista original, `pista.html` carga `src/main.js`. Cada cuadro, el módulo de entrada lee las teclas, pasa el tiempo a la lógica de movimiento y entrega la posición a Three.js. Las pruebas unitarias ejecutan esa lógica en Node, con direcciones y tiempos explícitos. La prueba de Chromium abre la compilación y verifica en el canvas que el cubo se mueve y vuelve al centro.
+En la pista de pruebas, `tests/browser/fixtures/pista.html` carga `src/main.js`. Cada cuadro, el módulo de entrada lee las teclas, pasa el tiempo a la lógica de movimiento y entrega la posición a Three.js. Las pruebas unitarias ejecutan esa lógica en Node, con direcciones y tiempos explícitos. La prueba de Chromium abre la pista con Vite y verifica en el canvas que el cubo se mueve y vuelve al centro.
 
 Playwright solo se usa para la prueba en navegador. Prettier comprueba el formato, ESLint busca errores de JavaScript, y TypeScript comprueba los tipos de los archivos JavaScript a partir de JSDoc. Los archivos del juego siguen siendo JavaScript.
 
@@ -21,7 +21,7 @@ Playwright solo se usa para la prueba en navegador. Prettier comprueba el format
 
 ## Prototipo de AtaDos
 
-La portada carga `src/atados/main.js`. La pista anterior usa `pista.html` y `src/main.js`. Vite compila ambas páginas.
+La portada carga `src/atados/main.js`. La dirección antigua `pista.html` redirige a la portada. La pista solo se usa en las pruebas.
 
 `main.js` une la página (menú, modos Solo y Dos jugadores, pausa y resultados) con la partida. El lobby y el pasillo comparten un mundo. Al cruzar el arco se prepara la pradera de Mirra y se transfieren los puntos de vida de cada jugador. Tras la victoria, el botón «Continuar al carro de completos» abre el primer tramo del siguiente pasillo. El HUD sigue al mundo activo. El audio y la entrada duran toda la sesión.
 

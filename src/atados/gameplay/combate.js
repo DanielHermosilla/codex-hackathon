@@ -2,10 +2,8 @@
 // presentación → pelea → derrota | victoria, las stats de la lápida y el reintento. Puro, paso fijo.
 //
 // D-006/D-064/D-074/D-180 presentación (completa la 1.ª vez, saltable en reintentos);
-// D-020/D-167 el caído revive al terminar el jefe con vida llena; D-028/D-111/D-173 derrota con frase
-// y reintento muy rápido (D-213: siempre con la presentación corta; el reinicio del rush de D-029/D-172
-// lo decide el flujo de partida, core/flujo.js); D-098/D-100/D-165/D-174
-// lápida con stats; D-099 drop extra sin daño; D-106 eventos de sonido de aviso; D-183 silencios.
+// Si ambos caen, el combate emite la derrota y la página ofrece volver al inicio.
+// Al vencer, el caído revive con vida llena (D-020/D-167) y la lápida muestra las estadísticas.
 
 import {
   crearArenaMirra,
@@ -121,8 +119,6 @@ export function crearCombate(cfg, opts = {}) {
         T: o.primeraVez ? C.presentacion.primera : C.presentacion.reintento,
         saltable: !o.primeraVez,
       },
-      derrotaT: 0,
-      pedirReintento: false,
       eventos: [],
       frase: null,
       stats: {
@@ -350,10 +346,6 @@ export function pasoCombate(c, inputs, dt) {
       (c.presentacion.saltable && dashNuevo)
     )
       saltarPresentacion(c);
-  } else if (c.estado === "derrota") {
-    c.derrotaT += dt;
-    if (c.derrotaT >= C.derrota.esperaReintento && dashNuevo)
-      c.pedirReintento = true;
   }
 
   // Empujes de ataques para este paso: tirón (decidido el paso anterior) + empuje de golpes que se frena solo.
@@ -462,7 +454,6 @@ function derrota(c) {
   liberarTodo(c.proyectiles);
   c.estado = "derrota";
   c.resultado = "derrota";
-  c.derrotaT = 0;
   emitir(c, "silencio", { motivo: "muerte_ambos" }); // D-183
   emitir(c, "derrota", {
     frase: `jefe.${c.jefe.def.textos}.derrota`,

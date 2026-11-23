@@ -171,13 +171,16 @@ export function etiquetaTecla(code) {
   if (NOMBRADAS.has(code)) return t(`tecla.${code}`);
   if (/^Key[A-Z]$/.test(code)) return code.slice(3);
   if (/^Digit\d$/.test(code)) return code.slice(5);
-  if (/^Numpad\d$/.test(code)) return code.slice(6);
+  if (/^Numpad\d$/.test(code)) return t("tecla.numerica", { n: code.slice(6) });
   return code;
 }
 
 /** @param {Config['controls']['keyboard']['sael']} m */
-const etiquetaMover = (m) =>
-  [m.up, m.left, m.down, m.right].map(etiquetaTecla).join("");
+const etiquetaMover = (m) => {
+  const teclas = [m.up, m.left, m.down, m.right].map(etiquetaTecla);
+  // WASD cabe en un rótulo compacto. Los nombres largos necesitan espacio entre teclas.
+  return teclas.join(teclas.some((tecla) => tecla.length > 1) ? " " : "");
+};
 
 // Iconos de una acción ('dash' | 'ancla' | 'mover'). `dispositivo` = 'teclado' | 'mando' para los dos, o
 // [dispositivoSael, dispositivoOdo] (partida mixta: uno con teclado y otro con mando).

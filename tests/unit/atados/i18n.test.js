@@ -33,7 +33,7 @@ describe("traducciones (D-102)", () => {
   it("t() traduce, interpola y cae al español", () => {
     expect(t("lapida.titulo", { jefe: "Mirra" })).toBe("Aquí cayó Mirra");
     setIdioma("en");
-    expect(t("combate.reintentar")).toBe("{dash} to retry");
+    expect(t("combate.derrota")).toBe("You both fell");
     expect(t("no.existe")).toBe("no.existe");
     expect(idiomaDe(["en-US", "es"])).toBe("en");
     expect(idiomaDe(["fr"])).toBe("es");

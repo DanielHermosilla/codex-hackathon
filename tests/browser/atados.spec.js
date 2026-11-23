@@ -26,6 +26,18 @@ async function pasos(page, n) {
   await page.evaluate((k) => window.__game.step(k), n);
 }
 
+/** El centro de Odo coincide con el de la ventana y las otras dos columnas quedan a igual distancia. */
+async function comprobarAyudaCentrada(page) {
+  const centros = await page.locator(".lower > div").evaluateAll((grupos) =>
+    grupos.map((grupo) => {
+      const r = grupo.getBoundingClientRect();
+      return r.left + r.width / 2 - window.innerWidth / 2;
+    }),
+  );
+  expect(centros[1]).toBeCloseTo(0, 1);
+  expect(centros[0]).toBeCloseTo(-centros[2], 1);
+}
+
 /** Lee una propiedad de `window.__game`. */
 async function leer(page, f) {
   return page.evaluate(f);
@@ -36,7 +48,16 @@ async function tipos(page) {
   return page.evaluate(() => window.__game.eventos.map((e) => e.tipo));
 }
 
-test("menú con el lobby → caída → pasillo → arco → Mirra con cinemática → reintento → victoria", async ({
+test("la dirección antigua de la pista abre AtaDos", async ({ page }) => {
+  await abrir(page, "/pista.html");
+  await expect(page).toHaveURL("/");
+  await expect(page.getByRole("button", { name: "Jugar" })).toBeVisible();
+  await page.getByRole("button", { name: "Ajustes", exact: true }).click();
+  await page.getByText("Cómo jugar", { exact: true }).click();
+  await expect(page.getByRole("dialog").getByRole("link")).toHaveCount(0);
+});
+
+test("menú con el lobby → caída → pasillo → arco → Mirra con cinemática → victoria", async ({
   page,
 }, info) => {
   test.setTimeout(180000);
@@ -142,25 +163,6 @@ test("menú con el lobby → caída → pasillo → arco → Mirra con cinemáti
   await expect(page.locator("#hud-combate .barra")).toBeVisible();
   await foto("08-combate");
 
-  // Morir y reintentar: directo en la pradera, presentación corta y sin cinemática.
-  await page.evaluate(() => {
-    const g = window.__game;
-    g.matarJugadores();
-    g.step(90);
-    g.setInput(0, { dash: true });
-    g.setInput(1, { dash: true });
-    g.step(2);
-    g.clearInput();
-    g.step(30);
-  });
-  const reintento = await leer(page, () => window.__game.combate);
-  expect(reintento.reintentos).toBe(1);
-  expect(reintento.estado).toBe("presentacion");
-  expect(await leer(page, () => window.__game.cinematica.partida)).toBe(false);
-  expect(await leer(page, () => window.__game.cinematica.franjas)).toBe(0);
-  expect(await leer(page, () => window.__game.escena)).toBe("jefe");
-  await foto("09-reintento");
-
   // Victoria: lápida y luego la pantalla de resultado.
   await page.evaluate(() => {
     const g = window.__game;
@@ -172,6 +174,7 @@ test("menú con el lobby → caída → pasillo → arco → Mirra con cinemáti
   await expect(
     page.getByRole("heading", { name: "Mirra ha caído" }),
   ).toBeVisible();
+  await comprobarAyudaCentrada(page);
   await foto("10-victoria");
   // Volver a jugar deja el resultado y devuelve a ambos a la pradera, con la presentación corta.
   await page.getByRole("button", { name: "Volver a jugar" }).click();
@@ -182,6 +185,37 @@ test("menú con el lobby → caída → pasillo → arco → Mirra con cinemáti
   );
   expect(await leer(page, () => window.__game.cinematica.partida)).toBe(false);
   expect(errores).toEqual([]);
+});
+
+test("tras caer ambos ante Mirra, la única acción vuelve a la portada", async ({
+  page,
+}) => {
+  await abrir(page, "/?seed=3&coop");
+  await page.locator("#play").click();
+  await page.evaluate(async () => {
+    const g = window.__game;
+    await g.saltarAlJefe();
+    g.saltarPresentacion();
+    g.matarJugadores();
+    g.step(2);
+  });
+  await expect(
+    page.getByRole("heading", { name: "Caísteis los dos" }),
+  ).toBeFocused();
+  await page.keyboard.press("Space");
+  await page.keyboard.press("ShiftRight");
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => window.dispatchEvent(new window.Event("blur")));
+  await pasos(page, 90);
+  expect(await leer(page, () => window.__game.combate.estado)).toBe("derrota");
+  await expect(page.getByRole("button")).toHaveText(["Volver al inicio"]);
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("button", { name: "Volver al inicio" }),
+  ).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#play")).toBeFocused();
+  expect(await leer(page, () => window.__game.escena)).toBe("recorrido");
 });
 
 test("cancelar el arco con la pradera visible devuelve al templo y permite cruzar de nuevo", async ({
@@ -360,6 +394,16 @@ test("sin barras al jugar: el canvas mide lo mismo que la ventana", async ({
   await expect(page.locator(".lower")).toBeVisible();
   await esperarPantallaCompleta();
   await page.screenshot({ path: info.outputPath("13-menu-barras.png") });
+  // En horizontal bajo, el botón Jugar debe quedar por encima de los controles centrados.
+  await page.setViewportSize({ width: 667, height: 375 });
+  const jugar = await page.locator("#play").boundingBox();
+  const barra = await page.locator(".lower").boundingBox();
+  const modos = await page.locator("#modes").boundingBox();
+  expect(jugar.y + jugar.height).toBeLessThanOrEqual(barra.y);
+  expect(modos.x).toBeCloseTo(jugar.x, 1);
+  expect(modos.width).toBeCloseTo(jugar.width, 1);
+  await comprobarAyudaCentrada(page);
+  await page.setViewportSize({ width: 960, height: 720 });
 
   // Jugando: sin barras y el canvas no cambia de tamaño; la pausa sigue en el HUD.
   await page.locator("#play").click();
@@ -377,8 +421,36 @@ test("sin barras al jugar: el canvas mide lo mismo que la ventana", async ({
   await expect(page.locator(".mast")).toBeVisible();
   await expect(page.locator(".lower")).toBeVisible();
   await esperarPantallaCompleta();
+  await expect(page.locator("#intro")).toBeHidden();
+  const botones = page.locator(".actions button:visible");
+  await expect(botones).toHaveText([
+    "Continuar",
+    "Reintentar",
+    "Volver al inicio",
+  ]);
+  const [continuar, reintentar, inicio] = await botones.evaluateAll(
+    (elementos) =>
+      elementos.map((e) => {
+        const r = e.getBoundingClientRect();
+        return {
+          x: r.x,
+          y: r.y,
+          alto: r.height,
+          ancho: r.width,
+          fuente: window.getComputedStyle(e).font,
+        };
+      }),
+  );
+  for (const boton of [reintentar, inicio]) {
+    expect(boton.x).toBe(continuar.x);
+    expect(boton.ancho).toBe(continuar.ancho);
+    expect(boton.fuente).toBe(continuar.fuente);
+  }
+  expect(reintentar.y).toBeGreaterThanOrEqual(continuar.y + continuar.alto);
+  expect(inicio.y).toBeGreaterThanOrEqual(reintentar.y + reintentar.alto);
+  await comprobarAyudaCentrada(page);
   await page.screenshot({ path: info.outputPath("15-pausa-barras.png") });
-  await page.locator("#guide").click();
+  await page.getByRole("button", { name: "Ajustes", exact: true }).click();
   await expect(page.locator("#controls")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.locator("#controls")).toBeHidden();
@@ -440,4 +512,94 @@ test("Start en el segundo mando arranca en cooperativo y cada mando mueve a su p
   const despues = await page.evaluate(() => window.__game.state.players);
   expect(despues[1].x).toBeGreaterThan(antes[1].x);
   expect(despues[0].anchored).toBe(true);
+
+  // Desenchufar el primer mando deja el segundo con Odo, incluso tras editar el teclado.
+  await page.evaluate(() => {
+    window.testPads[0] = null;
+  });
+  await pasos(page, 2);
+  await page.locator("#pause").click();
+  await page.getByRole("button", { name: "Ajustes", exact: true }).click();
+  await page.getByRole("button", { name: /Sael · Derecha/ }).click();
+  await page.keyboard.press("KeyL");
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Continuar" }).click();
+  // El ancla identifica al dueño del mando aunque la cadena arrastre al compañero.
+  await page.evaluate(() => {
+    window.testPads[1].axes[0] = 0;
+    window.testPads[1].buttons[7] = { pressed: true, value: 1 };
+  });
+  await pasos(page, 2);
+  const anclas = await page.evaluate(() =>
+    window.__game.state.players.map((p) => p.anchored),
+  );
+  expect(anclas).toEqual([false, true]);
+});
+
+test("el engranaje guarda el volumen y las teclas, y el recorrido los usa", async ({
+  page,
+}) => {
+  await abrir(page);
+  const ajustes = page.getByRole("button", { name: "Ajustes", exact: true });
+  await ajustes.click();
+  const panel = page.getByRole("dialog", { name: "Ajustes" });
+  const volumen = panel.getByRole("slider", { name: "Volumen general" });
+  await volumen.focus();
+  await page.keyboard.press("Home");
+  await expect(volumen).toHaveValue("0");
+  await expect
+    .poll(() => page.evaluate(() => window.__game.audio.volumenes.master))
+    .toBe(0);
+  await page.keyboard.press("ArrowRight");
+  await expect(volumen).toHaveValue("1");
+  const derecha = panel.getByRole("button", { name: /Sael · Derecha/ });
+  await derecha.click();
+  await page.keyboard.press("ArrowUp");
+  await expect(panel.getByRole("status").last()).toContainText(
+    "Ya está en uso",
+  );
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeVisible();
+  await expect(derecha).toHaveText("D");
+  await derecha.press("Enter");
+  await page.keyboard.press("KeyL");
+  await expect(derecha).toHaveText("L");
+  await page.reload();
+  await page.waitForFunction(() => window.__game?.pantalla === "menu");
+  await ajustes.click();
+  await expect(derecha).toHaveText("L");
+  await expect(volumen).toHaveValue("1");
+  await page.keyboard.press("Escape");
+  await expect(ajustes).toBeFocused();
+  await page.getByRole("button", { name: "Jugar" }).click();
+  await expect(page.locator("#arena")).toBeFocused();
+  await page.evaluate(() => window.__game.saltarCaida());
+  await pasos(page, 24);
+  const teclasTarjeta = page.locator(".tarjeta .teclas");
+  await expect(teclasTarjeta).toContainText("WASL");
+  const leerX = () => page.evaluate(() => window.__game.state.players[0].x);
+  const inicio = await leerX();
+  await page.keyboard.down("KeyD");
+  await pasos(page, 15);
+  await page.keyboard.up("KeyD");
+  expect(await leerX()).toBeCloseTo(inicio, 3);
+  await page.keyboard.down("KeyL");
+  await pasos(page, 15);
+  expect(await leerX()).toBeGreaterThan(inicio);
+  await page.locator("#pause").click();
+  await ajustes.click();
+  await page.keyboard.up("KeyL");
+  await expect(volumen).toHaveValue("1");
+  expect(await page.evaluate(() => window.__game.audio.volumenes.master)).toBe(
+    0,
+  );
+  await panel.getByRole("button", { name: "Restablecer teclas" }).click();
+  await expect(derecha).toHaveText("D");
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await pasos(page, 1);
+  await expect(teclasTarjeta).toContainText("WASD");
+  expect(await page.evaluate(() => window.__game.audio.volumenes.master)).toBe(
+    0.01,
+  );
 });

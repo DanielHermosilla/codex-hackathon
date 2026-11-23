@@ -16,7 +16,6 @@ export default {
   "indicacion.munecoPilar":
     "Bien. Prueben enredar la cadena en un pilar y barrer desde ahí.",
   "indicacion.mirra": "Crucen a Mirra con la cadena tensa.",
-  "indicacion.derrota": "Dash para reintentar.",
   "indicacion.siega": "Siega · sal del arco de la hoz.",
   "indicacion.siega_doble": "Siega doble · dos pasadas: sal del arco.",
   "indicacion.grano": "Grano · busca el hueco entre las marcas.",
@@ -39,7 +38,6 @@ export default {
   "jefe.mirra.derrota": "«Gracias por la comida.»",
 
   "combate.saltar": "{dash} para saltar",
-  "combate.reintentar": "{dash} para reintentar",
   "combate.reiniciaRush": "Modo difícil: el rush empieza de nuevo",
   "combate.derrota": "Caísteis los dos",
 
@@ -84,13 +82,38 @@ export default {
   "tarjeta.enredo.linea":
     "Al rodear una columna, la cadena se enrolla y queda tensa para barrer.",
 
+  "ajustes.titulo": "Ajustes",
+  "ajustes.volumen": "Volumen general",
+  "ajustes.teclado": "Teclado",
+  "ajustes.reset": "Restablecer teclas",
+  "ajustes.ayuda": "Cómo jugar",
+  "ajustes.cadena":
+    "Pasen a lados opuestos del objetivo y crucen la cadena tensa a través de él. Anclar a uno permite que el otro gire a su alrededor.",
+  "ajustes.mandos":
+    "En solitario, la esquiva de Sael mueve a ambos. Con un mando, usa los dos sticks, los gatillos para anclar y A para esquivar. Con dos mandos, cada jugador usa el stick izquierdo, A y el gatillo derecho.",
+  "ajustes.pausa":
+    "Tras vencer a Mirra, acércate al carro de completos y pulsa P para abrir la carta. Esc o Start pausa la partida.",
+  "ajustes.cerrar": "Cerrar ajustes",
+  "ajustes.up": "Arriba",
+  "ajustes.left": "Izquierda",
+  "ajustes.down": "Abajo",
+  "ajustes.right": "Derecha",
+  "ajustes.anchor": "Anclar",
+  "ajustes.dash": "Esquivar",
+  "ajustes.captura": "Pulsa una tecla. Esc cancela.",
+  "ajustes.instruccion": "Elige una tecla para cambiarla.",
+  "ajustes.reservada": "Esta tecla está reservada. Prueba otra.",
+  "ajustes.ocupada": "Ya está en uso. Prueba otra tecla.",
+  "ajustes.asignada": "Tecla asignada: {tecla}.",
+  "ajustes.restablecidas": "Teclas originales restablecidas.",
   "tecla.Space": "Espacio",
   "tecla.ShiftLeft": "Shift izq.",
   "tecla.ShiftRight": "Shift der.",
   "tecla.ControlLeft": "Ctrl izq.",
   "tecla.ControlRight": "Ctrl der.",
   "tecla.Enter": "Intro",
-  "tecla.NumpadEnter": "Intro",
+  "tecla.NumpadEnter": "Intro num.",
+  "tecla.numerica": "Num {n}",
   "tecla.Tab": "Tab",
   "tecla.Escape": "Esc",
   "tecla.stickIzq": "Stick izq.",

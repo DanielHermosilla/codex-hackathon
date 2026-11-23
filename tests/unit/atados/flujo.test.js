@@ -93,7 +93,7 @@ describe("flujo de la partida", () => {
     expect(p.estado).toBe("jefe");
   });
 
-  it("el primer combate trae presentación completa y cinemática; el reintento, corta y sin cinemática (D-213)", () => {
+  it("el primer combate trae cinemática y esquivar tras la derrota no lo reinicia", () => {
     const { p, f, correr, vistos } = nueva({ caida: false });
     expect(p.cinematica).toBe(false); // antes del jefe no hay cinemática
     p.saltarAlJefe();
@@ -103,20 +103,18 @@ describe("flujo de la partida", () => {
     expect(p.cinematica).toBe(true);
     const C = CONFIG.jefes.comun;
     expect(p.combate?.presentacion.T).toBe(C.presentacion.primera);
-    // Caen los dos en plena pelea → derrota → reintento con un toque de dash.
+    // Caen ambos. Ni esperar ni pulsar esquiva puede iniciar otro combate.
     const c = p.combate;
     if (!c) throw new Error("sin combate");
     saltarPresentacion(c);
     killPlayer(c.w.players[0]);
     killPlayer(c.w.players[1]);
-    correr(C.derrota.esperaReintento + 0.2);
+    correr(1);
     expect(c.estado).toBe("derrota");
     f.st.inputs[0] = { ...emptyInput(), dash: true, dashDown: false };
     correr(DT * 2);
-    expect(p.combate).not.toBe(c);
-    expect(p.estado).toBe("jefe");
-    expect(p.cinematica).toBe(false);
-    expect(p.combate?.presentacion.T).toBe(C.presentacion.reintento);
+    expect(p.combate).toBe(c);
+    expect(c.estado).toBe("derrota");
     expect(vistos.some((e) => e.tipo === "derrota")).toBe(true); // no se pierden los del combate viejo
   });
 
@@ -172,8 +170,8 @@ describe("flujo de la partida", () => {
 });
 
 describe("revisión del flujo", () => {
-  it("la vida y el caído del pasillo pasan al primer combate; el reintento restaura la vida (D-020, D-168)", () => {
-    const { p, f, correr, vistos } = nueva({ caida: false });
+  it("la vida y el caído del pasillo pasan al primer combate (D-020, D-168)", () => {
+    const { p, correr, vistos } = nueva({ caida: false });
     killPlayer(p.world.players[0]); // Sael cae en el pasillo
     p.world.players[1].hp = 380; // Odo llega tocado
     p.jefeListo();
@@ -189,18 +187,10 @@ describe("revisión del flujo", () => {
     expect(O.hp).toBe(380);
     correr(DT * 3);
     expect(vistos.some((e) => e.tipo === "jugador_cae")).toBe(false); // ya venía caído: no se anuncia otra vez
-    // Reintento: los dos con vida llena.
     saltarPresentacion(c);
     killPlayer(O);
-    correr(CONFIG.jefes.comun.derrota.esperaReintento + 0.2);
+    correr(DT);
     expect(c.estado).toBe("derrota");
-    f.st.inputs[0] = { ...emptyInput(), dash: true, dashDown: false };
-    correr(DT * 2);
-    expect(p.combate).not.toBe(c);
-    for (const pl of p.combate?.w.players ?? []) {
-      expect(pl.alive).toBe(true);
-      expect(pl.hp).toBe(CONFIG.player.maxHp);
-    }
   });
 
   it("volver a jugar tras ganar inicia un combate nuevo con presentación corta y permite otra victoria", () => {
@@ -331,7 +321,7 @@ describe("revisión del flujo", () => {
     expect(umbral()).toHaveLength(1);
   });
 
-  it("en difícil, el reintento contra Mirra trae la presentación corta (D-213)", () => {
+  it("en difícil, la esquiva tampoco reinicia a Mirra tras la derrota", () => {
     const { p, f, correr } = nueva({ caida: false, dificil: true });
     p.saltarAlJefe();
     const c = p.combate;
@@ -339,18 +329,13 @@ describe("revisión del flujo", () => {
     saltarPresentacion(c);
     killPlayer(c.w.players[0]);
     killPlayer(c.w.players[1]);
-    correr(CONFIG.jefes.comun.derrota.esperaReintento + 0.2);
+    correr(1);
     p.eventos.length = 0;
     f.st.inputs[0] = { ...emptyInput(), dash: true, dashDown: false };
     p.update(DT);
-    expect(p.combate).not.toBe(c);
-    expect(p.combate?.presentacion.T).toBe(
-      CONFIG.jefes.comun.presentacion.reintento,
-    );
-    expect(p.combate?.presentacion.saltable).toBe(true);
-    expect(
-      p.eventos.some((e) => e.tipo === "silencio" && e.motivo === "nombre"),
-    ).toBe(false);
+    expect(p.combate).toBe(c);
+    expect(c.estado).toBe("derrota");
+    expect(p.eventos.some((e) => e.tipo === "presentacion_inicio")).toBe(false);
   });
 
   it("el reinicio de depuración durante el arco cancela la entrada al jefe de una vez", () => {

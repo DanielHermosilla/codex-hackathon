@@ -434,7 +434,7 @@ describe("regresiones de la revisión Codex", () => {
     expect(max).toBeLessThanOrEqual(L + 1e-9);
   });
 
-  it("el dash mantenido de un jugador no bloquea el reintento ni el salto del otro", () => {
+  it("mantener esquiva no reinicia el combate ni bloquea el salto de presentación del otro jugador", () => {
     const c = nuevo();
     saltarPresentacion(c);
     sinAtaques(c);
@@ -442,13 +442,10 @@ describe("regresiones de la revisión Codex", () => {
     killPlayer(c.w.players[1]);
     pasoCombate(c, [inp({ dash: true }), inp()], DT);
     expect(c.estado).toBe("derrota");
-    correr(c, CONFIG.jefes.comun.derrota.esperaReintento + 0.1, () => [
-      inp({ dash: true }),
-      inp(),
-    ]);
-    expect(c.pedirReintento).toBe(false); // mantener no cuenta
+    correr(c, 1, () => [inp({ dash: true }), inp()]);
+    expect(c.estado).toBe("derrota");
     pasoCombate(c, [inp({ dash: true }), inp({ dash: true })], DT);
-    expect(c.pedirReintento).toBe(true);
+    expect(c.estado).toBe("derrota");
     const r = reintentar(c);
     pasoCombate(r, [inp({ dash: true }), inp({ dash: true })], DT); // siguen mantenidos: no salta
     expect(r.estado).toBe("presentacion");
@@ -644,12 +641,12 @@ describe("caídas, derrota y reintento (D-020, D-028, D-111, D-167, D-173)", () 
     expect(c.resultado).toBe("derrota");
     expect(c.frase?.clave).toBe("jefe.mirra.derrota");
     expect(c.zonas.usados + c.proyectiles.usados).toBe(0);
-    // Dash antes de la espera mínima no reintenta (evita reintentos sin querer).
+    // Ni la pulsación inmediata ni otra posterior reinician el combate.
     pasoCombate(c, [inp({ dash: true }), inp()], DT);
-    expect(c.pedirReintento).toBe(false);
-    correr(c, CONFIG.jefes.comun.derrota.esperaReintento);
+    expect(c.estado).toBe("derrota");
+    correr(c, 1);
     pasoCombate(c, [inp({ dash: true }), inp()], DT);
-    expect(c.pedirReintento).toBe(true);
+    expect(c.estado).toBe("derrota");
     const r = reintentar(c);
     expect(
       r.w.players.every((p) => p.alive && p.hp === CONFIG.player.maxHp),
@@ -669,7 +666,7 @@ describe("caídas, derrota y reintento (D-020, D-028, D-111, D-167, D-173)", () 
     expect(r.eventos.some((e) => e.tipo === "silencio")).toBe(false); // sin el silencio del nombre
   });
 
-  it("el bucle reemplaza el combate al reintentar", () => {
+  it("el bucle mantiene la derrota después de pulsar y soltar esquiva", () => {
     const st = { inputs: [inp(), inp()], debug: [] };
     const j = crearJuegoJefe(cfgBase(), {
       seed: 3,
@@ -687,8 +684,9 @@ describe("caídas, derrota y reintento (D-020, D-028, D-111, D-167, D-173)", () 
     j.update(DT);
     st.inputs[0].dash = false;
     j.update(DT);
-    expect(j.combate.opts.reintentos).toBe(1);
-    expect(j.world.players[0].alive).toBe(true);
+    expect(j.combate.opts.reintentos).toBe(0);
+    expect(j.combate.estado).toBe("derrota");
+    expect(j.world.players[0].alive).toBe(false);
   });
 
   it("el reintento es reproducible: misma semilla, mismos ataques", () => {

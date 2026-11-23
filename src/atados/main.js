@@ -2,7 +2,7 @@
 // Flujo (core/flujo.js, D-204 a D-214):
 //   menú con el lobby detrás → «Jugar» → caída al valle → lobby y pasillo de subida → arco de la cima
 //   → fundido a negro → la pradera se abre en silencio → presentación de Mirra (cinemática solo la 1.ª vez)
-//   → combate (al morir, reintento directo en la pradera) → lápida → tramo seguro con el carro de completos.
+//   → combate (si ambos caen, vuelta a la portada) → lápida → tramo seguro con el carro de completos.
 // El recorrido y el puesto usan render/recorrido.js; la pradera del jefe usa render/slice.js. La del
 // jefe se monta al cruzar el arco (evento `jefe:preparar`) mientras la pantalla funde a negro; al estar lista se
 // avisa a la partida (`jefeListo`). El recorrido se libera al entrar al combate. Audio, entrada y HUD duran toda la
@@ -17,7 +17,7 @@ import { crearRenderSlice } from "./render/slice.js";
 import { crearRenderRecorrido } from "./render/recorrido.js";
 import { crearAnillosHud } from "./render/hud-anillos.js";
 import { crearHud } from "./ui/hud.js";
-import { coloresHud, hexCss } from "./ui/hud-logica.js";
+import { coloresHud, etiquetaTecla, hexCss } from "./ui/hud-logica.js";
 import { conectarAudio } from "./audio/index.js";
 import { setIdioma, t } from "./i18n/index.js";
 import {
@@ -32,9 +32,11 @@ import {
 import { crearTienda, juntoAlCarro } from "./gameplay/tienda.js";
 import { crearCarta, textoMonedas } from "./ui/tienda.js";
 import { createMural } from "./mural.js";
+import { cargarPreferencias } from "./core/preferencias.js";
+import { prepararAjustes } from "./ui/ajustes.js";
 import "./ui.css";
 
-/** @typedef {"menu" | "cargando" | "playing" | "paused" | "result"} Pantalla */
+/** @typedef {"menu" | "cargando" | "playing" | "paused" | "result" | "derrota"} Pantalla */
 /** @typedef {ReturnType<typeof crearPartida>} Partida */
 /** @typedef {Awaited<ReturnType<typeof crearRenderRecorrido>>} VistaRecorrido */
 /** @typedef {Awaited<ReturnType<typeof crearRenderSlice>>} VistaJefe */
@@ -75,6 +77,7 @@ async function arrancar() {
   const title = elemento("title");
   const intro = elemento("intro");
   const primary = /** @type {HTMLButtonElement} */ (elemento("primary"));
+  const volver = elemento("menu");
   const play = /** @type {HTMLButtonElement} */ (elemento("play"));
   const objetivo = elemento("objective");
   const irAlPuesto = elemento("continuar-puesto");
@@ -111,17 +114,21 @@ async function arrancar() {
   let opacidadFundido = 0; // 0..1 que se ve ahora (lo leen las pruebas)
 
   // La entrada escucha al canvas: las teclas del juego no roban Enter ni Espacio a los botones del menú.
-  const input = createInput(CONFIG, canvas, { debug: params.has("dev") });
+  const preferencias = cargarPreferencias();
+  const cfg = {
+    ...CONFIG,
+    controls: { ...CONFIG.controls, keyboard: preferencias.teclado },
+  };
+  const input = createInput(cfg, canvas, { debug: params.has("dev") });
 
   /** @type {Pantalla} */
   let pantalla = "menu";
   let solo = !params.has("coop"); // el menú arranca en «Solo»; ?coop elige dos jugadores
-  let silencio = false; // botón «Sonido»
   let finT = 0; // segundos desde que Mirra cayó (para leer la lápida)
   let montaje = 0; // contador para descartar cargas viejas si se vuelve al menú mientras carga la pradera
   let aperturaDesde = -1; // s de partida en que la pradera empezó a abrirse tras el fundido (-1 = aún no)
 
-  let tienda = crearTienda(CONFIG); // saldo, productos vendidos y mejoras de la pareja durante esta partida
+  let tienda = crearTienda(cfg); // saldo, productos vendidos y mejoras de la pareja durante esta partida
   let recompensa = 0; // monedas que acreditó el evento de victoria más reciente
 
   /** Partida nueva desde la caída, con el modo elegido en el menú. */
@@ -357,6 +364,8 @@ async function arrancar() {
     if (e.tipo === "victoria") {
       recompensa = Number(e.monedas) || 0;
       tienda.acreditar(recompensa); // un único evento por combate ganado; la pantalla de resultado no vuelve a pagar
+    } else if (e.tipo === "derrota") {
+      mostrar("derrota", t(String(e.frase))); // Al caer ambos, termina la partida y se cierra el acceso a la pausa.
     } else if (e.tipo === "jefe:preparar") {
       const solicitante = partida;
       void prepararJefe(String(e.jefe)).catch(() => {
@@ -375,10 +384,16 @@ async function arrancar() {
   oyentes.push((e) => hud?.alEvento(e), alEventoFlujo);
   // El audio se suscribió al crearse (conectarAudio → onEvento); el orden no importa.
 
-  /** Ajusta el volumen general según el botón «Sonido» y la pantalla (en pausa no suena nada). */
+  /** Ajusta el volumen general según las preferencias y la pantalla (en pausa no suena nada). */
   function aplicarVolumen() {
-    const callado = silencio || pantalla === "paused" || carta.abierta;
-    audio.api.volumen("master", callado ? 0 : CONFIG.audio.volumen.master);
+    const callado = pantalla === "paused" || carta.abierta;
+    audio.api.volumen("master", callado ? 0 : preferencias.volumen);
+  }
+
+  /** Conserva las leyendas cortas de la barra del Templo Ancla. @param {string} codigo */
+  function teclaDeBarra(codigo) {
+    if (codigo === "Enter") return "Enter";
+    return etiquetaTecla(codigo).replace("Shift", "⇧");
   }
 
   /** @param {boolean} unSolo */
@@ -386,9 +401,29 @@ async function arrancar() {
     solo = unSolo;
     elemento("mode-solo").setAttribute("aria-pressed", String(solo));
     elemento("mode-coop").setAttribute("aria-pressed", String(!solo));
-    elemento("dash-help").innerHTML = solo
-      ? "<kbd>Espacio</kbd> Ambos"
-      : "<kbd>Espacio</kbd> Sael · <kbd>⇧ der.</kbd> Odo";
+    const teclado = preferencias.teclado;
+    for (const jugador of /** @type {const} */ (["sael", "odo"])) {
+      const m = teclado[jugador];
+      texto(
+        elemento(jugador + "-mover"),
+        [m.up, m.left, m.down, m.right].map(teclaDeBarra).join(" "),
+      );
+      texto(elemento(jugador + "-ancla"), teclaDeBarra(m.anchor[0]));
+    }
+    const ayuda = elemento("dash-help");
+    ayuda.replaceChildren();
+    for (const [codigo, nombre] of solo
+      ? [[teclado.soloDash[0], "Ambos"]]
+      : [
+          [teclado.sael.dash[0], "Sael"],
+          [teclado.odo.dash[0], "Odo"],
+        ]) {
+      const tecla = document.createElement("kbd");
+      tecla.textContent = teclaDeBarra(codigo);
+      const par = document.createElement("span"); // La tecla y su jugador se centran juntos.
+      par.append(tecla, " " + nombre);
+      ayuda.append(par);
+    }
   }
 
   /** Nombre del lugar para los textos del menú y la pausa. */
@@ -399,8 +434,8 @@ async function arrancar() {
         ? "Mirra la Hambrienta"
         : "El Templo Ancla";
 
-  /** Cambia de pantalla y ordena qué se ve. @param {Pantalla} siguiente */
-  function mostrar(siguiente) {
+  /** Cambia de pantalla y ordena qué se ve. @param {Pantalla} siguiente @param {string} [fraseDerrota] */
+  function mostrar(siguiente, fraseDerrota = "") {
     pantalla = siguiente;
     stage.dataset.screen = siguiente;
     document.body.dataset.screen = siguiente; // el CSS muestra u oculta las barras según esta pantalla
@@ -416,14 +451,15 @@ async function arrancar() {
     if (hud) hud.visible = jugando || siguiente === "paused";
     play.hidden = !menu;
     elemento("modes").hidden = !menu;
-    primary.hidden = menu || jugando || siguiente === "cargando";
+    primary.hidden = siguiente !== "paused" && siguiente !== "result";
     elemento("restart").hidden = siguiente !== "paused";
     texto(
       elemento("restart"),
       partida.estado === "puesto" ? "Reintentar a Mirra" : "Reintentar",
     );
     primary.classList.toggle("gold", siguiente !== "result");
-    elemento("menu").hidden = menu || jugando || siguiente === "cargando";
+    volver.classList.toggle("gold", siguiente === "derrota");
+    volver.hidden = menu || jugando || siguiente === "cargando";
     aplicarVolumen();
     if (jugando) {
       canvas.focus({ preventScroll: true });
@@ -446,9 +482,16 @@ async function arrancar() {
       return;
     }
     texto(caption, lugar());
+    if (siguiente === "derrota") {
+      texto(title, t("combate.derrota"));
+      texto(intro, fraseDerrota);
+      // El foco sale del canvas. Una esquiva sostenida no activa el botón de salida.
+      title.focus({ preventScroll: true });
+      return;
+    }
     if (siguiente === "paused") {
       texto(title, "En pausa");
-      texto(intro, "La partida seguirá donde la dejaste.");
+      texto(intro, "");
       texto(primary, "Continuar");
     } else {
       texto(title, "Mirra ha caído");
@@ -537,7 +580,7 @@ async function arrancar() {
     if (pantalla === "playing") mostrar("paused");
   }
   async function alMenu() {
-    tienda = crearTienda(CONFIG); // desde portada el saldo y los productos vuelven a su estado inicial
+    tienda = crearTienda(cfg); // desde portada el saldo y los productos vuelven a su estado inicial
     reemplazarPartida();
     audio.evento({ tipo: "zona_entra", zona: "pasillo", estado: "nada" }); // termina la música y los ataques anteriores
     if (!vistaRecorrido) mostrar("cargando");
@@ -561,18 +604,19 @@ async function arrancar() {
   primary.onclick = accionPrincipal;
   irAlPuesto.onclick = () => void continuarAlPuesto();
   elemento("pause").onclick = pausar;
-  elemento("menu").onclick = () => void alMenu();
+  volver.onclick = () => void alMenu();
   elemento("restart").onclick = reiniciar;
   elemento("mode-solo").onclick = () => modo(true);
   elemento("mode-coop").onclick = () => modo(false);
-  elemento("sound").onclick = () => {
-    silencio = !silencio;
-    if (!silencio) void audio.api.desbloquear();
-    aplicarVolumen();
-    elemento("sound").setAttribute("aria-pressed", String(!silencio));
-    if (pantalla === "playing") canvas.focus();
-  };
-  elemento("guide").onclick = () => {
+  prepararAjustes(controls, preferencias, aplicarVolumen, () => {
+    // Reconstruimos las teclas escuchadas al editar, fuera del bucle de render.
+    input.actualizarTeclado();
+    modo(solo);
+  });
+  const engranaje = elemento("settings");
+  engranaje.title = t("ajustes.titulo");
+  engranaje.setAttribute("aria-label", engranaje.title);
+  engranaje.onclick = () => {
     pausar();
     controls.showModal();
   };
@@ -613,18 +657,18 @@ async function arrancar() {
       if (pads[1]?.buttons[9]?.pressed) modo(false);
       empezar();
     } else if (pantalla === "result") void continuarAlPuesto();
+    else if (pantalla === "derrota") void alMenu();
   }
 
   /** Texto de la esquina: qué hacer ahora contra el jefe. En el recorrido hablan las tarjetas (D-206). */
   function pintarIndicacion() {
     const c = partida.combate;
-    const visible = c?.estado === "pelea" || c?.estado === "derrota";
+    const visible = c?.estado === "pelea";
     objetivo.hidden = !visible; // tampoco queda el fondo vacío durante la caída o la presentación
     if (!visible || !c) return;
     const accion = c.jefe.accion;
     let clave = "indicacion.mirra";
-    if (c.estado === "derrota") clave = "indicacion.derrota";
-    else if (accion?.tipo === "ataque" && accion.etapa === "telegrafia")
+    if (accion?.tipo === "ataque" && accion.etapa === "telegrafia")
       clave = "indicacion." + accion.id;
     if (c.estado === "pelea" && c.tPelea < c.finAviso)
       clave = "indicacion." + c.avisoRito;
@@ -892,7 +936,7 @@ async function arrancar() {
         repartir();
         revisarEscena();
       },
-      /** Deja a los dos jugadores sin vida (prueba del reintento). */
+      /** Deja a los dos jugadores sin vida (prueba de la derrota). */
       matarJugadores: () => {
         aplicarDebugComun(partida.world, "killSael");
         aplicarDebugComun(partida.world, "killOdo");
