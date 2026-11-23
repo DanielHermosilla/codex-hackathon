@@ -45,6 +45,8 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
   const mats = {
     corteza: std(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0 }),
     hojas: std(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0 }),
+    // Núcleo oscuro de la copa: separa la silueta de Mirra del trigo dorado.
+    hojaSeca: std(0xffffff, { emissive: 0xffffff, emissiveIntensity: 0 }),
     quitina: std(0xffffff, {
       roughness: 0.6,
       emissive: 0xffffff,
@@ -59,7 +61,7 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
     ojos: std(X.veta, { emissive: X.veta, emissiveIntensity: 1.2 }),
     espiga: std(X.brasaPura, { emissive: X.brasaPura, emissiveIntensity: 0.9 }),
   };
-  const flashMats = [mats.corteza, mats.hojas, mats.quitina];
+  const flashMats = [mats.corteza, mats.hojas, mats.hojaSeca, mats.quitina];
 
   const raiz = new THREE.Group();
   const cuerpo = new THREE.Group(); // gira con face (el modelo mira a +x)
@@ -165,7 +167,8 @@ export function crearMirra({ scene, cfg, keep, modelos, def }) {
   function aplicarPaleta(p) {
     pal = p;
     mats.corteza.color.setHex(p.jefe);
-    mats.hojas.color.setHex(mezclarHex(p.vegetacion, p.madera, 0.45));
+    mats.hojas.color.setHex(mezclarHex(p.vegetacion, p.madera, 0.2)); // borde de la copa: hoja dorada clara
+    mats.hojaSeca.color.setHex(mezclarHex(p.madera, p.jefe, 0.55)); // pardo rojizo, más oscuro que el trigo
     mats.quitina.color.setHex(mezclarHex(p.madera, p.jefe, 0.4));
     mats.veta.emissiveIntensity = TB.veta * p.corrupcion;
     mats.esquirla.emissiveIntensity = TB.esquirla * p.corrupcion;
