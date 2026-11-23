@@ -436,7 +436,7 @@ export function segmentInsideCircle(x1, z1, x2, z2, cx, cz, r, out) {
 const _mid = { x: 0, z: 0 };
 
 // Daño de la cadena a un cuerpo circular que atraviesa (D-148): por paso,
-//   Σ eslabones dentro: escala × tensión × |vel. relativa cadena–cuerpo| × metros dentro × dt.
+//   Σ eslabones dentro: escala × factor de tensión × |vel. relativa cadena–cuerpo| × metros dentro × dt.
 // Sin combos ni multiplicadores (D-081). `out` recibe el punto de contacto de mayor daño y la tensión máxima en contacto.
 /**
  * @param {Cadena} ch
@@ -448,7 +448,7 @@ const _mid = { x: 0, z: 0 };
  */
 export function chainDamageStep(ch, body, dt, cfg, out) {
   const { n, x, z, px, pz, segT } = ch;
-  const { scale, maxRelSpeed } = cfg.damage.chain;
+  const { scale, slackFactor, maxRelSpeed } = cfg.damage.chain;
   let total = 0,
     best = 0,
     maxT = 0,
@@ -471,7 +471,8 @@ export function chainDamageStep(ch, body, dt, cfg, out) {
     const vz =
       (z[i] - pz[i] + (z[i + 1] - pz[i + 1])) / (2 * dt) - (body.vz || 0);
     const speed = Math.min(maxRelSpeed, Math.hypot(vx, vz));
-    const d = scale * segT[i] * speed * len * dt;
+    const factorTension = slackFactor + (1 - slackFactor) * segT[i]; // floja conserva una fracción; tensa alcanza el daño completo
+    const d = scale * factorTension * speed * len * dt;
     total += d;
     if (segT[i] > maxT) maxT = segT[i];
     if (d > best && out) {

@@ -62,7 +62,7 @@ Fuente de verdad del diseño. Una fila por decisión; nunca se borran, se reempl
 | D-054 | 2026-11-20 | jefes | Todas las tácticas de cadena sirven contra cualquier jefe; no hay jefe que obligue a una forma concreta | E54 | vigente |
 | D-055 | 2026-11-20 | dificultad | Telegrafías generosas en modo normal y justas en modo difícil | E60, I97 | vigente |
 | D-056 | 2026-11-20 | jugabilidad | Ritmo de combate medio-rápido y fluido | D46 | vigente |
-| D-057 | 2026-11-20 | lore | Lore base: L1 «La Brasa Primera» (docs/design/lore-propuestas.md). Odo y Sael, ladrones rivales, rompen la Brasa que mantenía puros a los dioses; Tavor el Juez los ata con la urna fundida y luego se corrompe. Nombres provisionales | B11–B16 | vigente |
+| D-057 | 2026-11-20 | lore | Lore base: L1 «La Brasa Primera» (docs/design/lore-propuestas.md). Odo y Sael, ladrones rivales, rompen la Brasa que mantenía puros a los dioses; Tavor el Juez los ata con la urna fundida y luego se corrompe. Nombres provisionales | B11–B16 | reemplazada por D-217 |
 | D-058 | 2026-11-20 | jefes | Jefes provisionales según L1: 1 Mirra la Hambrienta (cosecha), 2 Ondar el Ahogado (mar), final Tavor el Juez | E62 | vigente |
 | D-059 | 2026-11-20 | audio | Música: mezcla de orquestal mística, folk antiguo, ambient atmosférico y electrónica orgánica | G79 | vigente |
 | D-060 | 2026-11-20 | audio | Música adaptativa por capas: tema por zona, calmo en pasillo; al entrar al jefe se suman capas y cambia por fase | G80 | vigente |
@@ -73,7 +73,7 @@ Fuente de verdad del diseño. Una fila por decisión; nunca se borran, se reempl
 | D-065 | 2026-11-20 | ui | La tensión se muestra solo en la cadena, pero de forma llamativa (efecto o cambio leve de color además de las runas) | H91 | vigente |
 | D-066 | 2026-11-20 | ui | Tutorial integrado en el primer pasillo: enemigos fáciles enseñan corte, ancla y dash con indicaciones breves | H94 | vigente |
 | D-067 | 2026-11-20 | cadena | Lanzar al compañero contra el jefe con el dash hace daño leve al impactar y lo deja en posición para cortar | D35 | reemplazada por D-144 |
-| D-068 | 2026-11-20 | cadena | El daño escala de forma continua mientras la cadena se va tensando (sin umbral duro; floja ≈ casi nada) | D35 | vigente |
+| D-068 | 2026-11-20 | cadena | El daño escala de forma continua mientras la cadena se va tensando (sin umbral duro). Ajuste del 23 nov: a igual contacto y velocidad, parte del 25 % con tensión cero | D35 y ajuste del prototipo | vigente |
 | D-069 | 2026-11-20 | jugabilidad | Dash con cooldown corto (~0,6 s de partida, ajustable en config); invulnerable solo durante el dash | D47 | vigente |
 | D-070 | 2026-11-20 | cadena | El cadáver arrastrado sigue siendo un extremo que corta: se puede girar como mangual, más lento y tosco | D44 | vigente |
 | D-071 | 2026-11-20 | ui | Nombre del equipo en los créditos iniciales: Geek Labs | A3 | vigente |
@@ -133,7 +133,7 @@ Fuente de verdad del diseño. Una fila por decisión; nunca se borran, se reempl
 | D-125 | 2026-11-20 | visión | El juego se llama AtaDos. Esta versión vive en ~/Documents/AtaDos; las carpetas viejas se renombran para liberar el nombre | A8 | vigente |
 | D-126 | 2026-11-20 | lore | Coleccionables de lore: murales e inscripciones en los pasillos que se activan al pasar; nada que juntar en menús | B19 | vigente |
 | D-127 | 2026-11-20 | lore | Referencias simbólicas: valen mitologías reales, historia, pecados/virtudes y conceptos filosóficos. Delegado: Claude propone 3 enfoques | A2, B19 | delegada |
-| D-128 | 2026-11-20 | lore | Capa simbólica: S1 virtud invertida (cada dios era una virtud que su esquirla invierte en pecado: Mirra gula, Ondar ira, Tavor soberbia) + guiños S2 de mitologías e historia reales en ítems y murales | A2, B19 | vigente |
+| D-128 | 2026-11-20 | lore | Capa simbólica: S1 virtud invertida (cada dios encarna una virtud que la corrupción invierte en pecado: Mirra gula, Ondar ira, Tavor soberbia) + guiños S2 de mitologías e historia reales en ítems y murales | A2, B19 | vigente |
 | D-129 | 2026-11-20 | proceso | Las métricas del experimento las mide Diego por su cuenta; el juego de «un prompt» existe pero no se toca ahora | K111, K112 | vigente |
 | D-130 | 2026-11-20 | proceso | Orquestación: la sesión principal usa Opus con esfuerzo alto para planificar y orquestar; separa las tareas por categoría o prioridad y las delega | K113 | vigente |
 | D-131 | 2026-11-20 | proceso | Subagentes: Opus esfuerzo medio para diseño de todo tipo, implementaciones difíciles, lo abstracto o artístico; Sonnet 5.5 esfuerzo alto para código pesado y largo pero no difícil; Haiku para buscar/investigar en internet y descargar librerías o dependencias | K113 | vigente |
@@ -209,8 +209,8 @@ Fuente de verdad del diseño. Una fila por decisión; nunca se borran, se reempl
 | D-201 | 2026-11-23 | jefes | Más «movida»: arena de Mirra de nuevo a radio 3 L con pilares a 2 L, cámara de jefe de 16 a 46 m; Sael y Odo siguen dibujados a escala 1,3 | playtest hackatón, tanda 1 | vigente |
 | D-202 | 2026-11-23 | jugabilidad | Vida y daño ×10 en todo (jugadores 1000, Mirra 12 000, ataques y cadena ×10): números de daño más grandes con la misma duración de pelea | playtest hackatón, tanda 1 | vigente |
 | D-203 | 2026-11-23 | alcance | La demo tendrá 2 jefes; el primero (Mirra) más fácil que el último. Nacho define los jefes y sus mecánicas: por ahora el recorrido termina en Mirra, sin segundo jefe | playtest hackatón, tanda 1 | vigente |
-| D-204 | 2026-11-23 | progresión | Estructura: lobby al pie del Templo Ancla → pasillo de subida entre ruinas (como un olimpo en ruinas) → pradera de Mirra en la cima. Al vencer a Mirra se sale de la pradera a otro setting, para variar lo visual (se define con el segundo jefe) | playtest hackatón, tanda 2 | vigente |
-| D-205 | 2026-11-23 | progresión | Spawn: Sael y Odo caen al valle, al pie del Templo Ancla (Tavor los lanzó), con polvo y un temblor corto de ~1,5 s | playtest hackatón, tanda 4 | vigente |
+| D-204 | 2026-11-23 | progresión | Estructura: lobby al pie del Templo Celestial → pasillo de subida entre ruinas (como un olimpo en ruinas) → pradera de Mirra en la cima. Al vencer a Mirra se sale de la pradera a otro setting, para variar lo visual (se define con el segundo jefe) | playtest hackatón, tanda 2 | vigente |
+| D-205 | 2026-11-23 | progresión | Spawn: Sael y Odo caen al valle, al pie del Templo Celestial (Tavor los lanzó), con polvo y un temblor corto de ~1,5 s | playtest hackatón, tanda 4 | vigente |
 | D-206 | 2026-11-23 | ui | Tutorial con tarjetas que salen por zonas al avanzar: mover (al aterrizar) → tensar y cortar → ancla → dash → enredo en pilares; ~4 s cada una y no exigen hacer la acción (precisa D-066) | playtest hackatón, tanda 2 | vigente |
 | D-207 | 2026-11-23 | ui | Formato de tarjeta: mini animación en bucle de la mecánica, título corto, teclas o botones del dispositivo en uso y una línea de texto | playtest hackatón, tanda 2 | vigente |
 | D-208 | 2026-11-23 | progresión | El muñeco de paja pasa al lobby como práctica opcional: no bloquea la salida | playtest hackatón, tanda 2 | vigente |
@@ -222,3 +222,4 @@ Fuente de verdad del diseño. Una fila por decisión; nunca se borran, se reempl
 | D-214 | 2026-11-23 | ui | Detrás del menú se ve el lobby; «Jugar» dispara la caída y el juego empieza ahí mismo, sin pantalla de carga | playtest hackatón, tanda 4 | vigente |
 | D-215 | 2026-11-23 | proceso | Los cambios de números de Mirra (D-201, D-202) se aplican en feature/atados-slice y se avisa a Nacho | playtest hackatón, tanda 4 | vigente |
 | D-216 | 2026-11-23 | progresión | El pasillo se queda como está por ahora (~30–60 s; se puede cruzar corriendo). Se reajusta después del playtest; precisa D-209 | revisión Codex del pasillo | vigente |
+| D-217 | 2026-11-23 | lore | La Brasa Eterna se apaga cuando Sael y Odo vuelcan su urna en el Templo Celestial. Los dioses se corrompen y entran en guerra. Tavor, antes benevolente y generoso, los destierra unidos por la Cadena del Castigo Eterno. Sael roba para alimentar a su familia y su pueblo; Odo, para pagar sus deudas y sacar a su hermano de prisión. Se actualizan los tres murales y las frases de presentación, derrota y muerte de Mirra. Su título antiguo lleva un tachado rojo más visible. | cambios de Diego al prólogo y a los textos del juego | vigente |

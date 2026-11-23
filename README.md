@@ -1,6 +1,6 @@
 # Hackatón Codex
 
-**AtaDos** es un boss rush cooperativo de Geek Labs para navegador de escritorio. Sael y Odo están unidos por una cadena, y la cadena es su única arma: corta cuando está tensa y la pasan a través del enemigo. La partida empieza al pie del Templo Ancla. Puedes practicar con el muñeco de paja o subir directamente por el pasillo. Las tarjetas enseñan los controles por el camino. Cruza el arco de la cima para enfrentar a Mirra la Hambrienta, que combina seis ataques en dos fases con el ácido, la luz divina, el pisotón y los braseros.
+**AtaDos** es un boss rush cooperativo de Geek Labs para navegador de escritorio. Sael y Odo están unidos por una cadena: hace daño al cruzar al enemigo y corta más al tensarla. La partida empieza al pie del Templo Celestial. Puedes practicar con el muñeco de paja o subir por el pasillo. Las tarjetas enseñan los controles por el camino. Cruza el arco de la cima para enfrentar a Mirra la Hambrienta. Sus seis ataques se combinan con la luz divina, el pisotón, los braseros y los turnos alternos de ácido y vacío.
 
 ## Jugar
 
@@ -13,9 +13,11 @@ npm run dev
 
 Abre la dirección que imprima Vite, normalmente `http://localhost:5173`. Deja la terminal abierta mientras juegas. Pulsa Ctrl+C para cerrar el servidor. Usa un navegador de escritorio con WebGL 2 y teclado.
 
+En el menú, los ajustes y la carta puedes moverte con **WASD** o las **flechas**. Confirma con **Enter**, **Shift** o **Espacio**. Durante la pelea o en derrota, mantén **R** un segundo para reintentar. La pantalla de derrota también permite volver al inicio.
+
 Elige **Solo** para mover a Sael con WASD y a Odo con las flechas. Espacio hace esquivar a ambos. Enreda la cadena en un pilar para fijar un extremo y barrer desde ahí. En **Dos jugadores**, Sael esquiva con Espacio y Odo con Shift derecho. Mantén Shift izquierdo o Enter para anclar a Sael u Odo. La partida se pausa con Esc o al cambiar de ventana. En **Ajustes → Cómo jugar** puedes consultar los controles de mando.
 
-Durante la práctica, busca el carro de completos a la derecha de la escalinata. Acércate y pulsa **P** para ver la carta. Empiezas con cero monedas y recibes 25 al vencer a Mirra. Elige **Continuar al carro de completos** para visitar el furgón en el muelle. El completo italiano y el mote con huesillos cuestan 25 monedas cada uno. La sopaipilla cuesta 23. Cada producto mejora a ambos personajes. **Esc** cierra la carta.
+Durante la práctica, busca el carro de completos a la derecha de la escalinata. Acércate y pulsa **P** para ver la carta. Empiezas con cero monedas y recibes 25 al vencer a Mirra. Tras el combate sal por el arco norte y encontrarás el carro a la derecha del pasillo. **Ir al carro de completos** acorta ese tramo. El completo italiano y el mote con huesillos cuestan 25 monedas cada uno. La sopaipilla cuesta 23. **Esc** cierra la carta. Desde el carro puedes entrar a la sala del Farolero o continuar a pie hasta el dominio de Ondar, donde termina el recorrido.
 
 El engranaje de la portada y de la pausa permite ajustar el volumen general y las teclas de ambos personajes. La [dirección de diseño](docs/atados/), los [créditos de recursos](CREDITS.md) y la [arquitectura](docs/architecture.md) acompañan al juego.
 
@@ -37,6 +39,8 @@ Instala Chromium para Playwright una vez por cada versión de Playwright. Luego 
 npx playwright install chromium
 python3 scripts/validate.py --strict
 ```
+
+Si dos sesiones prueban el juego a la vez, asigna un puerto libre a la segunda. En macOS puedes usar `ATADOS_TEST_PORT=4293 python3 scripts/validate.py --strict`.
 
 PowerShell, macOS y Linux pueden ejecutar los comandos de npm. Para el flujo de Codex en Windows, consulta los pasos de WSL en la guía de configuración.
 

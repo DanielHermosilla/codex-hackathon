@@ -75,6 +75,9 @@
             </div>
           </div>
           <p id="objective" role="status"></p>
+          <button type="button" id="atajo-puesto" hidden>
+            Ir al carro de completos
+          </button>
           <button
             type="button"
             id="enfrentar-farolero"
@@ -86,11 +89,11 @@
         <div id="tienda"></div>
         <div class="veil" id="overlay">
           <div class="panel">
-            <div class="eyebrow" id="caption">El Templo Ancla</div>
+            <div class="eyebrow" id="caption">El Templo Celestial</div>
             <h1 id="title" tabindex="-1">Ata<span>Dos</span></h1>
             <p id="intro">
-              Sael y Odo robaron la Brasa. Ahora, su única arma contra los
-              dioses es la cadena que los une.
+              Sael y Odo apagaron la Brasa Eterna. Ahora, su única arma contra
+              los dioses es la cadena que los une.
             </p>
             <div id="modes" role="group" aria-label="Modo de juego">
               <button type="button" id="mode-solo" aria-pressed="true">
@@ -117,7 +120,7 @@
                   <path d="M2 8h15m-6-5 5 5-5 5" />
                 </svg></button
               ><button class="gold" id="continuar-puesto" type="button" hidden>
-                Continuar al carro de completos
+                Volver al carro de completos
               </button>
               <button class="gold" id="primary" type="button" hidden></button>
               <button id="restart" type="button" hidden>Reintentar</button
@@ -185,6 +188,10 @@
             En solitario, la esquiva de Sael mueve a ambos. Con un mando, usa
             los dos sticks, los gatillos para anclar y A para esquivar. Con dos
             mandos, cada jugador usa el stick izquierdo, A y el gatillo derecho.
+          </p>
+          <p data-texto="ajustes.navegacion">
+            Usa WASD o las flechas para moverte por los menús. Confirma con
+            Enter, Shift o Espacio. Mantén R un segundo para reintentar.
           </p>
           <p data-texto="ajustes.pausa">
             Tras vencer a Mirra, acércate al carro de completos y pulsa P para

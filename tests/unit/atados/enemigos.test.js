@@ -64,7 +64,7 @@ function arena(lista, sael = [-1.5, 3], odo = [1.5, 3], seed = 1) {
 const deTipo = (evs, tipo) => evs.filter((e) => e.tipo === tipo);
 
 describe("daño de la cadena a los enemigos (D-148)", () => {
-  it("una pasada tensa corta al segador; floja casi no le hace nada", () => {
+  it("una pasada tensa vence al segador; floja lo hiere sin vencerlo", () => {
     const tenso = arena([{ tipo: "segador", x: 0, z: 0 }]);
     tenso.correr(30, { mx: -1 }, { mx: 1 }); // abren la cadena
     tenso.correr(60, { mx: -0.4, mz: -1 }, { mx: 0.4, mz: -1 }); // y la pasan por encima
@@ -79,7 +79,8 @@ describe("daño de la cadena a los enemigos (D-148)", () => {
     const flojo = arena([{ tipo: "segador", x: 0, z: 0 }]);
     flojo.correr(60, { mz: -1 }, { mz: -1 }); // cadena floja: los dos van juntos
     const f = flojo.h.enemigos[0];
-    expect(f.hpMax - f.hp).toBeLessThan(E.segador.vida * 0.1);
+    expect(f.hpMax - f.hp).toBeGreaterThan(0); // el contacto flojo ahora causa daño
+    expect(f.vivo).toBe(true); // esta misma pasada no derrota al segador, a diferencia de la tensa
   });
 
   it("el brincador aguanta una pasada tensa (pide dos)", () => {

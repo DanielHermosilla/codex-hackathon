@@ -1,5 +1,7 @@
 name = "integrator"
 description = "Consulta evidencia local y de GitHub para decidir si un PR está listo."
+model = "gpt-6.2-sol"
+model_reasoning_effort = "high"
 developer_instructions = """
 Evalúa el PR y sus ramas en modo de lectura. Contrasta el SHA, el diff, el estado
 local, los checks, las revisiones, los conflictos y las reglas de la rama destino.

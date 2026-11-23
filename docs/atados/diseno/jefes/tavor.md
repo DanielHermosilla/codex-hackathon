@@ -1,12 +1,12 @@
 # Jefe: Tavor el Juez
 
-**Orden en el rush:** 3 de 3, final [D-024, D-041, D-058] · **Duración objetivo:** 5–6 min [D-141] · **Qué enseña/prueba de la cadena:** todo lo aprendido, contra un jefe que se encoge entre fases. Al final, tirar juntos contra quien forjó la cadena («Juntos, o ninguno», L1). Ninguna táctica obligada [D-054, D-057, D-159] · **Decisiones:** D-012, D-013, D-017, D-018, D-022, D-025, D-041, D-047, D-048, D-054, D-055, D-057, D-058, D-070, D-084, D-085, D-086, D-088, D-091, D-092, D-093, D-098, D-101, D-106, D-128, D-141, D-144, D-147–D-153, D-155, D-156, D-159–D-165, D-169, D-171, D-174, D-176, D-178, D-180, D-183–D-185
+**Orden en el rush:** 3 de 3, final [D-024, D-041, D-058] · **Duración objetivo:** 5–6 min [D-141] · **Qué enseña/prueba de la cadena:** todo lo aprendido, contra un jefe que se encoge entre fases. Al final, tirar juntos contra quien forjó la cadena (la Cadena del Castigo Eterno). Ninguna táctica obligada [D-054, D-057, D-159] · **Decisiones:** D-012, D-013, D-017, D-018, D-022, D-025, D-041, D-047, D-048, D-054, D-055, D-057, D-058, D-070, D-084, D-085, D-086, D-088, D-091, D-092, D-093, D-098, D-101, D-106, D-128, D-141, D-144, D-147–D-153, D-155, D-156, D-159–D-165, D-169, D-171, D-174, D-176, D-178, D-180, D-183–D-185
 
 > Convenciones: ver `docs/jefes/mirra.md`. Bloques: `docs/jefes/_BLOQUES.md`.
 > El dash es solo movilidad + invulnerabilidad; no se lanza al compañero [D-144].
 
 ## Concepto
-- El dios que se volvió malvado [D-041]. Juez de Hestera; ató a Odo y Sael con la urna fundida y luego se corrompió (L1) [D-057].
+- El dios que se volvió malvado [D-041]. Fue un juez benevolente y generoso. Se corrompió al apagarse la Brasa Eterna y luego desterró a Sael y Odo atados con la Cadena del Castigo Eterno, forjada con la urna fundida [D-217].
 - Capa S1: justicia invertida en soberbia; se cree el único digno de la Brasa [D-128].
 - La esquirla más grande está en su pecho y da la luz de la sala [D-084, D-086].
 - Símbolo: su balanza solo pesa culpas (L1) [D-057].
@@ -31,7 +31,7 @@
 | 1 · El Juez (~8×) | 100–70 (de partida) | `zona_circular` + `onda_anillo` (Mazazo), `proyectil_arco` (Sentencias), `linea_suelo` (Veredicto) | Sentado en el estrado; no se mueve. Se le corta en manos y brazos cuando golpea el suelo [D-092] | Objetivo: atrae el Mazazo hacia una columna | Otro: se ancla o enreda la cadena en la columna y el objetivo barre el brazo apoyado |
 | Transición 1 | 70 | `transicion_fase` + `brasas_curacion` | Se levanta, el estrado cae y se encoge a ~4× [D-159]. Corta e invulnerable [D-153]. Brasas [D-171]. Silencio de cambio de fase [D-183] | Se aparta de la caída | Ídem |
 | 2 · La Balanza (~4×) | 70–35 (de partida) | `salto` + `zona_circular` (Caída), `barrido` arco 360° (Balanza), `onda_anillo`, `proyectil_arco` | Baja a la sala. Usa la balanza como mangual: dos platillos en cadenas, reflejo de la cadena de los jugadores. Ritmo más rápido | Esquiva la Balanza y se ancla al terminar | Rodea y corta en el mareo |
-| Transición 2 | 35 | `transicion_fase` + `destello` + `brasas_curacion` | Destello: baja el mazo y repite «Juntos, o ninguno», pausa real de 1–2 s [D-156]. Rompe la balanza. Se encoge a ~2× [D-159]. La sala se oscurece. Brasas [D-171] | Castiga el destello | Ídem |
+| Transición 2 | 35 | `transicion_fase` + `destello` + `brasas_curacion` | Destello: baja el mazo y repite «unidos para siempre», pausa real de 1–2 s [D-156]. Rompe la balanza. Se encoge a ~2× [D-159]. La sala se oscurece. Brasas [D-171] | Castiga el destello | Ídem |
 | 3 · El Soberbio (~2×) | 35–0 (de partida) | `carga` ×3 (Embestidas), `linea_suelo` (Veredicto), `agarre_cadena` (Sentencia final) | Casi del tamaño de los jugadores, rápido. Esquirla expuesta: único punto débil [D-160]. Patrón nuevo: intenta romper la cadena [D-185] | Si agarra la cadena: tira hacia su lado o se ancla | Tira hacia el lado contrario o dashea en contra (el dash gana el tirón [D-149]) |
 
 ## Ataques

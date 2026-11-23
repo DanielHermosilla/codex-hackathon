@@ -341,6 +341,9 @@ export const BLOQUES = {
     },
     activar(b) {
       activarZonas(b);
+      // El filo parte del borde inicial en el primer cuadro activo. 0 = aún no cruzó el sector.
+      const z = b.zonas[0];
+      if (z) z.progreso = 0;
       b.sub = "golpe";
       b.subT = 0;
       b.golpeados[0] = b.golpeados[1] = false;
@@ -387,7 +390,7 @@ export const BLOQUES = {
         b.golpeados[0] = b.golpeados[1] = false;
         if (z) {
           z.etapa = "activa";
-          z.progreso = 1;
+          z.progreso = 0; // el segundo filo también empieza en su propio borde de salida
         }
       }
       return false;
@@ -666,8 +669,9 @@ export const BLOQUES = {
             continue;
           }
           b.tick[i] += dt;
-          if (b.tick[i] >= d.tick) {
-            b.tick[i] -= d.tick;
+          // 30 pasos de 1/60 s suman medio segundo con un pequeño error de coma flotante.
+          if (b.tick[i] >= d.tick - 1e-9) {
+            b.tick[i] = Math.max(0, b.tick[i] - d.tick);
             ctx.golpear(b, i, d.danoPorTick, 0, z.x, z.z, true);
           }
         }

@@ -748,6 +748,12 @@ a {
   }
 }
 
+/* En victoria queda espacio para la indicación de caminar encima del atajo. */
+#objective:has(+ #atajo-puesto:not([hidden])) {
+  bottom: 60px;
+}
+
+#atajo-puesto,
 #enfrentar-farolero {
   position: absolute;
   right: 15px;

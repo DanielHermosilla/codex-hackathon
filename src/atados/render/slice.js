@@ -22,6 +22,8 @@ import { crearPersonajes } from "./personajes.js";
 import { crearCadenaArte } from "./cadena-arte.js";
 import { crearTelegrafias } from "./telegrafias.js";
 import { crearMirra } from "./mirra-arte.js";
+import { crearAtaquesMirra } from "./ataques-mirra.js";
+import { crearRitosMirra } from "./ritos-mirra.js";
 import { crearMuneco } from "./muneco-arte.js";
 import { crearArteFarolero } from "./farolero.js";
 import { crearBrillos } from "./brillos.js";
@@ -170,6 +172,14 @@ export async function crearRenderSlice({
         })
       : null;
   const vistaRitos = farolero ? null : crearVistaRitos(scene, keep, brillos);
+  // Señales físicas de cada ataque y de los ritos de Mirra (la práctica con el muñeco no las necesita).
+  const conMirra = c0.id === "mirra";
+  const ataquesMirra = conMirra
+    ? crearAtaquesMirra({ scene, cfg, keep, brillos })
+    : null;
+  const ritosMirra = conMirra
+    ? crearRitosMirra({ scene, keep, brillos, def })
+    : null;
   const vfx = crearVfx({ scene, cfg, keep });
   const exts = extras
     .map((f) =>
@@ -384,7 +394,8 @@ export async function crearRenderSlice({
       flashes,
       c.jefe,
     );
-    trigal?.sync(w, c, dtAnim, tiempo, fxJefe);
+    // El rito ya emite paja al perder un pilar; una sola nube respeta el ajuste de movimiento.
+    trigal?.sync(w, c, dtAnim, tiempo, ritosMirra ? undefined : fxJefe);
     // El brillo regula la luz ambiente de la sala completa durante toda la pelea.
     if (farolero)
       hemi.intensity = pal.hemiIntensidad * (0.75 + 2 * brilloFarolero());
@@ -402,6 +413,19 @@ export async function crearRenderSlice({
       flash: flashT * cfg.render.jefe.flash,
       fx: fxJefe,
     });
+    // Después de animar al jefe: los retoques de huesos van encima de la pose del mixer.
+    const reducido = reducir();
+    if (ataquesMirra && "huesos" in arteJefe)
+      ataquesMirra.sync(
+        c,
+        dtAnim,
+        arteJefe.huesos,
+        vfx,
+        colores,
+        reducido,
+        flashes,
+      );
+    ritosMirra?.sync(c, w, dtAnim, vfx, colores, reducido, flashes);
     vfx.sync(dt, tiempo, camera.position.x, camera.position.z - 6);
     for (const e of exts) e.sync?.(w, dt);
 
@@ -500,6 +524,8 @@ export async function crearRenderSlice({
       cadena.dispose();
       tele.dispose();
       arteJefe.dispose();
+      ataquesMirra?.dispose();
+      ritosMirra?.dispose();
       vfx.dispose();
       for (const o of keepList) o.dispose?.();
       for (const g of Object.values(modelos)) liberarGltf(g);

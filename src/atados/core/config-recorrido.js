@@ -1,4 +1,4 @@
-// Recorrido de inicio (D-204 a D-211): lobby al pie del Templo Ancla → pasillo de subida entre ruinas →
+// Recorrido de inicio (D-204 a D-211): lobby al pie del Templo Celestial → pasillo de subida entre ruinas →
 // arco de la cima → pradera de Mirra. Se une a CONFIG como `CONFIG.recorrido` (ver config.js).
 // Unidades: metros (m) y segundos (s). La física es plana (x, z); la subida es solo visual (`altura`).
 // Posiciones sobre la ruta: s = metros recorridos desde el inicio de la ruta; d = desvío lateral
@@ -6,7 +6,7 @@
 // Dueños: gameplay (lobby, pasillo, tutorial, enemigos, flujo) y render (altura, camara, arte).
 // Todo lo marcado PROVISIONAL no tiene cifra en el diseño: se ajusta jugando.
 export const RECORRIDO = {
-  // ─── Lobby: claro al pie del Templo Ancla donde caen Sael y Odo (D-205) ───
+  // ─── Lobby: claro al pie del Templo Celestial donde caen Sael y Odo (D-205) ───
   lobby: {
     centro: [0, 0], // m: centro del claro (x, z)
     radio: 12, // m transitables desde el centro. PROVISIONAL
@@ -142,7 +142,9 @@ export const RECORRIDO = {
 
   // Pasillo seguro que se abre al vencer a Mirra. Límites en metros del mundo.
   salida: {
-    zInicio: -18,
+    zInicio: -18, // m: el arco norte de la pradera comunica con la primera tabla
+    reunion: 4, // m: la pareja se reúne junto a cada umbral antes de cambiar de zona
+    anchoArco: 4.8, // m de paso, centrado en x = 0
     zFin: -33,
     ancho: 11,
     bordePuesto: 1.8, // m en X: el furgón ocupa el lado derecho

@@ -172,8 +172,8 @@ describe("tensión = rectitud por tramo (D-147, D-068)", () => {
   });
 });
 
-describe("daño continuo: tensión × velocidad relativa (D-012, D-068, D-081, D-148)", () => {
-  it("a igual velocidad el daño crece con la tensión; floja ≈ 0", () => {
+describe("daño continuo: tensión y velocidad relativa", () => {
+  it("con contacto el daño flojo es un cuarto del tenso y crece con la tensión", () => {
     const cfg = cfgBase();
     const ch = createChain(-3, 0, 3, 0, cfg);
     for (let i = 0; i <= ch.n; i++) ch.pz[i] = ch.z[i] - 5 * DT; // se mueve a 5 m/s en +z
@@ -183,11 +183,15 @@ describe("daño continuo: tensión × velocidad relativa (D-012, D-068, D-081, D
       ch.segT.fill(t);
       const d = chainDamageStep(ch, body, DT, cfg);
       expect(d).toBeGreaterThanOrEqual(prev);
-      if (t === 0) expect(d).toBe(0);
+      if (t === 0) expect(d).toBeGreaterThan(0);
       prev = d;
     }
     ch.segT.fill(1);
     const d5 = chainDamageStep(ch, body, DT, cfg);
+    ch.segT.fill(0);
+    expect(chainDamageStep(ch, body, DT, cfg)).toBeCloseTo(d5 * 0.25, 6);
+    expect(chainDamageStep(ch, { ...body, x: 100 }, DT, cfg)).toBe(0); // sin contacto no hay daño
+    ch.segT.fill(1);
     for (let i = 0; i <= ch.n; i++) ch.pz[i] = ch.z[i] - 10 * DT;
     expect(chainDamageStep(ch, body, DT, cfg)).toBeCloseTo(d5 * 2, 5); // y con la velocidad relativa
     // si el cuerpo se mueve con la cadena no hay corte
@@ -214,7 +218,8 @@ describe("daño continuo: tensión × velocidad relativa (D-012, D-068, D-081, D
     });
     run(floja, 1.2, () => [inp({ mz: -1 }), inp({ mz: -1 })]);
     expect(tensa.dummy.total).toBeGreaterThan(20);
-    expect(floja.dummy.total).toBeLessThan(tensa.dummy.total * 0.05);
+    expect(floja.dummy.total).toBeGreaterThan(0);
+    expect(floja.dummy.total).toBeLessThan(tensa.dummy.total);
     console.log(
       `barrido: tensa=${tensa.dummy.total.toFixed(1)} floja=${floja.dummy.total.toFixed(2)}`,
     );

@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { BRASEROS, PISOTON } from "../gameplay/ritos.js";
 
+/** @typedef {import('../gameplay/ritos.js').Ritos} Ritos */
+/** @typedef {import('../gameplay/ritos.js').ResolucionTiro} ResolucionTiro */
+
 /**
  * @param {THREE.Scene} scene
  * @param {import('./tipos.js').Keep} keep
@@ -36,6 +39,29 @@ export function crearVistaRitos(scene, keep, brillos) {
   const cuenta = brillos.aro(marca, 0xffb15c);
   cuenta.malla.position.y = 0.1;
   const onda = brillos.aro(raiz, 0xffc070);
+  // Grietas del pisotón: seis franjas oscuras salen de Mirra al caer y se borran con la onda (planos, no anillos).
+  const grietaMat = keep(
+    new THREE.MeshBasicMaterial({
+      color: 0x2a1a10, // costra oscura
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+  );
+  const grietaForma = keep(
+    new THREE.PlaneGeometry(1, 0.14) // 1 m de largo (se escala) y 0,14 m de ancho
+      .rotateX(-Math.PI / 2)
+      .translate(0.5, 0, 0), // nace en el centro y avanza hacia fuera
+  );
+  const grietas = new THREE.Group();
+  raiz.add(grietas);
+  for (let i = 0; i < 6; i++) {
+    const grieta = new THREE.Mesh(grietaForma, grietaMat);
+    grieta.rotation.y = (-i / 6) * Math.PI * 2 - 0.3 * Math.sin(i * 7.1); // reparto irregular alrededor
+    grieta.position.y = 0.07;
+    grietas.add(grieta);
+  }
   const luz = new THREE.PointLight(0xffa95e, 0, 7);
   raiz.add(luz);
   let golpe = 1;
@@ -90,8 +116,50 @@ export function crearVistaRitos(scene, keep, brillos) {
     );
     return { tiro, halo, estela };
   });
+  // Final de cada descarga. `t` va de 0 a 1 en 0,45 s; 1 = apagado.
+  const estallidos = tiros.map(
+    /** @returns {{ destello: THREE.Sprite, t: number, resolucion: ResolucionTiro | null }} */ () => {
+      const destello = brillos.halo(raiz, 0xffffff);
+      destello.visible = false;
+      return { destello, t: 1, resolucion: null };
+    },
+  );
+  /** @param {Ritos | null | undefined} r @param {number} dt @param {boolean} flashes */
+  function avanzarEstallidos(r, dt, flashes) {
+    let alguno = false;
+    for (const [i, e] of estallidos.entries()) {
+      const nuevo = r?.tiros[i].resolucion;
+      if (!r) {
+        // Al salir del combate, apaga los destellos y olvida lo visto.
+        e.resolucion = null;
+        e.t = 1;
+      } else if (nuevo && nuevo !== e.resolucion) {
+        // Cada resolución se dibuja una sola vez, incluso si el tiro nunca apareció en pantalla.
+        e.resolucion = nuevo;
+        e.t = 0;
+        e.destello.material.color.setHex(BRASEROS.colores[r.colorObjetivo]);
+      } else {
+        e.t = Math.min(1, e.t + dt / 0.45);
+      }
+      const resolucion = e.resolucion;
+      e.destello.visible = e.t < 1 && Boolean(resolucion);
+      if (!e.destello.visible || !resolucion) continue;
+      alguno = true;
+      // Absorbido: se encoge hacia el jugador. Roto: soplo corto. Impacto: se expande (menos sin flashes).
+      const tam =
+        resolucion.tipo === "escudo"
+          ? 0.4 + 2.8 * (1 - e.t)
+          : resolucion.tipo === "impacto"
+            ? 1 + (flashes ? 3.2 : 2) * e.t
+            : 1 + 1.5 * e.t;
+      e.destello.scale.setScalar(tam); // m de diámetro
+      e.destello.material.opacity = (flashes ? 0.85 : 0.55) * (1 - e.t);
+      e.destello.position.set(resolucion.x, 0.9, resolucion.z);
+    }
+    return alguno;
+  }
   /**
-   * @param {import('../gameplay/ritos.js').Ritos | null | undefined} r
+   * @param {Ritos | null | undefined} r
    * @param {number} dt
    * @param {boolean} flashes
    * @param {{ x: number, z: number }} jefe
@@ -104,18 +172,35 @@ export function crearVistaRitos(scene, keep, brillos) {
     }
     pisotonPrevio = pisoton;
     golpe = r ? Math.min(1, golpe + dt / 0.68) : 1;
-    raiz.visible = Boolean(r?.tipo) || golpe < 1;
+    if (!r) {
+      // Fuera de la pelea se ocultan los tiros del combate anterior.
+      for (const { tiro } of tiros) tiro.visible = false;
+    }
+    const estallando = avanzarEstallidos(r, dt, flashes);
+    raiz.visible = Boolean(r?.tipo) || golpe < 1 || estallando;
     luz.intensity = 0;
     onda.malla.visible = golpe < 1;
     onda.malla.scale.setScalar(0.5 + 7 * (1 - (1 - golpe) ** 2));
     onda.u.opacidad.value = (flashes ? 0.7 : 0.42) * (1 - golpe) ** 2;
+    // Las grietas crecen en el primer cuarto de la onda (hasta 4 m) y se borran con ella.
+    grietas.visible = golpe < 1;
+    grietas.position.copy(onda.malla.position).setY(0);
+    grietaMat.opacity = 0.55 * (1 - golpe);
+    for (const grieta of grietas.children)
+      grieta.scale.x = 0.6 + 3.4 * Math.min(1, golpe * 4);
     if (!r) return;
     marca.visible = pisoton;
     if (pisoton) {
       marca.position.set(r.x, 0, r.z);
       const restante = r.tiempo / PISOTON.aviso;
-      cuenta.malla.scale.setScalar(PISOTON.radio * Math.max(0.06, restante));
-      cuenta.u.opacidad.value = 0.56 + 0.35 * (1 - restante);
+      // Latido en cada segundo entero (3, 2, 1): la cuenta se aviva 0,3 s. Sin flashes solo cambia la opacidad.
+      const latido = Math.max(0, 1 - (Math.ceil(r.tiempo) - r.tiempo) / 0.3);
+      cuenta.malla.scale.setScalar(
+        PISOTON.radio *
+          Math.max(0.06, restante) *
+          (flashes ? 1 + 0.1 * latido : 1),
+      );
+      cuenta.u.opacidad.value = 0.56 + 0.35 * (1 - restante) + 0.25 * latido;
       luz.color.setHex(0xffb879);
       luz.position.set(r.x, 1.1, r.z);
       luz.intensity = 1.5 + 3 * (1 - restante);

@@ -18,8 +18,8 @@
 | 4 | Golpe final al jefe | Todo, menos la cadena | 1–1,5 s (con hitstop) | Frase de muerte del jefe y luego fanfarria [D-093, D-134] | El golpe ganador se siente propio y enorme | Imprescindible |
 | 5 | Muerte de un jugador | Solo la capa alta de la música (baja, no corta) | 0,5 s de hueco y vuelta al 60 % | Burla del jefe [D-093] | Pesa sin frenar: el otro sigue peleando arrastrando el cuerpo [D-020] | Opcional |
 | 6 | Muerte de ambos | Todo | 1,5–2 s | Frase del jefe en la derrota y tema de derrota [D-111, D-134] | La derrota necesita un instante de vacío antes del texto | Imprescindible |
-| 7 | Prólogo: la Brasa se rompe | Narrador y música | 1,5–2 s tras el crujido | Siete chispas (agudo, una por dios) y vuelve la música en menor | Es el crimen: el centro del lore [D-037, D-072] | Imprescindible (cuenta como uno del set) |
-| 8 | Prólogo: Tavor cierra la cadena | Música; quedan chispas de forja | 0,8 s antes del cierre | "Clac" de grillete + primer zumbido de la cadena + "Juntos, o ninguno" | Presenta el sonido que será el hilo de todo el juego | Opcional (unir con 7 si el prólogo queda largo) |
+| 7 | Prólogo: se apaga la Brasa Eterna | Narrador y música | 1,5–2 s tras el golpe de la urna | Siete esquirlas (agudo, una por dios) y vuelve la música en menor | Es el crimen: el centro del lore [D-037, D-072] | Imprescindible (cuenta como uno del set) |
+| 8 | Prólogo: Tavor cierra la cadena | Música; quedan chispas de forja | 0,8 s antes del cierre | "Clac" de grillete + primer zumbido de la cadena + sentencia de destierro de Tavor | Presenta el sonido que será el hilo de todo el juego | Opcional (unir con 7 si el prólogo queda largo) |
 | 9 | Final: la Brasa se reforma | Música | 2–3 s | Latido grave de la Brasa encendida y tema final [D-101] | Cierre del arco culpa y reparación | Opcional (es post-boss rush; demo según alcance) |
 
 ## Recomendación: set mínimo (5 + 1)
@@ -28,7 +28,7 @@
 3. **Cambio de fase** (3).
 4. **Golpe final** (4).
 5. **Muerte de ambos** (6).
-6. En el prólogo, **un solo** silencio: la Brasa se rompe (7).
+6. En el prólogo, **un solo** silencio: se apaga la Brasa Eterna (7).
 
 Fuera del set: 5, 8 y 9 se prueban en playtest. La muerte de un jugador se resuelve con un hueco corto y bajada de música, no con silencio total, para no cortar el ritmo del jugador vivo.
 

@@ -217,11 +217,27 @@ describe("revisión del flujo", () => {
     expect(p.estado).toBe("victoria");
   });
 
+  it("el atajo al carro comparte el destino y la salud con el arco y solo funciona una vez", () => {
+    const { p, correr } = nueva({ caida: false });
+    p.saltarAlJefe();
+    expect(p.entrarPuesto()).toBe(false);
+    p.world.players[0].hp = 380;
+    ponerVidaJefe(p.combate, 0);
+    correr(DT);
+    expect(p.entrarPuesto()).toBe(true);
+    expect(p.world.players[0].hp).toBe(380);
+    expect(p.entrarPuesto()).toBe(false);
+    expect(p.entrarFarolero()).toBe(true);
+    expect(p.world.players[0].hp).toBe(380);
+    ponerVidaJefe(p.combate, 0);
+    correr(DT);
+    expect(p.entrarPuesto()).toBe(false); // la victoria final conserva su propia lápida
+  });
+
   it("se compra en el puesto con la recompensa de cada victoria", () => {
     const tienda = crearTienda(CONFIG);
     const fuenteEntrada = fuente();
     const p = crearPartida(tienda.cfg, { sample: fuenteEntrada.sample });
-    expect(p.entrarPuesto()).toBe(false);
     p.saltarAlJefe();
     p.world.players[1].hp = 380; // el jugador que sobrevivió conserva su vida
     ponerVidaJefe(p.combate, 0);
@@ -234,10 +250,33 @@ describe("revisión del flujo", () => {
     };
     expect(cobrarVictorias()).toBe(1);
     p.update(DT);
-    expect(cobrarVictorias()).toBe(0); // la lápida permanece a la vista sin repetir el abono
+    expect(cobrarVictorias()).toBe(0); // la lápida permanece a la vista sin devolver otra moneda
     expect(tienda.saldo).toBe(25);
-    expect(p.entrarPuesto()).toBe(true);
-    expect(p.entrarPuesto()).toBe(false);
+    // En el borde sur y a un costado del norte no hay salida.
+    p.colocarJugadores([-1, 18], [1, 18]);
+    for (const entrada of fuenteEntrada.st.inputs) entrada.mz = -1;
+    p.update(DT);
+    expect(p.estado).toBe("victoria");
+    p.colocarJugadores([5, -18], [7, -18]);
+    p.update(DT);
+    expect(p.estado).toBe("victoria");
+    // Si Odo se ancla lejos del arco, Sael no lo teletransporta al muelle al llegar primero.
+    p.colocarJugadores([-1, -18], [1, -12.5]);
+    fuenteEntrada.st.inputs[1].anchor = true;
+    p.update(DT);
+    expect(p.estado).toBe("victoria");
+    fuenteEntrada.st.inputs[1].anchor = false;
+    // En el arco, quedarse quieto mantiene la lápida; avanzar conduce al muelle.
+    const cruzar = () => {
+      p.colocarJugadores([-1, -17.5], [1, -17.5]);
+      for (const entrada of fuenteEntrada.st.inputs) entrada.mz = 0;
+      p.update(DT);
+      expect(p.estado).toBe("victoria");
+      for (const entrada of fuenteEntrada.st.inputs) entrada.mz = -1;
+      for (let i = 0; i < 60 && p.estado === "victoria"; i++) p.update(DT);
+      expect(p.estado).toBe("puesto");
+    };
+    cruzar();
     expect(cobrarVictorias()).toBe(0); // continuar dos veces no repite la victoria
     expect(p.recorrido.estado.fase).toBe("puesto");
     expect(p.combate).toBe(null);
@@ -252,11 +291,15 @@ describe("revisión del flujo", () => {
     expect(cerca()).toBe(true);
     expect(tienda.comprar("italiano", p.world.players)).toBe(true);
     expect(p.world.players[1].hp).toBe(630);
-    for (let i = 0; i < 600; i++) p.update(DT); // llegan al final y se quedan, sin desencadenar otro encuentro
-    expect(p.estado).toBe("puesto");
-    expect(p.eventos).toEqual([]);
+    for (let i = 0; i < 190; i++) p.update(DT); // hasta el extremo del muelle, pasado el furgón
+    expect(p.estado).toBe("destino");
+    expect(p.combate).toBe(null);
+    expect(p.eventos.filter((e) => e.estado === "destino")).toHaveLength(1);
     for (const j of p.world.players)
       expect(j.z).toBeGreaterThanOrEqual(CONFIG.recorrido.salida.zFin);
+    p.volverAlPuesto();
+    expect(p.estado).toBe("puesto");
+    expect(p.world.players[1].hp).toBe(630);
     p.reintentarJefe(); // solo una acción explícita reabre la arena
     expect(p.estado).toBe("jefe");
     expect(p.cinematica).toBe(false);
@@ -267,7 +310,7 @@ describe("revisión del flujo", () => {
     p.update(DT);
     expect(cobrarVictorias()).toBe(1); // esta victoria corresponde al nuevo combate
     expect(tienda.saldo).toBe(25);
-    expect(p.entrarPuesto()).toBe(true);
+    cruzar();
     expect(tienda.comprar("mote", p.world.players)).toBe(true);
     expect(tienda.saldo).toBe(0);
   });

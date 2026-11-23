@@ -68,8 +68,14 @@ test("los dos proyectiles impactan a los cuatro segundos y el brasero aparece si
   paso(239);
   assert.deepEqual(golpes, []);
   assert.equal(r.escudo.color, -1);
+  mundo.players[0].x += 0.25; // El proyectil termina donde está el objetivo en el último paso.
   paso(1);
   assert.deepEqual(golpes, [0, 1]);
+  assert.deepEqual(r.tiros[0].resolucion, {
+    tipo: "impacto",
+    x: mundo.players[0].x,
+    z: mundo.players[0].z,
+  });
 });
 test("un solo jugador protege a ambos solo durante los tres segundos del fuego", () => {
   for (const [espera, esperado] of [
@@ -84,6 +90,14 @@ test("un solo jugador protege a ambos solo durante los tres segundos del fuego",
     assert.equal(r.escudo.restante, 3);
     paso(239 - espera);
     assert.deepEqual(golpes, esperado);
+    assert.deepEqual(
+      r.tiros.map((t) => t.resolucion),
+      mundo.players.map(({ x, z }) => ({
+        tipo: espera === 160 ? "escudo" : "impacto",
+        x,
+        z,
+      })),
+    );
   }
 });
 test("el proyectil interceptado por un obstáculo desaparece", () => {
@@ -94,6 +108,37 @@ test("el proyectil interceptado por un obstáculo desaparece", () => {
   assert.equal(t.activo, false);
   paso(240);
   assert.deepEqual(golpes, [1]);
+});
+
+test("en el paso final el tiro se rompe en el primer borde que cruza", () => {
+  const { mundo, r, golpes, paso } = caso(iniciarBraseros);
+  r.tiempo = 0.01; // Quedan 10 ms, así que el siguiente paso cierra la salva.
+  Object.assign(r.escudo, { color: r.colorObjetivo, restante: 1 });
+  Object.assign(r.tiros[0], { x: 0, z: 5 });
+  Object.assign(mundo.players[0], { x: 8, z: 5 });
+  // El obstáculo que el tiro toca primero figura al final de la lista.
+  mundo.pillars.push({ x: 6, z: 5, r: 1 }, { x: 2, z: 5, r: 0.5 });
+  paso(1);
+  assert.equal(r.tiempo, 0);
+  assert.deepEqual(r.tiros[0].resolucion, { tipo: "pilar", x: 1.5, z: 5 });
+  assert.equal(r.tiros[1].resolucion.tipo, "escudo");
+  assert.deepEqual(golpes, []);
+});
+
+test("si el objetivo cae, el tiro se apaga en su posición previa y la próxima salva limpia el resultado", () => {
+  const { mundo, r, golpes, paso } = caso(iniciarBraseros);
+  paso(60);
+  const { x, z } = r.tiros[0];
+  mundo.players[0].alive = false;
+  paso(180);
+  assert.deepEqual(r.tiros[0].resolucion, { tipo: "caida", x, z });
+  assert.deepEqual(golpes, [1]);
+  iniciarBraseros(r, mundo);
+  assert.equal(r.tiros[0].activo, false);
+  assert.deepEqual(
+    r.tiros.map((t) => t.resolucion),
+    [null, null],
+  );
 });
 
 test("elegir el color incorrecto gasta la elección y no bloquea ninguno de los impactos", () => {

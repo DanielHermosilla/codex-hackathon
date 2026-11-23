@@ -1,6 +1,8 @@
 # Jefe: Mirra la Hambrienta
 
-**Orden en la demo:** primera de dos de acuerdo con D-203. El carro de completos conecta la victoria de Mirra con la sala del Farolero · **Duración objetivo:** 2–3 min [D-141] · **Qué enseña/prueba de la cadena:** la cuchilla tensa básica (uno ancla, el otro rodea), el corte contra una carga y el enredo en pilares. Lo enseña, no lo obliga [D-012, D-019, D-048, D-054, D-148] · **Decisiones:** D-012, D-018, D-025, D-043, D-047, D-048, D-054, D-055, D-057, D-058, D-078, D-084, D-085, D-086, D-088, D-091, D-092, D-093, D-098, D-106, D-128, D-141, D-147, D-148, D-150, D-152–D-156, D-160, D-163–D-165, D-169–D-172, D-174, D-176, D-180, D-183, D-184
+Para iterar la puesta en escena de cada ataque y reproducir sus capturas, consulta la [ficha visual de Mirra](ataques-visuales-mirra.md).
+
+**Orden en la demo:** primera de dos de acuerdo con D-203. Desde el carro de completos la pareja puede abrir la sala del Farolero o continuar hasta el muelle de Ondar · **Duración objetivo:** 2–3 min [D-141] · **Qué enseña/prueba de la cadena:** la cuchilla tensa básica (uno ancla, el otro rodea), el corte contra una carga y el enredo en pilares. Lo enseña, no lo obliga [D-012, D-019, D-048, D-054, D-148] · **Decisiones:** D-012, D-018, D-025, D-043, D-047, D-048, D-054, D-055, D-057, D-058, D-078, D-084, D-085, D-086, D-088, D-091, D-092, D-093, D-098, D-106, D-128, D-141, D-147, D-148, D-150, D-152–D-156, D-160, D-163–D-165, D-169–D-172, D-174, D-176, D-180, D-183, D-184
 
 > Convenciones de las fichas:
 > - **(de partida)** = número propuesto para afinar en playtest. No es decisión. La configuración de la demo está en `src/atados/core/config.js`.
@@ -64,10 +66,10 @@ Cada ataque da un rol a cada jugador [D-164]. "Objetivo" = a quien apunta; "otro
 - Destello [D-093, D-156]: la espiga de la transición, pausa real de 1–2 s.
 
 ## Personalidad (borrador)
-- **Presentación** [D-064, D-093, D-180]: título «Mirra, la Hambrienta» en grande; debajo, tachado, «la que Alimentaba». Frase: *«Alimenté este valle mil cosechas. Ahora el valle me alimenta a mí.»*
-- **Muerte**: *«Pan tibio… me acuerdo del pan tibio.»*
+- **Presentación** [D-064, D-093, D-180]: título «Mirra, la Hambrienta» en grande; debajo, «la que Alimentaba», con tachado rojo y más grueso [D-217]. Frase: *«Mis cosechas alimentaron a la humanidad y sus pueblos prosperaron. Ahora ustedes serán mi alimento.»*
+- **Muerte**: *«Enciendan la Brasa… antes de que el valle muera de hambre.»*
 - **Burla al morir un jugador**: *«Uno menos en la mesa.»*
-- **Derrota de ambos** [D-111]: *«Gracias por la comida.»*
+- **Derrota de ambos** [D-111]: *«Gracias por la comida. Los demás mortales serán los siguientes.»*
 - Tono serio con chispa de humor [D-002].
 
 ## Drop / recompensa

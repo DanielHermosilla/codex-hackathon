@@ -1,4 +1,4 @@
-// Recorrido de inicio en un solo mundo: lobby al pie del Templo Ancla + pasillo de subida (D-204 a D-211).
+// Recorrido de inicio en un solo mundo: lobby al pie del Templo Celestial + pasillo de subida (D-204 a D-211).
 // Puro: sin three.js ni DOM. Paso fijo y determinista (azar por semilla, tiempo por parámetro).
 //
 // D-205 caída al valle: fase `caida` con las entradas ignoradas; al terminar, `caida:aterriza`.

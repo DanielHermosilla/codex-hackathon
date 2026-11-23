@@ -70,6 +70,8 @@ export function crearTelegrafias({ scene, cfg, keep, decalMat, def }) {
   scene.add(proyectiles);
   const d = new THREE.Object3D();
   const caidaPrev = new Uint8Array(NP);
+  // Con Mirra, slice.js crea ataques-mirra.js, que dibuja las semillas del Grano (mismo criterio que `conMirra`).
+  const conSemillas = def.arte !== "muneco";
 
   /**
    * @param {import('./tipos.js').Combate} c
@@ -95,8 +97,9 @@ export function crearTelegrafias({ scene, cfg, keep, decalMat, def }) {
             colores.polvo,
             1.2,
           );
-        // La hoz levanta polvo a lo largo de su arco, dentro de la marca de daño.
-        if (z.forma === "arco") {
+        // La hoz levanta polvo a lo largo de su arco, dentro de la marca de daño. El barrido pide zonas de
+        // forma "sector" (gameplay/bloques.js); "arco" es solo el nombre de la ficha y nunca llega aquí.
+        if (z.forma === "sector") {
           for (let i = 0; i < 5; i++) {
             const angulo = z.ang + z.apertura * (i / 4 - 0.5);
             const radio = z.r * 0.84;
@@ -143,7 +146,8 @@ export function crearTelegrafias({ scene, cfg, keep, decalMat, def }) {
         caidaPrev[i] = 1;
       }
       if (!ver || p.t < 0.5) caidaPrev[i] = 0;
-      if (!ver) continue;
+      // Las semillas del Grano las dibuja ataques-mirra.js desde la boca real (aquí solo queda su impacto).
+      if (!ver || (conSemillas && p.ataque === "grano")) continue;
       const t = p.t;
       d.position.set(
         p.x0 + (p.x1 - p.x0) * t,

@@ -28,7 +28,7 @@ Set aprobado de 5+1 (detalle en [`propuesta-D107-silencios.md`](propuesta-D107-s
 3. Cambio de fase.
 4. Golpe final al jefe.
 5. Muerte de ambos.
-6. Prólogo: la Brasa se rompe.
+6. Prólogo: se apaga la Brasa Eterna.
 
 - El zumbido de la cadena se mantiene durante los silencios [D-183].
 - Nunca se calla un aviso de ataque [D-106] ni un sonido de daño [D-062].

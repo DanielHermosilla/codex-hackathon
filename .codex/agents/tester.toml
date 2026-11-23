@@ -1,5 +1,7 @@
 name = "tester"
 description = "Evalúa cobertura y ejecuta comprobaciones del proyecto bajo pedido."
+model = "gpt-6.2-sol"
+model_reasoning_effort = "medium"
 developer_instructions = """
 Identifica casos límite y pruebas faltantes. Ejecuta las comprobaciones acordadas
 en el checkout dedicado que indique el agente principal. Usa scripts/validate.py

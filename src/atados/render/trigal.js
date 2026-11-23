@@ -425,6 +425,7 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
   const ruinaMat = std(0xffffff, { vertexColors: true });
   const RU = C.ruinas,
     AR = C.arco;
+  let /** @type {THREE.Mesh} */ arcoSalida; // mismo arco de piedra que la entrada, visible al vencer a Mirra
   const RRu = R + RU.distancia; // m: radio del anillo de ruinas
   {
     /** @type {THREE.BufferGeometry[]} */
@@ -519,6 +520,7 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
       }
     }
     // Arco de llegada (D-204, D-211): detrás de donde aparecen Sael y Odo, abierto hacia el claro.
+    const inicioArco = piezas.length; // a partir de aquí están solo las piezas del arco de llegada
     const az = R + AR.distancia; // m en +z
     const radioArco = AR.ancho / 2;
     const altoPie = AR.alto - radioArco; // m: altura de los pies hasta el arranque del medio punto
@@ -536,6 +538,12 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
     const clave = new THREE.BoxGeometry(0.7, 0.9, 1.25);
     clave.translate(0, AR.alto + 0.2, az);
     poner(clave, 1.05);
+    // Reutiliza esas piedras en la salida que indica el HUD. La pareja pasa entre los dos pies.
+    const arcoGeo = keep(mergeGeometries(piezas.slice(inicioArco)));
+    arcoSalida = new THREE.Mesh(arcoGeo, ruinaMat);
+    arcoSalida.position.z = cfg.recorrido.salida.zInicio - az;
+    arcoSalida.visible = false;
+    scene.add(arcoSalida);
     const g = keep(mergeGeometries(piezas));
     piezas.forEach((q) => q.dispose());
     const ruinas = new THREE.Mesh(g, ruinaMat);
@@ -890,24 +898,24 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
   let siega = 0,
     siegaObj = 0; // 0 = intacto, 1 = franjas segadas
   /** @type {{x:number,z:number,r:number}[]} */
-  let charcos = [];
-  let habiaCharcos = false;
-  // Solo las matas que cruzan el borde del ácido necesitan cambiar su matriz.
-  const bajoAcido = new Uint8Array(ND);
-  function colocarDentro(soloCambiosDeAcido = false) {
+  const peligrosSuelo = [];
+  let habiaPeligros = false;
+  // Solo las matas que cruzan el borde de un charco o un hueco necesitan cambiar su matriz.
+  const ocultasPorSuelo = new Uint8Array(ND);
+  function colocarDentro(soloCambiosDeSuelo = false) {
     let cambiado = false;
     for (let i = 0; i < ND; i++) {
       const x = dPos[i * 4],
         z = dPos[i * 4 + 1];
       let oculta = 0;
-      for (const p of charcos) {
+      for (const p of peligrosSuelo) {
         if ((x - p.x) ** 2 + (z - p.z) ** 2 < p.r * p.r) {
           oculta = 1;
           break;
         }
       }
-      if (soloCambiosDeAcido && bajoAcido[i] === oculta) continue;
-      bajoAcido[i] = oculta;
+      if (soloCambiosDeSuelo && ocultasPorSuelo[i] === oculta) continue;
+      ocultasPorSuelo[i] = oculta;
       cambiado = true;
       const banda =
         (((x * dirX + z * dirZ) % F.ancho) + F.ancho) % F.ancho < F.segado;
@@ -922,7 +930,7 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
         (hash(i, 7) - 0.5) * 0.4,
       );
       d.scale.set(h * 1.5 + 0.12, h, h * 1.5 + 0.12);
-      // El ácido consume el trigo y lo descubre al evaporarse.
+      // El trigo reaparece al retirarse el borde del ácido o del vacío.
       if (oculta) d.scale.setScalar(0);
       d.updateMatrix();
       dentro.setMatrixAt(i, d.matrix);
@@ -940,10 +948,13 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
    * @param {{ paja: (x: number, y: number, z: number, n: number) => void }} [vfx]
    */
   function sync(w, c, dt, tiempo, vfx) {
+    arcoSalida.visible = c.estado === "victoria";
     uViento.value = tiempo * T.viento.velocidad;
-    charcos = c.arenaMirra?.charcos ?? [];
-    if (charcos.length || habiaCharcos) colocarDentro(true);
-    habiaCharcos = charcos.length > 0;
+    peligrosSuelo.length = 0; // Reutiliza la lista al dibujar ambos tipos de suelo.
+    if (c.arenaMirra)
+      peligrosSuelo.push(...c.arenaMirra.charcos, ...c.arenaMirra.huecos);
+    if (peligrosSuelo.length || habiaPeligros) colocarDentro(true);
+    habiaPeligros = peligrosSuelo.length > 0;
     molinoAspas.rotation.z = tiempo * 0.25;
     nubes.rotation.y = tiempo * 0.004; // rad/s: el mar de nubes se desliza casi quieto
     // Fase 2 (jefe.fase interna ≥ 1): siega en franjas durante la transición.

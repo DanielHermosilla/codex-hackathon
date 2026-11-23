@@ -11,20 +11,60 @@ import { segmentInsideCircle } from "./cadena.js";
 
 const ID_BARRIL = "barril-polvora";
 const EPS = 1e-8;
-const impactoLuz = 2.5;
+const radioHueco = 2.4;
+const cierreHueco = 12; // segundos desde la apertura hasta recuperar todo el suelo
+export const FIN_AVISO_ORBE = 4.5; // s hasta que el orbe fija su objetivo
+const finCaida = FIN_AVISO_ORBE + 0.35;
+const abrirSuelo = finCaida + 0.5;
+export const IMPACTO_LUZ = 2.5; // s entre encender la fuente y comprobar la sombra
 
 export function crearArenaMirra() {
   return {
+    danoHuecoEn: [0, 0],
+    orbe: /** @type {(Punto & {y:number,t:number,objetivo:number})|null} */ (
+      null
+    ),
+    pilar: /** @type {Circulo|null} */ (null),
+    huecos: /** @type {Circulo[]} */ ([]),
     acido: /** @type {Acido|null} */ (null),
     barril: /** @type {Circulo|null} */ (null),
     charcos: /** @type {Circulo[]} */ ([]),
     resultadoAcido: /** @type {Resultado|null} */ (null),
     luz: /** @type {(Punto & {t:number,impacto:boolean})|null} */ (null),
-    explosion: /** @type {(Punto & {t:number})|null} */ (null),
+    explosion: /** @type {(Punto & {t:number,origen:string})|null} */ (null),
     mecha: 0,
     mechaTotal: 0,
     danoCharcoEn: [0, 0],
   };
+}
+
+/** El jugador puede llegar al pilar antes de que caiga la bola. @param {Arena} a @param {Ctx} ctx */
+export function iniciarOrbe(a, ctx) {
+  if (a.orbe || a.pilar) return;
+  const vivos = ctx.w.players;
+  let i = Math.floor(ctx.rng.next() * vivos.length);
+  if (!vivos[i].alive) i = 1 - i;
+  const p = vivos[i];
+  if (!p.alive) return;
+  const ang = ctx.rng.range(0, 2 * Math.PI);
+  // Se prueban direcciones alrededor del objetivo para no levantar el pilar dentro de un cuerpo.
+  for (let n = 0; n < 24; n++) {
+    const dir = ang + (n * Math.PI) / 12;
+    const dist = 4.8;
+    const x = p.x + Math.cos(dir) * dist,
+      z = p.z + Math.sin(dir) * dist;
+    const libre =
+      Math.hypot(x, z) < ctx.w.arenaRadius - 1.4 &&
+      [...ctx.w.pillars, ...a.huecos, ...a.charcos, ctx.w.dummy].every(
+        (o) => Math.hypot(o.x - x, o.z - z) > o.r + 1.2,
+      ) &&
+      vivos.every((o) => Math.hypot(o.x - x, o.z - z) > 1.4);
+    if (!libre) continue;
+    a.pilar = { id: "pilar-void", x, z, r: 0.72 };
+    ctx.w.pillars.push(a.pilar);
+    a.orbe = { x: p.x, z: p.z, y: 2.7, t: 0, objetivo: i };
+    return;
+  }
 }
 
 /** La marca apunta a los pies del jugador; la boca sigue la orientación de Mirra.
@@ -61,7 +101,7 @@ export function iniciarAcido(a, ctx) {
   const ang = ctx.rng.range(0, 2 * Math.PI);
   // Deja sitio a un personaje entre el barril y el sólido más cercano.
   const margen = reglas.radioBarril + ctx.cfg.player.radius * 2;
-  const solidos = [...w.pillars, ...a.charcos, w.dummy];
+  const solidos = [...w.pillars, ...a.charcos, ...a.huecos, w.dummy];
   for (const distancia of [
     reglas.distanciaBarril,
     reglas.distanciaBarril * 0.75,
@@ -113,40 +153,48 @@ export function bajoSombra(luz, jugador, pilares) {
   return pilares.some(
     (p) =>
       p.id !== ID_BARRIL &&
+      p.id !== "pilar-void" &&
       segmentInsideCircle(luz.x, luz.z, jugador.x, jugador.z, p.x, p.z, p.r) >
         0,
   );
+}
+
+/** Romper cualquiera de los dos objetivos derriba primero las coberturas cercanas.
+ * @param {Arena} a @param {Ctx} ctx @param {Circulo} objetivo @param {string} origen @param {number} fraccion */
+function detonar(a, ctx, objetivo, origen, fraccion) {
+  const { x, z } = objetivo;
+  a.explosion = { x, z, t: 0, origen };
+  const coberturas = ctx.w.pillars.filter((p) => p !== objetivo);
+  const distancia2 = (/** @type {Circulo} */ p) =>
+    (p.x - x) ** 2 + (p.z - z) ** 2;
+  const ordenadas = [...coberturas].sort(
+    (p, q) => distancia2(p) - distancia2(q),
+  );
+  const cuota = Math.round(coberturas.length * fraccion);
+  const destruidas = new Set(ordenadas.slice(0, cuota));
+  // Conserva el orden de las coberturas que siguen en pie.
+  ctx.w.pillars = coberturas.filter((p) => !destruidas.has(p));
+  ctx.w.players.forEach((p, i) => {
+    if (p.alive)
+      ctx.golpear(
+        { accion: { id: origen } },
+        i,
+        ctx.cfg.jefes.mirra.ritual.dano.explosion,
+        0,
+        x,
+        z,
+        true,
+      );
+  });
 }
 
 /** @param {Arena} a @param {Ctx} ctx @param {Circulo} barril @param {Resultado["tipo"]} tipo */
 function resolverBarril(a, ctx, barril, tipo) {
   const reglas = ctx.cfg.jefes.mirra.acido;
   const { x, z } = barril;
-  const coberturas = ctx.w.pillars.filter((p) => p !== barril);
-  if (tipo === "explosion") {
-    a.explosion = { x, z, t: 0 };
-    const distancia2 = (/** @type {Circulo} */ p) =>
-      (p.x - x) ** 2 + (p.z - z) ** 2;
-    const ordenadas = [...coberturas].sort(
-      (p, q) => distancia2(p) - distancia2(q),
-    );
-    const cuota = Math.round(coberturas.length * reglas.fraccionCoberturas);
-    const destruidas = new Set(ordenadas.slice(0, cuota));
-    // Conserva el orden de las coberturas que siguen en pie.
-    ctx.w.pillars = coberturas.filter((p) => !destruidas.has(p));
-    ctx.w.players.forEach((p, i) => {
-      if (p.alive)
-        ctx.golpear(
-          { accion: { id: ID_BARRIL } },
-          i,
-          ctx.cfg.jefes.mirra.ritual.dano.explosion,
-          0,
-          x,
-          z,
-          true,
-        );
-    });
-  } else ctx.w.pillars = coberturas;
+  if (tipo === "explosion")
+    detonar(a, ctx, barril, ID_BARRIL, reglas.fraccionCoberturas);
+  else ctx.w.pillars = ctx.w.pillars.filter((p) => p !== barril);
   a.barril = null;
   a.mecha = 0;
   a.mechaTotal = 0;
@@ -200,6 +248,12 @@ function avanzarAcido(a, ctx, dt) {
 export function avanzarArenaMirra(a, ctx, dt) {
   const { players } = ctx.w;
   const reglas = ctx.cfg.jefes.mirra.acido;
+  // Simulación y dibujo consultan el mismo radio. El hueco recién abierto empieza entero.
+  for (let i = a.huecos.length - 1; i >= 0; i--) {
+    const h = a.huecos[i];
+    h.r = Math.max(0, h.r - (dt * radioHueco) / cierreHueco);
+    if (h.r < 1e-8) a.huecos.splice(i, 1);
+  }
   // El borde que se evapora deja de dañar en ese mismo paso.
   for (let i = a.charcos.length - 1; i >= 0; i--) {
     const h = a.charcos[i];
@@ -213,11 +267,47 @@ export function avanzarArenaMirra(a, ctx, dt) {
     a.resultadoAcido = null;
   if (a.explosion && (a.explosion.t += dt) >= reglas.duracionOnda)
     a.explosion = null;
+  // Los dos retos ocupan turnos distintos y comparten la cuenta de la mecha.
+  if (a.mecha > 0 && a.pilar) {
+    a.mecha = Math.max(0, a.mecha - dt);
+    if (a.mecha <= EPS) {
+      detonar(a, ctx, a.pilar, "pilar-void", 0.4);
+      a.pilar = null;
+    }
+  }
   avanzarAcido(a, ctx, dt);
+  const o = a.orbe;
+  if (o && a.pilar) {
+    if (o.t < FIN_AVISO_ORBE - 1e-8) {
+      const p = players[o.objetivo];
+      o.x = p.x;
+      o.z = p.z;
+    }
+    o.t += dt;
+    o.y =
+      0.24 +
+      2.46 *
+        (1 -
+          Math.min(
+            1,
+            Math.max(0, (o.t - FIN_AVISO_ORBE) / (finCaida - FIN_AVISO_ORBE)),
+          ) **
+            2);
+    if (o.t >= abrirSuelo - 1e-8) {
+      a.huecos.push({ x: o.x, z: o.z, r: radioHueco });
+      // El centro del pilar debe quedar sobre la parte de suelo perdida.
+      if (Math.hypot(a.pilar.x - o.x, a.pilar.z - o.z) <= radioHueco) {
+        ctx.w.pillars = ctx.w.pillars.filter((p) => p !== a.pilar);
+        a.pilar = null;
+      } else a.mecha = 1;
+      a.orbe = null;
+    }
+  }
+
   const luz = a.luz;
   if (luz) {
     luz.t += dt;
-    if (!luz.impacto && luz.t >= impactoLuz - 1e-8) {
+    if (!luz.impacto && luz.t >= IMPACTO_LUZ - 1e-8) {
       luz.impacto = true;
       players.forEach((p, i) => {
         if (!bajoSombra(luz, p, ctx.w.pillars))
@@ -232,10 +322,27 @@ export function avanzarArenaMirra(a, ctx, dt) {
           );
       });
     }
-    if (luz.t >= impactoLuz + 0.45) a.luz = null;
+    if (luz.t >= IMPACTO_LUZ + 0.45) a.luz = null;
   }
   for (let i = 0; i < players.length; i++) {
     const p = players[i];
+    a.danoHuecoEn[i] = Math.max(0, a.danoHuecoEn[i] - dt);
+    if (
+      p.alive &&
+      a.danoHuecoEn[i] <= EPS &&
+      a.huecos.some((h) => Math.hypot(p.x - h.x, p.z - h.z) < h.r)
+    ) {
+      ctx.golpear(
+        { accion: { id: "suelo-void" } },
+        i,
+        ctx.cfg.jefes.mirra.ritual.dano.vacio,
+        0,
+        p.x,
+        p.z,
+        true,
+      );
+      a.danoHuecoEn[i] = 0.8;
+    }
     a.danoCharcoEn[i] = Math.max(0, a.danoCharcoEn[i] - dt);
     if (!p.alive || a.danoCharcoEn[i] > EPS) continue;
     if (a.charcos.some((h) => Math.hypot(p.x - h.x, p.z - h.z) <= h.r)) {

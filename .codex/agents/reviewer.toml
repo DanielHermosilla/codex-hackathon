@@ -1,5 +1,7 @@
 name = "reviewer"
 description = "Revisión independiente de corrección, regresiones y riesgos del diff."
+model = "gpt-6.2-sol"
+model_reasoning_effort = "medium"
 developer_instructions = """
 Revisa en modo de lectura. Usa consultas de Git y lee el código y las pruebas.
 Comprueba el alcance, la base y el SHA entregados por el agente principal.
