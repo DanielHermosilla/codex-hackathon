@@ -1,18 +1,12 @@
 // Señales de Mirra en los ritos de arena: de dónde sale cada peligro y qué rompe al llegar.
-// - Orbe del vacío: un hilo de motas va de la esquirla del pecho a la bola mientras la carga; 0,6 s antes de
-//   caer, una columna une la bola con el suelo y se acorta en la caída; al abrirse el hueco saltan escombros.
 // - Luz divina: la esquirla se enciende y suelta motas hacia el sol; junto a la pareja, tres cuñas doradas en
-//   el suelo señalan hacia dónde viaja la luz (se leen aunque el sol quede fuera del encuadre o sobre un hueco);
+//   el suelo señalan hacia dónde viaja la luz (se leen aunque el sol quede fuera del encuadre);
 //   en el impacto la esquirla destella (menos sin flashes).
-// - Coberturas perdidas (explosión, transición o hueco): el espantapájaros revienta en paja; el pilar del vacío,
-//   en esquirlas oscuras.
-// El aspecto del orbe, el hueco y la sombra de la luz sigue en arena-mirra.js; el pisotón y los braseros, en
-// ritos.js. Solo lee el estado y todo está pre-asignado.
+// Las coberturas perdidas se rompen en paja. Los efectos se crean antes de la pelea.
 import * as THREE from "three";
 
-import { FIN_AVISO_ORBE, IMPACTO_LUZ } from "../gameplay/arena-mirra.js";
-const AVISO_COLUMNA = 0.6; // s antes de caer en que aparece la columna (anticipación)
-const MAX_PILARES = 24; // coberturas que se vigilan a la vez (la arena tiene 8 + el pilar del vacío)
+import { IMPACTO_LUZ } from "../gameplay/arena-mirra.js";
+const MAX_PILARES = 24; // coberturas que se vigilan a la vez
 
 /** @param {number} v */
 const frac = (v) => v - Math.floor(v); // parte decimal (0..1)
@@ -29,35 +23,10 @@ export function crearRitosMirra({ scene, keep, brillos, def }) {
     s.visible = false;
     return s;
   };
-  const hilo = Array.from({ length: 6 }, () => halo(0xc58bff)); // motas violetas pecho → orbe
   const motasSol = Array.from({ length: 5 }, () => halo(0xffd27a)); // motas doradas pecho → sol
   const esquirla = halo(0xffd27a); // brillo del pecho mientras invoca la luz
-  // Columna de caída: cilindro fino y aditivo; base en el suelo, alto 1 (se escala a la altura de la bola).
-  const columnaMat = keep(
-    new THREE.MeshBasicMaterial({
-      color: 0xd59cff,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending, // brilla sobre lo que tiene detrás
-      fog: false,
-      toneMapped: false,
-    }),
-  );
-  const columna = new THREE.Mesh(
-    keep(
-      new THREE.CylinderGeometry(0.07, 0.07, 1, 6, 1, true).translate(
-        0,
-        0.5,
-        0,
-      ),
-    ),
-    columnaMat,
-  );
-  columna.visible = false;
-  raiz.add(columna);
   // Seña de la luz junto a la pareja: tres cuñas doradas en el suelo, del lado del sol, que apuntan hacia
-  // donde viaja la luz. Se leen aunque el sol quede fuera del encuadre o haya un hueco del vacío debajo.
+  // donde viaja la luz. Se leen aunque el sol quede fuera del encuadre.
   const cunaGeo = keep(new THREE.BufferGeometry());
   // Dos brazos de 0,3 de grosor que se unen en la punta (+x); medidas para 1 m, se escala con `CUNA`.
   cunaGeo.setAttribute(
@@ -77,7 +46,7 @@ export function crearRitosMirra({ scene, keep, brillos, def }) {
       transparent: true,
       opacity: 0,
       depthWrite: false,
-      depthTest: false, // por encima del hueco del vacío y del claro iluminado
+      depthTest: false, // por encima del claro iluminado
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
       fog: false,
@@ -93,11 +62,10 @@ export function crearRitosMirra({ scene, keep, brillos, def }) {
     raiz.add(m);
     return m;
   });
-  const todos = [...hilo, ...motasSol, esquirla, columna, ...cunas];
+  const todos = [...motasSol, esquirla, ...cunas];
 
   const pecho = new THREE.Vector3(); // esquirla del pecho (m)
   let reloj = 0;
-  let huecosPrev = 0; // huecos del vacío vistos el cuadro anterior
   // Coberturas del cuadro anterior: ids y posiciones en arreglos fijos (sin objetos nuevos por cuadro).
   /** @type {any[]} */
   const pilarId = new Array(MAX_PILARES).fill(null);
@@ -172,23 +140,13 @@ export function crearRitosMirra({ scene, keep, brillos, def }) {
         j.z + Math.sin(j.face) * 0.95,
       );
 
-      // ─── Coberturas destruidas: paja (espantapájaros) o esquirlas oscuras (pilar del vacío) ───
+      // ─── Coberturas destruidas ───
       const pilares = w.pillars;
       if (pelea && pilaresN >= 0) {
         for (let k = 0; k < pilaresN; k++) {
           if (sigue(pilares, pilarId[k]) || pilarId[k] === "barril-polvora")
             continue; // la mecha tiene su propio desenlace
-          if (pilarId[k] === "pilar-void")
-            vfx.trozos(
-              pilarX[k],
-              1.2,
-              pilarZ[k],
-              reducido ? 5 : 10,
-              0x241634,
-              1.1,
-              0.14,
-            );
-          else vfx.paja(pilarX[k], 1.2, pilarZ[k], reducido ? 7 : 16);
+          vfx.paja(pilarX[k], 1.2, pilarZ[k], reducido ? 7 : 16);
           vfx.polvo(pilarX[k], pilarZ[k], reducido ? 3 : 6, colores.polvo, 1.4);
         }
       }
@@ -198,47 +156,7 @@ export function crearRitosMirra({ scene, keep, brillos, def }) {
         pilarX[k] = pilares[k].x;
         pilarZ[k] = pilares[k].z;
       }
-      if (!a || !pelea || !j.vivo) {
-        huecosPrev = a ? a.huecos.length : 0;
-        return;
-      }
-
-      // ─── Orbe del vacío ───
-      const o = a.orbe;
-      if (o && o.t < FIN_AVISO_ORBE) {
-        // Hilo: cada mota viaja del pecho a la bola en ~1,7 s con un arco de 1,2 m (reducido: la mitad de rápido).
-        const vel = reducido ? 0.3 : 0.6; // vueltas por segundo del ciclo de cada mota
-        for (let i = 0; i < hilo.length; i++) {
-          const s = frac(reloj * vel + i / hilo.length); // 0 = pecho, 1 = bola
-          const m = hilo[i];
-          m.visible = true;
-          m.position.set(
-            pecho.x + (o.x - pecho.x) * s,
-            pecho.y + (o.y - pecho.y) * s + Math.sin(Math.PI * s) * 1.2,
-            pecho.z + (o.z - pecho.z) * s,
-          );
-          m.scale.setScalar(0.35);
-          m.material.opacity = 0.75 * Math.sin(Math.PI * s); // nacen y mueren suaves
-        }
-      }
-      if (o && o.t >= FIN_AVISO_ORBE - AVISO_COLUMNA) {
-        // Columna: aparece antes de la caída y se acorta con la bola hasta el suelo.
-        columna.visible = true;
-        columna.position.set(o.x, 0, o.z);
-        columna.scale.set(1, Math.max(0.01, o.y), 1); // alto = altura actual de la bola (m)
-        const k = Math.min(
-          1,
-          (o.t - (FIN_AVISO_ORBE - AVISO_COLUMNA)) / AVISO_COLUMNA,
-        );
-        columnaMat.opacity = 0.2 + 0.45 * k;
-      }
-      if (a.huecos.length > huecosPrev) {
-        // Se abrió un hueco: escombros oscuros y polvo en su centro.
-        const h = a.huecos[a.huecos.length - 1];
-        vfx.trozos(h.x, 0.3, h.z, reducido ? 5 : 10, 0x241634, 1.2, 0.16);
-        vfx.polvo(h.x, h.z, reducido ? 4 : 8, colores.polvo, 1.6);
-      }
-      huecosPrev = a.huecos.length;
+      if (!a || !pelea || !j.vivo) return;
 
       // ─── Luz divina ───
       const l = a.luz;

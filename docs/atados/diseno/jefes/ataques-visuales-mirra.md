@@ -17,7 +17,7 @@ Ficha de las señales físicas de cada ataque y rito de Mirra. Complementa [la f
 | Archivo | Qué hace |
 |---|---|
 | `src/atados/render/ataques-mirra.js` | Siega, Siega doble, Grano, Hambre, Enjambre y Banquete. Ajustes en `AJUSTE_ATAQUES`. |
-| `src/atados/render/ritos-mirra.js` | Lado de Mirra en el orbe del vacío y la luz divina; coberturas que revientan. |
+| `src/atados/render/ritos-mirra.js` | Señales de luz divina y efectos al destruir coberturas. |
 | `src/atados/render/ritos.js` | Latido de la cuenta y grietas del pisotón; final de cada descarga de los braseros. |
 | `src/atados/render/slice.js` | Crea los dos módulos (no con el muñeco) y los sincroniza después de `mirra.sync`. |
 
@@ -36,9 +36,8 @@ Ficha de las señales físicas de cada ataque y rito de Mirra. Complementa [la f
 
 | Rito | Señal |
 |---|---|
-| **Orbe del vacío** | Un hilo de motas violetas va de la esquirla del pecho a la bola mientras la carga. 0,6 s antes de caer, una columna une la bola con el suelo y se acorta con la caída. Al abrirse el hueco saltan escombros oscuros. |
-| **Pilar explosivo** | Cada cobertura destruida revienta en paja y polvo; el pilar del vacío, en esquirlas oscuras. También al devorar pilares en la transición. |
-| **Luz divina** | La esquirla del pecho se enciende y suelta motas hacia el sol. Junto a la pareja, del lado del sol, tres cuñas doradas de 1,8 m apuntan hacia donde viaja la luz y avanzan despacio (quietas con movimiento reducido). Se dibujan encima del hueco del vacío y se leen aunque el sol quede fuera del encuadre. En el impacto, la esquirla destella (menos sin flashes). |
+| **Barril de ácido** | Si el barril explota, las coberturas que destruye revientan en paja y polvo. También al devorar pilares en la transición. |
+| **Luz divina** | La esquirla del pecho se enciende y suelta motas hacia el sol. Junto a la pareja, del lado del sol, tres cuñas doradas de 1,8 m apuntan hacia donde viaja la luz y avanzan despacio (quietas con movimiento reducido). Se leen aunque el sol quede fuera del encuadre. En el impacto, la esquirla destella (menos sin flashes). |
 | **Pisotón** | La cuenta se aviva en cada segundo entero (3, 2, 1). Al caer, seis grietas salen de Mirra con la onda. |
 | **Braseros** | Al terminar cada descarga: se expande si golpea, se encoge si el escudo del color correcto la absorbe y suelta un soplo corto si una cobertura la corta antes. |
 
@@ -51,12 +50,12 @@ npm run build
 npm run test:browser -- tests/browser/mirra-visual.spec.js
 ```
 
-La prueba coloca a la pareja en la misma posición, fija la semilla y guarda un PNG del aviso y otro del golpe para cada ataque en `test-results/`. Siega doble se captura en la segunda pasada. Para los cuatro ritos, ejecuta `npm run test:browser -- tests/browser/atados.spec.js -g "cuatro avisos"`.
+La prueba coloca a la pareja en la misma posición, fija la semilla y guarda un PNG del aviso y otro del golpe para cada ataque en `test-results/`. Siega doble se captura en la segunda pasada. Para los cuatro ritos, ejecuta `npm run test:browser -- tests/browser/atados.spec.js -g "Mirra repite"`.
 
 ## Guía de iteración para Codex y Claude
 
 1. **Cambiar el aspecto:** edita `AJUSTE_ATAQUES` en `ataques-mirra.js`. Cada valor tiene unidades y efecto comentados. Ejemplos: `siega.anchoFilo` (grosor del filo), `banquete.dientes` (cantidad en el borde) y `enjambre.langostas`. Si el Grano aún no se distingue a 960 × 720, sube primero `grano.semilla`, `grano.alturaPua` y `grano.puntos`. Para el Hambre, sube `hambre.garfioLargo` y `hambre.surcoAncho`; este último debe seguir por debajo de `anchoL × L − 1 m`.
-2. **Cambiar un tiempo de juego:** no se cambia aquí. Edita `CONFIG.jefes.mirra.ataques.<id>` y la señal lo sigue. Los ritos del orbe y la luz copian `4.5` y `2.5` s de `gameplay/arena-mirra.js` (`FIN_AVISO_ORBE` e `IMPACTO_LUZ` en `ritos-mirra.js`). Si cambian allí, cámbialos también aquí.
+2. **Cambiar un tiempo de juego:** no se cambia aquí. Edita `CONFIG.jefes.mirra.ataques.<id>` y la señal lo sigue. La señal de luz divina usa `IMPACTO_LUZ` de `gameplay/arena-mirra.js` (2,5 s).
 3. **Añadir un ataque:** crea `sync<Nombre>` en `ataques-mirra.js` con la misma forma: detecta `at.id`, usa `at.etapa`/`at.t`/`at.T` o la zona (`zonaDe`) y deja estado propio para los desvanecimientos. Llámalo desde `sync` y añade su fila a esta ficha.
 4. **Huesos:** usa `punto(huesos, nombre, …)`, que ya incluye un respaldo si el GLB no cargó. Para mover un hueso usa `retocar`, que no acumula entre cuadros. Huesos: `tronco`, `abdomen`, `cabeza`, `mandI/D`, `copa`, `alaI/D`, `brazoI/D`, `antebrazoI/D`, `pata0–5`.
 5. **Comprobar:** `python3 scripts/validate.py`. Luego, en el navegador, fuerza cada ataque desde `window.__game` (normal y difícil) y repítelo con `?reducir`. Captura la carga, el golpe y la ventana. Confirma que nada sale del área y que el color de aviso sigue legible.

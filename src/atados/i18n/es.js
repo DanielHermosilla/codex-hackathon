@@ -80,8 +80,6 @@ export default {
   "brasero.color.1": "azul",
   "brasero.color.2": "dorado",
   "brasero.escudo": "Escudo {color} · {tiempo} s",
-  "indicacion.orbe":
-    "Orbe de vacío · lleva la marca sobre el pilar y sal cuando caiga.",
   "indicacion.luz": "Luz divina · busca la sombra detrás de un obstáculo.",
   "indicacion.pisotonSolo": "Pisotón · entra al círculo marcado.",
   "indicacion.pisoton": "Pisotón · entren juntos al círculo marcado.",

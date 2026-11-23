@@ -79,8 +79,6 @@ export default {
   "brasero.color.1": "blue",
   "brasero.color.2": "gold",
   "brasero.escudo": "Shared shield ({color}) · {tiempo} s",
-  "indicacion.orbe":
-    "Void orb · lead the mark onto the pillar and get out when it falls.",
   "indicacion.luz": "Divine light · take cover in the shadow of an obstacle.",
   "indicacion.pisotonSolo": "Stomp · stand inside the marked circle.",
   "indicacion.pisoton": "Stomp · stand together inside the marked circle.",
