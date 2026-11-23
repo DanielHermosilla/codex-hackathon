@@ -1,7 +1,7 @@
 # Cómo trabajar en este repositorio
 
 - Comunica avances, preguntas y resultados en español. Para principiantes, describe lo que podrán ver o hacer y su siguiente paso con lenguaje sencillo.
-- Escribe las skills del repo en español, con pasos breves y legibles. Deja los ejemplos largos en referencias que se puedan consultar por separado.
+- Guarda cada skill del repo en `.agents/skills/<nombre>/SKILL.md` para que Codex la encuentre. Escribe los pasos en español y deja los ejemplos largos en referencias dentro de la carpeta de la skill. Las definiciones de subagentes van en `.codex/agents/<nombre>.toml`.
 - Conserva las funciones y mecánicas actuales. Sigue la arquitectura y las convenciones que existan. Prefiere cambios pequeños, código mantenible y reutilización. Justifica cada dependencia nueva.
 - Escribe JavaScript con nombres claros, funciones pequeñas y manejo explícito de errores. Asume que el equipo empieza desde cero. Añade comentarios en español junto a casi cada línea con lógica: explica la sintaxis nueva, qué valor cambiar, sus unidades y cómo se verá el cambio. Mantén los comentarios al día.
 - Mantén la lógica del juego comprobable y, cuando sea práctico, separada del renderizado. Prefiere transiciones deterministas, controla el tiempo y el azar en las pruebas, y evita asignaciones innecesarias y regresiones de rendimiento en bucles críticos. Respeta la versión del motor acordada.
