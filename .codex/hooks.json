@@ -1,5 +1,5 @@
 {
-  "description": "Protección local contra operaciones Git de riesgo reconocibles.",
+  "description": "Protección local contra operaciones Git de riesgo reconocibles y aviso de números mágicos.",
   "hooks": {
     "PreToolUse": [
       {
@@ -10,6 +10,19 @@
             "command": "root=$(git rev-parse --show-toplevel) && python3 \"$root/.codex/hooks/protect_branches.py\"",
             "timeout": 5,
             "statusMessage": "Comprobando operación Git"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^(apply_patch|Edit|Write)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "root=$(git rev-parse --show-toplevel) && python3 \"$root/.codex/hooks/magic_numbers.py\"",
+            "timeout": 5,
+            "statusMessage": "Buscando números mágicos"
           }
         ]
       }

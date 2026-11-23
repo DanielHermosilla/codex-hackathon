@@ -29,3 +29,16 @@ PowerShell, macOS y Linux pueden ejecutar los comandos de npm. Para el flujo de 
 ## Trabajar con Codex
 
 Lee [Configurar Codex](docs/codex-setup.md) para activar los hooks del repositorio y comprobar las skills. [Arquitectura](docs/architecture.md) muestra dónde cambiar la pista y las reglas. [Colaboración](docs/collaboration.md) describe las ramas, el PR y las aprobaciones.
+
+## AtaDos: material de diseño
+
+La carpeta [atados-info/](atados-info/) guarda todo lo preparado para AtaDos, un boss rush cooperativo en 3D donde dos jugadores unidos por una cadena tienen esa cadena como única arma. No hay código del juego ahí. El [inventario](atados-info/INVENTARIO.md) lista cada archivo.
+
+| Carpeta | Qué hay |
+| --- | --- |
+| [atados-info/docs/](atados-info/docs/) | El juego explicado y el método de trabajo |
+| [atados-info/diseno/](atados-info/diseno/) | 199 decisiones, entrevista, GDD, jefes y producción |
+| [atados-info/herramientas/](atados-info/herramientas/) | Skills, hooks, MCP, scripts y referencias |
+| [atados-info/investigacion/](atados-info/investigacion/) | Motores, géneros, vibecoding, precedentes y audiovisual |
+
+Las skills de terceros traen su licencia en `atados-info/herramientas/claude/skills/_LICENSES/`. Para usar una, cópiala a `.agents/skills/`. Esta sección no cambia el flujo de arriba: ramas `feature/` desde `develop` y PR a `develop`.

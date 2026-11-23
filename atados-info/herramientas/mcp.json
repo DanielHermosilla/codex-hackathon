@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "playwright": { "command": "pnpm", "args": ["exec", "playwright-mcp"] },
+    "blender": {
+      "command": "uvx",
+      "args": ["mcp-for-blender==2.2.7"],
+      "env": { "DISABLE_TELEMETRY": "true" }
+    }
+  }
+}
