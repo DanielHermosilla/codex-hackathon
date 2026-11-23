@@ -33,6 +33,8 @@ export function crearSalidaTrigal({ scene, cfg, keep }) {
   /** @type {Pieza[]} */
   const postes = [];
   /** @type {Pieza[]} */
+  const vetas = [];
+  /** @type {Pieza[]} */
   const rocas = [];
   /** @type {Pieza[]} */
   const juncos = [];
@@ -90,7 +92,7 @@ export function crearSalidaTrigal({ scene, cfg, keep }) {
       // Fibras largas y marcas de desgaste a un par de milímetros sobre el tablón.
       for (let veta = 0; veta < 3; veta++) {
         const t = 0.5 + 0.5 * Math.sin(i * 2.41 + a * 1.21 + veta * 3.7);
-        tablas.push({
+        vetas.push({
           x: a + (b - a) * (0.24 + t * 0.52),
           y: 0.001,
           z: z + (veta - 1) * paso * 0.23,
@@ -291,6 +293,7 @@ export function crearSalidaTrigal({ scene, cfg, keep }) {
     }
   }
   montar(cubo, tablas, true);
+  montar(cubo, vetas, false); // Las marcas planas de la madera reciben sombra sin proyectarla.
   montar(poste, postes, true);
   montar(roca, rocas, false);
   montar(keep(new THREE.SphereGeometry(0.5, 9, 6)), boyas, false);
@@ -313,8 +316,9 @@ export function crearSalidaTrigal({ scene, cfg, keep }) {
   cuerdas.receiveShadow = true;
   raiz.add(cuerdas);
   const letrero = crearLetreroMuelle(keep);
-  letrero.position.set(medio - 0.72, 0, tramo.zInicio - 3.3); // al borde del paso peatonal
-  letrero.rotation.y = -0.22;
+  // Los postes se apoyan en el borde del tablón, fuera del ancho físico del muelle.
+  letrero.position.set(medio + 0.18, 0, tramo.zInicio - 3.3);
+  letrero.rotation.y = -Math.PI / 2;
   raiz.add(letrero);
 
   // Agua facetada. El color y las ondas se calculan una vez: el movimiento reducido también conserva la calma.

@@ -308,9 +308,7 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
     sueloGeo,
     std(0xffffff, {
       vertexColors: true,
-      map: tierra,
-      bumpMap: tierra,
-      bumpScale: 0.055, // relieve de terrones en m, apenas visible desde la cámara alta
+      map: tierra, // El color conserva el grano del suelo sin recalcular su relieve por píxel.
       roughness: 1,
     }),
   );
@@ -396,7 +394,7 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
   scene.add(dentro);
 
   // Fuera: trigo alto hasta el horizonte (estático salvo el viento).
-  const NF = Math.round(T.fuera.matas * 1.55);
+  const NF = T.fuera.matas; // La mata más ancha cubre el terreno con la densidad original.
   const fuera = new THREE.InstancedMesh(
     keep(geometriaEspiga()),
     trigoMatFuera,
@@ -423,7 +421,7 @@ export function crearTrigal({ scene, cfg, keep, modelos, world0, jefe0 }) {
         hash(i, 15) * 6.28,
         (hash(i, 16) - 0.5) * 0.3,
       );
-      d.scale.set(h * 1.25, h, h * 1.25);
+      d.scale.set(h * 1.45, h, h * 1.45);
       d.updateMatrix();
       fuera.setMatrixAt(n, d.matrix);
       const tono = 0.65 + hash(i, 17) * 0.49 + lomo * 0.07;

@@ -583,7 +583,7 @@ export function crearVestigiosTemplo({
     );
   }
   matasMesh.count = nMatas;
-  matasMesh.castShadow = true;
+  // Se apoyan sobre roca sombreada y no necesitan un segundo dibujo en el mapa de sombras.
   matasMesh.receiveShadow = true;
   grupo.add(matasMesh);
 

@@ -233,12 +233,12 @@ export function geometriaEspiga() {
   const { hoja, grano, geometria } = follaje();
   hoja(0, 0, 1.06, 0.06, 0.019, 0.95);
   hoja(Math.PI / 2, 0, 1.06, 0.06, 0.019, 0.95);
-  hoja(0.63, 0.16, 0.43, 0.25, 0.052, 0.84);
-  hoja(3.4, 0.28, 0.46, 0.27, 0.042, 0.95);
-  for (let k = 0; k < 4; k++) {
+  hoja(0.63, 0.16, 0.43, 0.25, 0.067, 0.84);
+  // Dos granos cruzados conservan el volumen de la espiga desde la cámara elevada.
+  for (let k = 0; k < 2; k++) {
     const a = (k * Math.PI) / 2;
-    const y = 0.78 + k * 0.058;
-    grano(0.032 + Math.cos(a) * 0.026, y, Math.sin(a) * 0.027, a, 0.2, 0.044);
+    const y = 0.84 + k * 0.1;
+    grano(0.032 + Math.cos(a) * 0.026, y, Math.sin(a) * 0.027, a, 0.26, 0.052);
   }
   return geometria();
 }

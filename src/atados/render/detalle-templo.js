@@ -16,11 +16,11 @@ function geometriaMata() {
   const vertices = [];
   /** @type {number[]} */
   const colores = [];
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 6; i++) {
     const angulo = i * 2.4; // rad; la espiral reparte las hojas alrededor de la base
     const alto = 0.42 + azar(i, 1) * 0.61; // m antes de escalar la mata
     const largo = 0.18 + azar(i, 2) * 0.44;
-    const ancho = 0.045 + azar(i, 3) * 0.045;
+    const ancho = 0.06 + azar(i, 3) * 0.055; // Las seis hojas más anchas conservan la cobertura.
     const dx = Math.cos(angulo);
     const dz = Math.sin(angulo);
     const raiz = [dx * 0.05, -0.08, dz * 0.05];
@@ -137,7 +137,7 @@ export function crearDetalleTemplo({
     keep(
       unirPiezas([
         {
-          geo: new THREE.CylinderGeometry(0.014, 0.022, 0.57, 4).translate(
+          geo: new THREE.CylinderGeometry(0.014, 0.022, 0.57, 3).translate(
             0,
             0.22,
             0,
@@ -145,17 +145,17 @@ export function crearDetalleTemplo({
           hex: 0x78935a,
         },
         {
-          geo: new THREE.IcosahedronGeometry(0.11)
+          geo: new THREE.OctahedronGeometry(0.11)
             .scale(1, 0.51, 1)
             .translate(0, 0.51, 0),
           hex: 0xffe9b5,
         },
         {
-          geo: new THREE.IcosahedronGeometry(0.045).translate(0, 0.555, 0),
+          geo: new THREE.OctahedronGeometry(0.045).translate(0, 0.555, 0),
           hex: 0xe7b268,
         },
         {
-          geo: new THREE.IcosahedronGeometry(0.1)
+          geo: new THREE.OctahedronGeometry(0.1)
             .scale(0.9, 0.25, 0.36)
             .translate(0.055, 0.31, 0),
           hex: 0x8aab59,
