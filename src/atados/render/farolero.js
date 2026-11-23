@@ -282,9 +282,9 @@ export function crearArteFarolero({ scene, keep, world0, decalMat, reducir }) {
   }
   /**
    * @param {import('./tipos.js').Combate} c @param {import('./tipos.js').Mundo} w
-   * @param {number} dt @param {number} t @param {{flash: number}} efectos
+   * @param {number} dt @param {number} t @param {{flash: number, revelado?: number}} efectos
    */
-  function sync(c, w, dt, t, { flash: destello }) {
+  function sync(c, w, dt, t, { flash: destello, revelado }) {
     const j = c.jefe,
       f = c.farolero;
     if (!f) return;
@@ -325,14 +325,30 @@ export function crearArteFarolero({ scene, keep, world0, decalMat, reducir }) {
           : 0;
     const peso = 1 - Math.exp(-Math.min(dt, 0.1) * 12);
     martillo.rotation.z += (gestoMartillo - martillo.rotation.z) * peso;
-    farolBrazo.rotation.z += (gestoFarol - farolBrazo.rotation.z) * peso;
+    if (revelado === undefined)
+      farolBrazo.rotation.z += (gestoFarol - farolBrazo.rotation.z) * peso;
+    else farolBrazo.rotation.z = quieto ? 0.29 : revelado * 0.29; // rad: alza el farol hacia la pareja
     cuerpo.rotation.z = acierto && muestra ? Math.sin(Math.PI * q) * 0.16 : 0;
     cuerpo.position.y = pulso * 0.032;
     faldon.rotation.z = pulso * 0.028;
-    const tono = ecos ? 0xff7956 : campanas ? 0xffc354 : 0x61f0db;
+    const tono =
+      revelado !== undefined
+        ? 0xffc582
+        : ecos
+          ? 0xff7956
+          : campanas
+            ? 0xffc354
+            : 0x61f0db;
     fuego.emissive.setHex(tono);
     fuego.color.setHex(tono);
     luzFarol.color.setHex(tono); // la luz del farol también anuncia la prueba
+    if (revelado !== undefined) {
+      // La luz crece con el gesto, sin destellos. En movimiento reducido mantiene su valor final.
+      const k = quieto ? 1 : revelado;
+      luzFarol.intensity = 5 + k * 75;
+      luzFarol.distance = 13;
+      fuego.emissiveIntensity = 1.25 + k * 2;
+    }
     farolJefe.cristal.rotation.y = quieto ? 0 : t * 1.1;
     placa.emissive.setHex(0xffd790);
     placa.emissiveIntensity = Math.min(

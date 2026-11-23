@@ -89,6 +89,10 @@ a:hover {
 /* Mientras se juega no se ven ni ocupan espacio: lo decide el atributo data-screen del body. */
 body[data-screen="playing"] .mast,
 body[data-screen="playing"] .lower,
+body[data-screen="cinematica"] .mast,
+body[data-screen="cinematica"] .lower,
+body[data-screen="fin-demo"] .mast,
+body[data-screen="fin-demo"] .lower,
 body[data-screen="derrota"] .mast {
   display: none;
 }
@@ -160,6 +164,46 @@ nav button {
   width: 100%;
   height: 100%;
   outline-offset: -3px;
+}
+.stage {
+  --fondo-epilogo: #08080d;
+}
+.fundido-epilogo {
+  --fondo-fundido: var(--fondo-epilogo);
+}
+.stage[data-screen="cinematica"] #arena:focus-visible {
+  outline: none;
+}
+.stage[data-screen="cinematica"]::before {
+  /* El viñeteado dirige la mirada a la pareja y al farol del fondo. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 54%, transparent 42%, #08080db0);
+  border-block: clamp(24px, 8vh, 105px) solid var(--fondo-epilogo);
+}
+.stage[data-screen="fin-demo"] .veil {
+  justify-content: center;
+  padding: 24px;
+  background: var(--fondo-epilogo);
+  text-align: center;
+}
+.stage[data-screen="fin-demo"] .panel {
+  max-width: 100%;
+}
+.stage[data-screen="fin-demo"] :is(#caption, #intro) {
+  display: none;
+}
+.stage[data-screen="fin-demo"] h1 {
+  color: var(--gold);
+  font-size: clamp(2.1rem, 8vw, 6.25rem);
+  letter-spacing: 0.04em;
+  outline: none;
+}
+.stage[data-screen="fin-demo"] .actions {
+  justify-content: center;
 }
 .veil {
   position: absolute;
