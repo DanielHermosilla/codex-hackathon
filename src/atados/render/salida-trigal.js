@@ -235,9 +235,10 @@ export function crearSalidaTrigal({ scene, cfg, keep }) {
   agua.position.z = centro;
   raiz.add(agua);
 
-  // El modelo mantiene carrocería, ventanilla, toldo, ruedas y completo gigante del PR de la tienda.
+  // El vendedor forma parte del furgón y comparte su posición con la interacción.
   const furgon = crearPuesto({ scene, cfg, keep, posicion: cfg.tienda.carro });
   return {
+    sync: furgon.sync,
     dispose() {
       furgon.dispose();
       scene.remove(raiz); // keep libera los materiales, instancias y geometrías al cerrar la sala
