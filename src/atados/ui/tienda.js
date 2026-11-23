@@ -18,11 +18,13 @@ export function crearCarta(contenedor, tienda, comprar, alCerrar) {
     <dialog id="carta-productos" aria-labelledby="titulo-carta">
       <div class="carta-interior">
         <header class="carta-cabecera">
+          <h2 id="titulo-carta">${t("tienda.titulo")}</h2>
+          <form method="dialog"><button class="carta-volver" aria-label="${t("tienda.cerrar")}" title="${t("tienda.cerrar")}" autofocus>×</button></form>
+        </header>
+        <div class="carta-estado">
           <span class="carta-pausa"><i aria-hidden="true">Ⅱ</i>${t("tienda.pausa")}</span>
           <span class="carta-saldo" aria-live="polite"></span>
-          <form method="dialog"><button class="carta-volver" autofocus>${t("tienda.cerrar")} <kbd aria-hidden="true">Esc</kbd></button></form>
-        </header>
-        <h2 id="titulo-carta">${t("tienda.titulo")}</h2>
+        </div>
         <p class="carta-nota">${t("tienda.nota")}</p>
         <ul class="carta-productos"></ul>
         <span role="status" class="sr"></span>
@@ -45,7 +47,7 @@ export function crearCarta(contenedor, tienda, comprar, alCerrar) {
   const filas = productos.map((id) => {
     const ficha = document.createElement("li");
     const nombre = t("tienda." + id);
-    ficha.innerHTML = `<img width="768" height="585" alt="" src="${import.meta.env.BASE_URL}atados/tienda/${id}.webp">
+    ficha.innerHTML = `<div class="carta-ilustracion"><img width="768" height="585" alt="" src="${import.meta.env.BASE_URL}atados/tienda/${id}.webp"></div>
       <div class="carta-detalle"><h3>${nombre}</h3><p>${t("tienda.efecto." + id)}</p>
       <button type="button"><span></span><b aria-hidden="true"></b></button></div>`;
     const boton = /** @type {HTMLButtonElement} */ (
@@ -76,7 +78,7 @@ export function crearCarta(contenedor, tienda, comprar, alCerrar) {
     return actualizar;
   });
 
-  // Gastar una moneda también cambia qué otros productos siguen al alcance de la pareja.
+  // Al comprar se actualiza qué productos puede pagar la pareja con el saldo restante.
   function actualizarCarta() {
     saldo.textContent = textoMonedas(tienda().saldo);
     for (const actualizar of filas) actualizar();

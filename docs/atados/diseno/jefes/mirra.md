@@ -71,7 +71,7 @@ Cada ataque da un rol a cada jugador [D-164]. "Objetivo" = a quien apunta; "otro
 - Tono serio con chispa de humor [D-002].
 
 ## Drop / recompensa
-- En la demo, cada victoria entrega una moneda para la carta del furgón en el pasillo de salida [D-212].
+- En la demo, vencer a Mirra entrega una recompensa para la carta del furgón en el pasillo de salida [D-212]. El prototipo actual entrega 25 monedas.
 - Al morir, su esquirla se incrusta en la cadena: es narrativa, no un ítem [D-169].
 - Suelta un ítem para cada jugador, al azar de su pool [D-031, D-078]. Cada ítem lleva el color de su jugador y solo él lo recoge [D-170]. Pool de 3–4 ítems [D-170]. Todo nace del lore [D-030].
 - Pool (propuesta). Capa S1: virtud vs pecado del mismo dios; juntos hacen sinergia [D-096, D-128]:

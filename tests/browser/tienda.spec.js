@@ -85,7 +85,7 @@ test("la pareja visita el carro en la práctica y compra después de vencer a Mi
     g.setVidaJefe(0);
     g.step(420);
   });
-  await expect(page.locator("#intro")).toContainText("Recompensa: +1 moneda");
+  await expect(page.locator("#intro")).toContainText("Recompensa: +25 monedas");
   await page.locator("#continuar-puesto").click();
   await page.waitForFunction(
     () =>
@@ -123,13 +123,32 @@ test("la pareja visita el carro en la práctica y compra después de vencer a Mi
     )
     .toBe(3);
   const saldo = carta.locator(".carta-saldo");
-  await expect(saldo).toHaveText("1 moneda");
+  await expect(saldo).toHaveText("25 monedas");
+  await expect(
+    carta.getByRole("button", {
+      name: "Comprar · Mote con huesillos · 25 monedas",
+    }),
+  ).toBeEnabled();
+  await expect(
+    carta.getByRole("button", { name: "Comprar · Sopaipilla · 23 monedas" }),
+  ).toBeEnabled();
   await page.screenshot({ path: info.outputPath("carta.png") });
+  // En una ventana angosta la carta desplaza hacia abajo, sin cortar las fichas a los lados.
+  const ventana = page.viewportSize();
+  await page.setViewportSize({ width: 390, height: 640 });
+  await expect
+    .poll(() => carta.evaluate((el) => el.scrollWidth - el.clientWidth))
+    .toBe(0);
+  await page.screenshot({ path: info.outputPath("carta-angosta.png") });
+  const ultimaFicha = carta.getByRole("listitem").last();
+  await ultimaFicha.scrollIntoViewIfNeeded();
+  await expect(ultimaFicha).toBeInViewport();
+  await page.setViewportSize(ventana);
   const antes = await page.evaluate(() => window.__game.state.time);
   await page.evaluate(() => window.__game.step(120));
   expect(await page.evaluate(() => window.__game.state.time)).toBe(antes);
   await carta
-    .getByRole("button", { name: "Comprar · Completo italiano · 1 moneda" })
+    .getByRole("button", { name: "Comprar · Completo italiano · 25 monedas" })
     .click();
   await expect(saldo).toHaveText("0 monedas");
   await expect(

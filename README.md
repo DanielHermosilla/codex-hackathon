@@ -15,7 +15,7 @@ Abre la dirección que imprima Vite, normalmente `http://localhost:5173`. Deja l
 
 Elige **Solo** para mover a Sael con WASD y a Odo con las flechas. Espacio hace esquivar a ambos. Enreda la cadena en un pilar para fijar un extremo y barrer desde ahí. En **Dos jugadores**, Sael esquiva con Espacio y Odo con Shift derecho. Mantén Shift izquierdo o Enter para anclar a Sael u Odo. La partida se pausa con Esc o al cambiar de ventana. En **Ajustes → Cómo jugar** puedes consultar los controles de mando.
 
-Durante la práctica, busca el carro de completos a la derecha de la escalinata. Acércate y pulsa **P** para ver la carta. Empiezas con cero monedas. Al vencer a Mirra recibes una moneda. Elige **Continuar al carro de completos** para visitar el furgón en el muelle. Cada producto cuesta una moneda y mejora a ambos personajes. **Esc** cierra la carta.
+Durante la práctica, busca el carro de completos a la derecha de la escalinata. Acércate y pulsa **P** para ver la carta. Empiezas con cero monedas y recibes 25 al vencer a Mirra. Elige **Continuar al carro de completos** para visitar el furgón en el muelle. El completo italiano y el mote con huesillos cuestan 25 monedas cada uno. La sopaipilla cuesta 23. Cada producto mejora a ambos personajes. **Esc** cierra la carta.
 
 El engranaje de la portada y de la pausa permite ajustar el volumen general y las teclas de ambos personajes. La [dirección de diseño](docs/atados/), los [créditos de recursos](CREDITS.md) y la [arquitectura](docs/architecture.md) acompañan al juego.
 
