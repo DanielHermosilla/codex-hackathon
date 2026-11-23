@@ -1,7 +1,8 @@
 // Flujo de la partida completa: máquina de estados pura, sin three.js ni DOM, sobre el paso fijo.
 //
 //   caida ──(aterrizan, D-205)──▶ recorrido ──(cruzan el arco, D-211)──▶ arco
-//     arco ──(fundido + silencio y la pradera ya cargó)──▶ jefe ──(Mirra cae)──▶ victoria ──(arco norte)──▶ puesto ──(fin del muelle)──▶ destino
+//     arco ──(fundido + silencio y la pradera ya cargó)──▶ jefe ──(Mirra cae)──▶ victoria ──(arco norte)──▶ puesto
+//     puesto ──(fin del muelle)──▶ destino; puesto ──(sala del Farolero montada)──▶ epilogo ──(fundido)──▶ fin-demo
 //   recorrido: caer los dos reinicia el pasillo dentro del recorrido (D-168), sin salir de este estado.
 //   jefe: si ambos caen, la pantalla de derrota permite volver al inicio.
 //
@@ -46,7 +47,7 @@ import { colocarParaPrueba, heredarJugadores } from "../gameplay/combate.js";
 /** @typedef {import('./juego.js').Muestreo} Muestreo */
 /** @typedef {import('./input.js').Entrada} Entrada */
 /** @typedef {import('../gameplay/tipos.js').Evento} Evento */
-/** @typedef {"caida" | "recorrido" | "arco" | "jefe" | "victoria" | "puesto" | "destino"} EstadoPartida */
+/** @typedef {"caida" | "recorrido" | "arco" | "jefe" | "victoria" | "puesto" | "destino" | "epilogo" | "fin-demo"} EstadoPartida */
 /** @typedef {ReturnType<typeof crearJuegoRecorrido>} JuegoRecorrido */
 /** @typedef {ReturnType<typeof crearJuegoJefe>} JuegoJefe */
 
@@ -78,7 +79,7 @@ export function crearPartida(cfg, opciones) {
     jefe: primerJefe = cfg.recorrido.pasillo.jefe,
     caida = true,
   } = opciones;
-  let jefe = primerJefe; // El puesto conecta el primer combate con el jefe final.
+  const jefe = primerJefe; // El Farolero solo tiene combate cuando se arranca en su ensayo.
   const F = cfg.recorrido.flujo;
   // El juego del recorrido trae su propio bucle, pero la partida no lo usa: simula con `paso` y su bucle.
   const juegoRecorrido = crearJuegoRecorrido(cfg, {
@@ -253,6 +254,17 @@ export function crearPartida(cfg, opciones) {
    * @returns {boolean} false si no simuló (hit-stop), como stepWorld
    */
   function paso(ins, dt) {
+    // El epílogo consume tiempo fijo sin mover el mundo del puesto ni arrancar las pruebas del Farolero.
+    if (estado === "fin-demo") return true;
+    if (estado === "epilogo") {
+      t += dt;
+      tEstado += dt;
+      if (tEstado >= cfg.ui.epilogo.duracion - EPS) {
+        cambiar("fin-demo");
+        emitir("zona_entra", { zona: "farolero", estado: "nada" }); // el cartel queda en silencio
+      }
+      return true;
+    }
     const r = juegoJefe
       ? juegoJefe.paso(ins, dt)
       : juegoRecorrido.paso(ins, dt);
@@ -300,6 +312,7 @@ export function crearPartida(cfg, opciones) {
    * @param {string[]} acciones
    */
   function aplicarDebug(acciones) {
+    if (estado === "epilogo" || estado === "fin-demo") return; // el plano es una secuencia guiada
     for (const a of acciones) {
       if (estado === "puesto" || estado === "destino") {
         if (a === "reset") {
@@ -329,7 +342,11 @@ export function crearPartida(cfg, opciones) {
 
   /** Termina la caída al instante (prueba). */
   function saltarCaida() {
-    if (juegoJefe || estado === "puesto" || estado === "destino") return;
+    if (
+      juegoJefe ||
+      (estado !== "caida" && estado !== "recorrido" && estado !== "arco")
+    )
+      return;
     saltarCaidaRecorrido(juegoRecorrido.recorrido);
     drenarActivo();
     revisarRecorrido();
@@ -359,12 +376,17 @@ export function crearPartida(cfg, opciones) {
       colocarEnRecorrido(juegoRecorrido.recorrido, sael, odo);
       cambiar("puesto");
     },
-    /** Conserva la salud y las compras al pasar del carro a la arena final. */
+    /** La sala debe estar montada antes de iniciar el epílogo desde el carro. */
     entrarFarolero() {
       if (estado !== "puesto") return false;
-      jefe = "farolero";
-      entrarJefe();
+      cambiar("epilogo");
+      emitir("zona_entra", { zona: "farolero", estado: "presentacion" }); // arranca su música sin combate
       return true;
+    },
+    /** Segundos del plano, o null cuando la historia aún no llega al Farolero. */
+    get tiempoEpilogo() {
+      if (estado === "epilogo") return tEstado;
+      return estado === "fin-demo" ? cfg.ui.epilogo.duracion : null;
     },
     /** Juego del recorrido (sigue existiendo durante el jefe; deja de simular al entrar). */
     juegoRecorrido,
@@ -426,6 +448,7 @@ export function crearPartida(cfg, opciones) {
      * @param {number} [face]  rad (solo en el recorrido)
      */
     colocarJugadores(sael, odo, face) {
+      if (estado === "epilogo" || estado === "fin-demo") return;
       if (juegoJefe) colocarParaPrueba(juegoJefe.combate, { sael, odo });
       else colocarEnRecorrido(juegoRecorrido.recorrido, sael, odo, face);
     },
@@ -434,26 +457,28 @@ export function crearPartida(cfg, opciones) {
      * @param {number} s  m
      */
     irA(s) {
-      if (juegoJefe || estado === "puesto" || estado === "destino") return;
+      if (
+        juegoJefe ||
+        (estado !== "caida" && estado !== "recorrido" && estado !== "arco")
+      )
+        return;
       if (estado === "caida") saltarCaida();
       irARecorrido(juegoRecorrido.recorrido, s);
     },
     /** Cruza el arco en el acto (estado `arco`). */
     cruzarArco() {
-      if (
-        juegoJefe ||
-        estado === "arco" ||
-        estado === "puesto" ||
-        estado === "destino"
-      )
-        return;
+      if (juegoJefe || (estado !== "caida" && estado !== "recorrido")) return;
       cruzarUmbral(juegoRecorrido.recorrido);
       drenarActivo();
       revisarRecorrido();
     },
     /** Entra al jefe en el acto, como la primera vez (con cinemática). */
     saltarAlJefe() {
-      if (juegoJefe || estado === "puesto" || estado === "destino") return;
+      if (
+        juegoJefe ||
+        (estado !== "caida" && estado !== "recorrido" && estado !== "arco")
+      )
+        return;
       jefeCargado = true;
       entrarJefe();
     },

@@ -17,7 +17,9 @@ export default {
   "farol.intro":
     "El Farolero dibuja tres pruebas en el suelo. Cada acierto le quita vida. La primera vuelta es de práctica y pueden equivocarse sin recibir daño.",
   "farol.jugar": "Enfrentar al Farolero",
-  "farol.enfrentar": "Enfrentar al Farolero",
+  "epilogo.entrar": "Entrar en la sala del Farolero",
+  "epilogo.fin": "Continuará...",
+  "epilogo.volver": "Volver al inicio",
   "farol.victoria": "El Farolero ha caído",
   "farol.recompensa": "Sael y Odo recuperaron la luz de Hestera.",
   "farol.repetir": "Repetir combate",

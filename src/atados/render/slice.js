@@ -26,6 +26,7 @@ import { crearAtaquesMirra } from "./ataques-mirra.js";
 import { crearRitosMirra } from "./ritos-mirra.js";
 import { crearMuneco } from "./muneco-arte.js";
 import { crearArteFarolero } from "./farolero.js";
+import { crearPlanoEpilogo } from "./epilogo-farolero.js";
 import { crearBrillos } from "./brillos.js";
 import { crearVfx } from "./vfx.js";
 import { configurarRenderer, reducidoSistema } from "./renderer-config.js";
@@ -48,6 +49,7 @@ const MODELOS_DE = {
  *   cfg: import('./tipos.js').Cfg,
  *   getWorld: () => import('./tipos.js').Mundo,
  *   getCombate: () => import('./tipos.js').Combate,
+ *   getEpilogo?: () => number | null,
  *   params?: URLSearchParams,
  *   brilloFarolero?: () => number,
  *   extras?: ((ctx: any) => any)[],
@@ -58,6 +60,7 @@ export async function crearRenderSlice({
   cfg,
   getWorld,
   getCombate,
+  getEpilogo,
   params,
   brilloFarolero = () => 0.16,
   extras = [],
@@ -152,16 +155,23 @@ export async function crearRenderSlice({
     modelos,
     keep,
     decalMat,
-    anillo: extras.length === 0,
+    anillo: !getEpilogo && extras.length === 0,
   });
   const cadena = crearCadenaArte({ scene, cfg, renderer, keep, world0 });
   const tele = crearTelegrafias({ scene, cfg, keep, decalMat, def });
   // Cada sala carga solo su jefe y las señales de sus propias pruebas.
-  const arteJefe = farolero
+  const arteFarolero = farolero
     ? crearArteFarolero({ scene, keep, world0, decalMat, reducir })
-    : def.arte === "muneco"
+    : null;
+  const arteJefe =
+    arteFarolero ??
+    (def.arte === "muneco"
       ? crearMuneco({ scene, cfg, keep, modelos, def })
-      : crearMirra({ scene, cfg, keep, modelos, def });
+      : crearMirra({ scene, cfg, keep, modelos, def }));
+  const planoEpilogo =
+    getEpilogo && arteFarolero
+      ? crearPlanoEpilogo({ scene, camera, keep, cfg, reducir })
+      : null;
   const arenaVisual =
     c0.id === "mirra"
       ? crearArenaMirraVisual({
@@ -309,11 +319,34 @@ export async function crearRenderSlice({
     alto: def.altura,
     cinematica: false,
   };
+  const sinEvento = () => {};
+  const eventosEpilogo = {
+    flashes: false,
+    dash: sinEvento,
+    golpe: sinEvento,
+    muere: sinEvento,
+    paso: sinEvento,
+  };
 
   /** @param {number} dt */
   function sync(dt) {
     const w = getWorld();
     const c = getCombate();
+    const epilogo = getEpilogo?.();
+    if (epilogo != null && planoEpilogo && arteFarolero) {
+      // El tiempo absoluto coloca la cámara y las marcas de actuación. El rig acota su propio paso de animación.
+      const dtCine = Math.min(dt, 1 / 30);
+      planoEpilogo(c, epilogo);
+      personajes.sync(w, dtCine, eventosEpilogo, epilogo);
+      cadena.sync(w, dtCine);
+      const revelado = THREE.MathUtils.smoothstep(
+        epilogo,
+        cfg.ui.epilogo.finMarcha - 1.5,
+        cfg.ui.epilogo.cierre,
+      );
+      arteFarolero.sync(c, w, dtCine, epilogo, { flash: 0, revelado });
+      return;
+    }
     tiempo += dt;
     // Hit-stop (gameplay, D-166): la animación casi se congela; cámara y partículas siguen.
     const dtAnim = w.hitstop > 0 ? dt * 0.08 : dt;

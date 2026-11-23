@@ -1533,6 +1533,13 @@ export const CONFIG = {
   // Página: tiempos del flujo menú → caída → recorrido → Mirra (main.js). Solo presentación.
   ui: {
     finJefe: 5.5, // segundos para leer la lápida del Farolero antes del resultado
+    // El viaje del carro al Farolero cierra la demo. Tiempos de la toma, en segundos simulados.
+    epilogo: {
+      apertura: 0.8, // el fundido deja ver el umbral
+      finMarcha: 5.7, // la pareja se planta frente al Farolero
+      cierre: 6.8, // empieza a caer el telón
+      duracion: 8.1, // el cartel aparece con el fondo ya negro
+    },
     // Al cruzar el arco la pantalla funde a negro (`recorrido.flujo.fundidoArco`) y, ya cargada la pradera, se
     // abre sobre ella durante el silencio (D-183, D-211). s de esa apertura. PROVISIONAL.
     aperturaJefe: 0.8,

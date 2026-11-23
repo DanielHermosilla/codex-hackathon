@@ -17,7 +17,9 @@ export default {
   "farol.intro":
     "The Lamplighter sets three trials on the floor. Each success costs him health. The first round is practice, so mistakes won’t hurt you.",
   "farol.jugar": "Face the Lamplighter",
-  "farol.enfrentar": "Face the Lamplighter",
+  "epilogo.entrar": "Enter the Lamplighter’s hall",
+  "epilogo.fin": "To be continued...",
+  "epilogo.volver": "Back to the start",
   "farol.victoria": "The Lamplighter has fallen",
   "farol.recompensa": "Sael and Odo restored the light of Hestera.",
   "farol.repetir": "Fight again",

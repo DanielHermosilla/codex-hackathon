@@ -218,7 +218,7 @@ describe("revisión del flujo", () => {
   });
 
   it("el atajo al carro comparte el destino y la salud con el arco y solo funciona una vez", () => {
-    const { p, correr } = nueva({ caida: false });
+    const { p, correr, vistos } = nueva({ caida: false });
     p.saltarAlJefe();
     expect(p.entrarPuesto()).toBe(false);
     p.world.players[0].hp = 380;
@@ -228,10 +228,22 @@ describe("revisión del flujo", () => {
     expect(p.world.players[0].hp).toBe(380);
     expect(p.entrarPuesto()).toBe(false);
     expect(p.entrarFarolero()).toBe(true);
-    expect(p.world.players[0].hp).toBe(380);
-    ponerVidaJefe(p.combate, 0);
+    expect(p.estado).toBe("epilogo");
+    expect(p.tiempoEpilogo).toBe(0);
+    expect(p.combate).toBe(null); // solo el ensayo directo inicia las pruebas del Farolero
+    expect(p.entrarFarolero()).toBe(false);
+    const tiempoPuesto = p.world.time;
+    const duracion = CONFIG.ui.epilogo.duracion;
+    correr(duracion - DT);
+    expect(p.estado).toBe("epilogo");
     correr(DT);
-    expect(p.entrarPuesto()).toBe(false); // la victoria final conserva su propia lápida
+    expect(p.estado).toBe("fin-demo");
+    expect(p.tiempoEpilogo).toBe(duracion);
+    expect(p.world.time).toBe(tiempoPuesto);
+    expect(p.world.players[0].hp).toBe(380);
+    p.reintentarJefe();
+    expect(p.estado).toBe("fin-demo");
+    expect(vistos.filter((e) => e.estado === "fin-demo")).toHaveLength(1);
   });
 
   it("se compra en el puesto con la recompensa de cada victoria", () => {

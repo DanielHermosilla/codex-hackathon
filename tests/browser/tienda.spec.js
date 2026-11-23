@@ -223,9 +223,11 @@ test("la pareja visita el carro en la práctica y compra después de vencer a Mi
   ).toBeDisabled();
   await page.keyboard.press("Escape");
 
-  // F puede reasignarse al movimiento: el botón del puesto sigue disponible para entrar al jefe.
-  const enfrentar = page.getByRole("button", { name: "Enfrentar al Farolero" });
-  await expect(enfrentar).toHaveAttribute("aria-keyshortcuts", "F");
+  // F puede reasignarse al movimiento: el botón sigue disponible para entrar en la sala.
+  const entrar = page.getByRole("button", {
+    name: "Entrar en la sala del Farolero",
+  });
+  await expect(entrar).toHaveAttribute("aria-keyshortcuts", "F");
   await page.locator("#pause").click();
   await page.getByRole("button", { name: "Ajustes", exact: true }).click();
   const derecha = page.getByRole("button", { name: /Sael · Derecha/ });
@@ -239,53 +241,39 @@ test("la pareja visita el carro en la práctica y compra después de vencer a Mi
   await page.evaluate(() => window.__game.step(3));
   await page.keyboard.up("KeyF");
   expect(await page.evaluate(() => window.__game.etapa)).toBe("puesto");
-  await expect(enfrentar).not.toHaveAttribute("aria-keyshortcuts", "F");
-  await enfrentar.click();
+  await expect(entrar).not.toHaveAttribute("aria-keyshortcuts", "F");
+  await entrar.click();
   await page.waitForFunction(
     () =>
-      window.__game.combate?.jefe.id === "farolero" &&
-      window.__game.pantalla === "playing",
+      window.__game.etapa === "epilogo" &&
+      window.__game.pantalla === "cinematica" &&
+      window.__game.escena === "jefe",
   );
   expect(
     await page.evaluate(() => window.__game.state.players.map((p) => p.hp)),
   ).toEqual([1250, 1250]);
-  await page.evaluate(() => {
-    const g = window.__game;
-    g.saltarPresentacion();
-    g.setVidaJefe(0);
-    g.step(420);
-  });
-  await expect(
-    page.getByRole("heading", { name: "El Farolero ha caído" }),
-  ).toBeVisible();
-  await expect(page.locator("#continuar-puesto")).toBeHidden();
-  await page.locator("#primary").click();
-  await page.waitForFunction(
-    () =>
-      window.__game.combate?.jefe.id === "farolero" &&
-      window.__game.pantalla === "playing",
-  );
-  // El reintento usa la misma compra; al volver al menú, la siguiente partida empieza de cero.
+  expect(await page.evaluate(() => window.__game.combate)).toBeNull();
+  await page.evaluate(() => window.__game.step(64));
+  await expect(page.locator("#hud")).toBeHidden();
+  await expect(page.locator(".hud")).toBeHidden();
+  await page.screenshot({ path: info.outputPath("farolero-umbral.png") });
+  // Una pausa detiene el reloj del plano y permite seguir viendo la entrada.
+  const instante = await page.evaluate(() => window.__game.tEtapa);
   await page.keyboard.press("Escape");
-  await page.locator("#restart").click();
-  await page.waitForFunction(
-    () =>
-      window.__game.etapa === "jefe" && window.__game.pantalla === "playing",
-  );
-  expect(
-    await page.evaluate(() => window.__game.state.players.map((p) => p.hp)),
-  ).toEqual([1250, 1250]);
-  // Tras la derrota final, el botón vuelve a la portada y limpia las compras.
-  await page.evaluate(() => {
-    const g = window.__game;
-    g.saltarPresentacion();
-    g.matarJugadores();
-    g.step(2);
-  });
+  await page.evaluate(() => window.__game.step(120));
+  expect(await page.evaluate(() => window.__game.tEtapa)).toBe(instante);
+  await expect(page.locator("#restart")).toBeHidden();
+  await page.getByRole("button", { name: "Continuar", exact: true }).click();
+  await page.evaluate(() => window.__game.step(280));
+  await page.screenshot({ path: info.outputPath("farolero-revelado.png") });
+  await page.evaluate(() => window.__game.step(540));
   await expect(
-    page.getByRole("heading", { name: "Caísteis los dos" }),
+    page.getByRole("heading", { name: "Continuará..." }),
   ).toBeFocused();
-  await expect(page.getByRole("button")).toHaveText(["Volver al inicio"]);
+  await expect(page.locator("#primary")).toBeHidden();
+  expect(await page.evaluate(() => window.__game.combate)).toBeNull();
+  await page.screenshot({ path: info.outputPath("farolero-continuara.png") });
+  // El botón vuelve a la portada. La siguiente partida empieza sin las compras previas.
   await page.getByRole("button", { name: "Volver al inicio" }).click();
   await page.waitForFunction(() => window.__game.pantalla === "menu");
   await jugar.click();
@@ -296,7 +284,7 @@ test("la pareja visita el carro en la práctica y compra después de vencer a Mi
   expect(errores).toEqual([]);
 });
 
-test("el atajo abre el carro y el Farolero espera si el puesto debe volver a cargar", async ({
+test("el atajo abre el carro y la entrada al Farolero espera al montaje", async ({
   page,
 }) => {
   await page.goto("/?jefe=mirra&seed=17");
@@ -332,6 +320,6 @@ test("el atajo abre el carro y el Farolero espera si el puesto debe volver a car
       window.__game.escena === "puesto" && window.__game.pantalla === "playing",
   );
   await expect(
-    page.getByRole("button", { name: "Enfrentar al Farolero" }),
+    page.getByRole("button", { name: "Entrar en la sala del Farolero" }),
   ).toBeVisible();
 });
