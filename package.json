@@ -1,0 +1,30 @@
+{
+  "name": "codex-hackathon",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "^24.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "format:check": "prettier --check index.html package.json jsconfig.json eslint.config.js playwright.config.js src tests/unit tests/browser",
+    "lint": "eslint src tests/unit tests/browser eslint.config.js playwright.config.js --max-warnings 0",
+    "typecheck": "tsc --project jsconfig.json",
+    "test": "node --test tests/unit/*.test.js",
+    "test:browser": "playwright test"
+  },
+  "dependencies": {
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.65.1",
+    "@types/three": "0.187.0",
+    "eslint": "10.15.0",
+    "prettier": "3.10.1",
+    "typescript": "5.9.3",
+    "vite": "8.3.8"
+  }
+}

@@ -13,3 +13,7 @@
 ## Riesgos pendientes
 
 <!-- Compatibilidad, escenas o recursos compartidos y pruebas manuales pendientes. -->
+
+## Revisión
+
+<!-- Con Code Review habilitado, pide una revisión en un comentario aparte con @codex review. -->

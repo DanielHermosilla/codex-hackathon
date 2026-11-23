@@ -1,5 +1,18 @@
 # Arquitectura del juego
 
+La demo corre en un navegador de escritorio con teclado y WebGL 2. Usa JavaScript con módulos, Three.js 0.187.0 para dibujar y Vite para servir y compilar. Node.js 24 coincide con el CI. `package-lock.json` fija todo el árbol de dependencias.
+
+| Si quieres cambiar… | Abre |
+| --- | --- |
+| La velocidad o los límites de movimiento | [src/movement.js](../src/movement.js) |
+| El cubo, la pista, la cámara o las luces | [src/scene.js](../src/scene.js) |
+| Las teclas, el reinicio o el ciclo de cuadros | [src/main.js](../src/main.js) |
+| La disposición y colores de la página | [index.html](../index.html) y [src/style.css](../src/style.css) |
+
+`index.html` carga `src/main.js`. Cada cuadro, el módulo de entrada lee las teclas, pasa el tiempo a la lógica de movimiento y entrega la posición a Three.js. Las pruebas unitarias ejecutan esa lógica en Node, con direcciones y tiempos explícitos. La prueba de Chromium abre la compilación y verifica en el canvas que el cubo se mueve y vuelve al centro.
+
+Playwright solo se usa para la prueba en navegador. Prettier comprueba el formato, ESLint busca errores de JavaScript, y TypeScript comprueba los tipos de los archivos JavaScript a partir de JSDoc. Los archivos del juego siguen siendo JavaScript.
+
 - Separa las reglas y el estado del juego de la presentación, el audio y la entrada cuando lo permita el motor. Cubre las transiciones importantes con pruebas pequeñas.
 - Haz reproducibles los casos que dependen de reloj, eventos, física o azar. Pasa un tiempo de simulación o semilla controlable cuando facilite la prueba.
 - Reutiliza sistemas y recursos existentes. Mide antes de optimizar. Para cambios en bucles por cuadro, revisa asignaciones y costo por entidad.
@@ -8,7 +21,7 @@
 
 ## Validación
 
-El entorno usa Python estándar. El lenguaje del juego y sus herramientas se definen en [checks.toml](../checks.toml). Seis etapas son obligatorias para integrar.
+El validador usa Python estándar. Las etapas llaman a los comandos de npm definidos en [checks.toml](../checks.toml). Seis etapas son obligatorias para integrar.
 
 | Etapa | Qué comprueba |
 | --- | --- |
@@ -31,3 +44,5 @@ Las comprobaciones deben ser no interactivas. Usa el modo de solo comprobación 
 | `python3 scripts/validate.py --strict` | Exige éxito del entorno y de las seis etapas. |
 
 Salida `0` indica éxito dentro del modo elegido, `1` algún fallo y `2` etapa ausente en modo individual o estricto. Un fallo tiene prioridad si también faltan etapas. `Juego` usa el modo estricto. Si la ejecución normal sale con `0` y muestra `SIN CONFIGURAR`, el cambio sigue pendiente de validación completa.
+
+Si ejecutas `--stage integration` por separado, ejecuta primero `npm run build`. El modo estricto ya construye la versión que abre Playwright.

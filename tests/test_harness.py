@@ -24,10 +24,12 @@ class RepositoryTest(unittest.TestCase):
         self.git("config", "user.name", "Pruebas locales")
         self.git("config", "user.email", "pruebas@example.invalid")
         for path in (".codex/hooks.json", ".codex/hooks/protect_branches.py",
-                     "scripts/validate.py", "scripts/feature-status.py", "checks.toml"):
+                     "scripts/validate.py", "scripts/feature-status.py"):
             target = self.repo / path
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / path, target)
+        # El fixture decide sus etapas sin instalar las dependencias del juego.
+        (self.repo / "checks.toml").write_text("[checks]\n", encoding="utf-8")
         self.nested = self.repo / "carpeta anidada"
         self.nested.mkdir()
         (self.nested / "nota.txt").write_text("base\n", encoding="utf-8")

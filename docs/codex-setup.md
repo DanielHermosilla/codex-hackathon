@@ -3,8 +3,16 @@
 1. Usa Codex actualizado con Git y Python 3.11 o posterior en el PATH. El punto de referencia para este entorno es la CLI 0.169.0. En Windows, usa WSL para la configuración y los comandos POSIX del hook. En ese caso instala los requisitos dentro de la distribución.
 2. Abre la raíz del repositorio en la app o ejecuta `codex` desde la raíz. Identifica el repositorio y revisa `.codex/config.toml`, `.codex/hooks.json` y el script que ejecuta el hook. Confía en el proyecto en el cliente. Los ajustes de proyecto se cargan solo en una capa confiable. [Capas y confianza](https://learn.chatgpt.com/docs/config-file/config-basic).
 3. En la CLI, abre `/hooks` y revisa la definición local antes de confiar en ella. Codex registra confianza por definición. Tras actualizar la rama revisa también el script invocado, aunque la definición siga igual. [Descubrimiento y confianza de hooks](https://learn.chatgpt.com/docs/hooks#review-and-trust-hooks).
-4. Comprueba `/status` y `/skills`. Deben aparecer `new-feature`, `code-review` y `merge-feature`; escribe `$` para elegir una skill local. Para comprobar un agente, pide a Codex que abra `reviewer` y le encargue leer `AGENTS.md` y resumir el flujo en español. En la CLI usa `/agents` o `/subagents` para ver las sesiones auxiliares. [Skills](https://learn.chatgpt.com/docs/build-skills), [Subagentes](https://learn.chatgpt.com/docs/agent-configuration/subagents).
+4. Comprueba `/status` y `/skills`. Deben aparecer `new-feature`, `code-review`, `merge-feature` y `humanizer`; escribe `$` para elegir una skill local. Para comprobar un agente, pide a Codex que abra `reviewer` y le encargue leer `AGENTS.md` y resumir el flujo en español. En la CLI usa `/agents` o `/subagents` para ver las sesiones auxiliares. [Skills](https://learn.chatgpt.com/docs/build-skills), [Subagentes](https://learn.chatgpt.com/docs/agent-configuration/subagents).
 5. Para acciones remotas, usa tu cuenta de GitHub en el navegador o autentica `gh` con `gh auth login` en la terminal y verifica `gh auth status`. Coordina con A la configuración de [ramas y permisos](collaboration.md). La confianza de Codex y la autenticación son decisiones de cada persona.
+
+## Pedir una revisión en GitHub
+
+1. En [Code Review de Codex](https://chatgpt.com/settings/code-review), inicia sesión con la cuenta que usará la integración. Conecta GitHub si falta la conexión y selecciona `DanielHermosilla/codex-hackathon` en la instalación de la app. Un administrador puede conceder acceso solo a ese repositorio privado.
+2. Busca el repositorio en Code Review y comprueba que la revisión esté habilitada. Para el flujo manual, elige la modalidad que sigue las preferencias personales y deja apagada la revisión automática de tu cuenta.
+3. En un PR abierto en GitHub, escribe `@codex review` como comentario independiente. Comprueba que Codex reaccione con 👀 y publique su revisión para ese PR. Si no reacciona, revisa la conexión, el acceso al repositorio y que Code Review esté habilitado.
+
+Codex sigue las reglas de revisión de [AGENTS.md](../AGENTS.md). El equipo sigue usando CI y la aprobación de otra persona antes de integrar. [Documentación oficial de OpenAI](https://learn.chatgpt.com/docs/third-party/github).
 
 ## Configuración efectiva y diagnóstico
 

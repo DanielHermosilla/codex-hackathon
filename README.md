@@ -1,23 +1,31 @@
-# Hackaton Codex
+# Hackatón Codex
 
-**Es importante que USTEDES (no una IA) lean esto antes de ponerse a desarrollar**:
+El repositorio incluye una pista 3D para probar el flujo de desarrollo. Haz clic en la pista o selecciónala con Tab. Mueve el cubo con las flechas o WASD y usa **Volver al centro** para reiniciar su posición.
 
-1. Confirmen que tienen Git y Python 3.11 (o más) instalado. Desde mac pueden ver al correr
+## Abrir la pista
 
-```
-git --version && python3 --version
-```
+Instala Git, Python 3.11 o posterior y Node.js 24 con npm. Si usas nvm, ejecuta `nvm install` y `nvm use` desde la raíz.
 
-Si **no tienen** algunas de esas dos, instalarlo con homebrew:
-
-```
-brew install git python
+```sh
+npm ci
+npm run dev
 ```
 
-2. Abran Codex **desde el terminal**. Deben poner `/hooks` y dar permiso a los hooks que están en el repositorio. Por ejemplo, `PreToolUse` tiene el hook `Comprobando Operación GitHub` que deben aceptar. 
+Abre la dirección que imprima Vite, normalmente `http://localhost:5173`. Deja la terminal abierta mientras juegas. Pulsa Ctrl+C para cerrar el servidor. Usa un navegador de escritorio con WebGL 2 y teclado.
 
-3. Ahora, ponen `/skills` y acá deben buscar **las tres skills que son fundamentales para el desarrollo**. DEBEN usar esas skills **siempre** que quieran implementar una feature nueva: (i) `merge_feature`: para hacer un merge, que idealmente NO lo deben hacer sin supervisión, ya que es **necesario** probar y asegurar que todo esté funcionando correctamente antes de un merge; (ii) `new_feature`: cada vez que quieran añadir para nueva feature al juego; (iii) `code-review`: para evaluar los cambios en el código.
+## Comprobar un cambio
 
-4. Correr `python3 scripts/validate.py --harness` para verificar que todo esté bien. 
+Instala Chromium para Playwright una vez por cada versión de Playwright. Luego ejecuta la validación completa.
 
-Esto si se lo pueden tirar a una IA para que se los lea. Ver la [guía para principiantes](docs/beginner-guide.md) y [publicación y protección en GitHub](docs/collaboration.md).
+```sh
+npx playwright install chromium
+python3 scripts/validate.py --strict
+```
+
+PowerShell, macOS y Linux pueden ejecutar los comandos de npm. Para el flujo de Codex en Windows, consulta los pasos de WSL en la guía de configuración.
+
+`npm run build` deja la versión web en `dist/`. `npm run preview` permite abrir esa compilación localmente. El test de navegador guarda una captura del canvas en `test-results/`.
+
+## Trabajar con Codex
+
+Lee [Configurar Codex](docs/codex-setup.md) para activar los hooks del repositorio y comprobar las skills. [Arquitectura](docs/architecture.md) muestra dónde cambiar la pista y las reglas. [Colaboración](docs/collaboration.md) describe las ramas, el PR y las aprobaciones.
