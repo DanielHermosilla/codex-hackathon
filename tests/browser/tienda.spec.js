@@ -23,7 +23,7 @@ async function caminarHasta(page, destino) {
   }, destino);
 }
 
-test("la pareja visita el carro en la práctica y compra después de vencer a Mirra", async ({
+test("el único carro llega a la arena con el premio y las compras duran hasta el Farolero", async ({
   page,
 }, info) => {
   test.setTimeout(120000);
@@ -36,7 +36,9 @@ test("la pareja visita el carro en la práctica y compra después de vencer a Mi
   await page.waitForFunction(() => window.__game?.pantalla === "menu");
   const jugar = page.getByRole("button", { name: "Jugar" });
   const aviso = page.locator("#aviso-puesto");
-  const carta = page.getByRole("dialog", { name: "Carro de completos" });
+  const carta = page.getByRole("dialog", {
+    name: "Carro de completos de Bodoque",
+  });
   await expect(jugar).toBeVisible();
   await page.keyboard.press("p");
   await expect(carta).toBeHidden();
@@ -46,76 +48,53 @@ test("la pareja visita el carro en la práctica y compra después de vencer a Mi
   await expect(aviso).toBeHidden();
   await expect(carta).toBeHidden();
 
-  // En la práctica se llega a pie desde el punto de caída. La pareja todavía no tiene monedas.
+  // En el antiguo lugar del carro, P ya no permite comprar.
   await page.evaluate(() => window.__game.step(100));
   await caminarHasta(page, { x: 8.5, z: -6 });
-  await expect(aviso).toBeVisible();
-  const mural = page.locator("#mural");
-  await expect(mural).toHaveAttribute("aria-label", "Carro de completos");
-  const tarjeta = page.locator(".hud .tarjeta");
-  await expect(tarjeta).toBeVisible();
-  const dialogo = await mural.boundingBox();
-  expect(dialogo.y + dialogo.height).toBeLessThan(
-    (await tarjeta.boundingBox()).y,
-  );
-  await page.screenshot({ path: info.outputPath("carro-practica.png") });
   await page.keyboard.press("p");
-  await expect(carta).toBeVisible();
-  await expect(carta.locator(".carta-saldo")).toHaveText("0 monedas");
-  await expect(carta.getByRole("button", { name: /Comprar/ })).toHaveCount(3);
-  for (const boton of await carta
-    .getByRole("button", { name: /Comprar/ })
-    .all())
-    await expect(boton).toBeDisabled();
-  const tiempoPractica = await page.evaluate(() => window.__game.state.time);
-  await page.evaluate(() => window.__game.step(60));
-  expect(await page.evaluate(() => window.__game.state.time)).toBe(
-    tiempoPractica,
-  );
-  await page.keyboard.press("Escape");
-  await expect(carta).toBeHidden();
-  await expect(page.locator("#arena")).toBeFocused();
-  await caminarHasta(page, { x: 0, z: 3 });
   await expect(aviso).toBeHidden();
+  await expect(carta).toBeHidden();
+  expect(await page.evaluate(() => window.__game.tienda)).toEqual({
+    carro: null,
+    saldo: 0,
+  });
 
-  // Solo se acorta el combate. La recompensa y la salida usan los eventos de la partida.
   await page.evaluate(async () => {
     const g = window.__game;
     await g.saltarAlJefe();
     g.saltarPresentacion();
-    g.setVidaJefe(0);
-    g.step(420);
+    g.colocar({ sael: [-1.5, 2.8], odo: [1.5, 2.8], jefe: [-4, 0] });
+    g.step(2);
   });
-  await expect(page.locator("#objective")).toContainText(
-    "Recompensa: +25 monedas",
+  expect(
+    await page.evaluate(() => window.__game.render.carroVictoria),
+  ).toBeNull();
+  expect(await page.evaluate(() => window.__game.render.monedasVisibles)).toBe(
+    0,
   );
-  // Caminan por el claro y pasan el arco norte con los controles de la partida.
-  await page.keyboard.down("KeyW"); // Sael y Odo avanzan con sus teclas reales
-  await page.keyboard.down("ArrowUp");
   await page.evaluate(() => {
-    window.__game.step(400);
-    // Aunque el montaje termine después, salir de la ventana deja el juego en pausa.
-    window.dispatchEvent(new window.Event("blur"));
+    const g = window.__game;
+    g.setVidaJefe(0);
+    g.step(30); // medio segundo: las monedas caen y el carro todavía viene en camino
   });
-  await page.keyboard.up("KeyW");
-  await page.keyboard.up("ArrowUp");
-  await page.waitForFunction(
-    () =>
-      window.__game.etapa === "puesto" && window.__game.pantalla === "paused",
+  const llegada = await page.evaluate(() => window.__game.render);
+  expect(llegada.monedasVisibles).toBeGreaterThan(0);
+  expect(llegada.carroVictoria.x).toBeGreaterThan(0);
+  await page.keyboard.press("p");
+  await expect(carta).toBeHidden();
+  await page.screenshot({ path: info.outputPath("llegada-bodoque.png") });
+
+  await page.evaluate(() => window.__game.step(120));
+  expect(await page.evaluate(() => window.__game.render.carroVictoria)).toEqual(
+    { x: 0, z: 0 },
   );
-  await page.getByRole("button", { name: "Continuar", exact: true }).click();
-  await page.evaluate(() => window.__game.step(1));
-  await expect(aviso).toBeHidden();
-  const inicio = await page.evaluate(() => {
-    const [a, b] = window.__game.state.players;
-    return { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
-  });
-  await caminarHasta(page, { x: 2, z: -25 });
+  await expect(page.locator("#objective")).toContainText("+25 pesos");
   await expect(aviso).toBeVisible();
   await expect(aviso).toContainText("P");
+  const mural = page.locator("#mural");
   await expect(mural).toHaveAttribute(
     "aria-label",
-    "Carro de completos · El Trigal",
+    "Carro de completos de Bodoque",
   );
   await expect(mural).toContainText("31 minutos");
   await expect(mural).toContainText("quiero un puro completo");
@@ -136,14 +115,14 @@ test("la pareja visita el carro en la práctica y compra después de vencer a Mi
     )
     .toBe(3);
   const saldo = carta.locator(".carta-saldo");
-  await expect(saldo).toHaveText("25 monedas");
+  await expect(saldo).toHaveText("25 pesos");
   await expect(
     carta.getByRole("button", {
-      name: "Comprar · Mote con huesillos · 25 monedas",
+      name: "Comprar · Mote con huesillos · 25 pesos",
     }),
   ).toBeEnabled();
   await expect(
-    carta.getByRole("button", { name: "Comprar · Sopaipilla · 23 monedas" }),
+    carta.getByRole("button", { name: "Comprar · Sopaipilla · 23 pesos" }),
   ).toBeEnabled();
   await page.screenshot({ path: info.outputPath("carta.png") });
   // En una ventana angosta la carta desplaza hacia abajo, sin cortar las fichas a los lados.
@@ -165,11 +144,11 @@ test("la pareja visita el carro en la práctica y compra después de vencer a Mi
   await page.keyboard.press("d"); // la primera opción de la carta es el completo
   await expect(
     carta.getByRole("button", {
-      name: "Comprar · Completo italiano · 25 monedas",
+      name: "Comprar · Completo italiano · 25 pesos",
     }),
   ).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(saldo).toHaveText("0 monedas");
+  await expect(saldo).toHaveText("0 pesos");
   await expect(
     carta.getByRole("button", { name: "Comprado · Completo italiano" }),
   ).toBeDisabled();
@@ -182,23 +161,57 @@ test("la pareja visita el carro en la práctica y compra después de vencer a Mi
     await page.evaluate(() => window.__game.state.players.map((p) => p.hp)),
   ).toEqual([1250, 1250]);
   await page.keyboard.press("p");
-  await expect(saldo).toHaveText("0 monedas");
+  await expect(saldo).toHaveText("0 pesos");
   await carta.getByRole("button", { name: "Volver al juego" }).click();
-  await caminarHasta(page, inicio);
+  await caminarHasta(page, { x: 0, z: 8 });
   await expect(aviso).toBeHidden();
   await page.keyboard.press("p");
   await expect(carta).toBeHidden();
 
-  // La llegada al dominio de Ondar se activa andando más allá del carro.
+  // Rodean el carro por el espacio entre su costado izquierdo y los pilares de Mirra.
+  await caminarHasta(page, { x: -5.3, z: 7 });
+  await caminarHasta(page, { x: -5.3, z: -5 });
+  await caminarHasta(page, { x: 0, z: -6 });
+  await page.keyboard.down("KeyW"); // Sael y Odo avanzan con sus teclas reales
+  await page.keyboard.down("ArrowUp");
+  await page.evaluate(() => {
+    window.__game.step(400);
+    // Aunque el montaje termine después, salir de la ventana deja el juego en pausa.
+    window.dispatchEvent(new window.Event("blur"));
+  });
+  await page.keyboard.up("KeyW");
+  await page.keyboard.up("ArrowUp");
+  await page.waitForFunction(
+    () =>
+      window.__game.etapa === "puesto" && window.__game.pantalla === "paused",
+  );
+  await page.getByRole("button", { name: "Continuar", exact: true }).click();
+  await page.evaluate(() => window.__game.step(1));
+  await expect(aviso).toBeHidden();
+  const inicio = await page.evaluate(() => {
+    const [a, b] = window.__game.state.players;
+    return { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
+  });
+  // El segundo emplazamiento antiguo también está vacío.
+  await caminarHasta(page, { x: 2, z: -25 });
+  await page.keyboard.press("p");
+  await expect(carta).toBeHidden();
+  await expect(aviso).toBeHidden();
+  expect(await page.evaluate(() => window.__game.tienda)).toEqual({
+    carro: null,
+    saldo: 0,
+  });
+
+  // La llegada al dominio de Ondar se activa al caminar hasta el final del muelle.
   await caminarHasta(page, { x: -1, z: -32.5 });
   await expect(
     page.getByRole("heading", { name: "Ondar el Ahogado" }),
   ).toBeVisible();
   await expect(page.locator("#intro")).toContainText("Aquí termina");
-  const volverAlCarro = page.getByRole("button", {
-    name: "Volver al carro de completos",
+  const volverAlMuelle = page.getByRole("button", {
+    name: "Volver al muelle",
   });
-  // Si el modelo no carga al repetir Mirra, se conserva el destino y el carro sigue disponible.
+  // Si el modelo no carga al repetir Mirra, se conserva el destino y se puede volver al muelle.
   await page.route("**/mirra.glb", (route) =>
     route.fulfill({
       contentType: "model/gltf-binary",
@@ -211,18 +224,11 @@ test("la pareja visita el carro en la práctica y compra después de vencer a Mi
   );
   expect(await page.evaluate(() => window.__game.etapa)).toBe("destino");
   await page.unroute("**/mirra.glb");
-  await expect(volverAlCarro).toBeFocused();
+  await expect(volverAlMuelle).toBeFocused();
   await page.keyboard.press("d");
   await expect(page.locator("#primary")).toBeFocused();
   await page.keyboard.press("a");
   await page.keyboard.press("Space");
-  await caminarHasta(page, { x: 2, z: -25 });
-  await page.keyboard.press("p");
-  await expect(
-    carta.getByRole("button", { name: "Comprado · Completo italiano" }),
-  ).toBeDisabled();
-  await page.keyboard.press("Escape");
-
   // F puede reasignarse al movimiento: el botón sigue disponible para entrar en la sala.
   const entrar = page.getByRole("button", {
     name: "Entrar en la sala del Farolero",
@@ -284,7 +290,7 @@ test("la pareja visita el carro en la práctica y compra después de vencer a Mi
   expect(errores).toEqual([]);
 });
 
-test("el atajo abre el carro y la entrada al Farolero espera al montaje", async ({
+test("se puede seguir sin comprar y reintentar la carga del muelle", async ({
   page,
 }) => {
   await page.goto("/?jefe=mirra&seed=17");
@@ -300,13 +306,13 @@ test("el atajo abre el carro y la entrada al Farolero espera al montaje", async 
   // Fuerza un fallo en el modelo de la nueva escena, después de cargar la pradera.
   const modelo = "**/sael.glb";
   await page.route(modelo, (ruta) => ruta.abort());
-  await page.getByRole("button", { name: "Ir al carro de completos" }).click();
+  await page.getByRole("button", { name: "Continuar al muelle" }).click();
   const continuar = page.getByRole("button", {
     name: "Continuar",
     exact: true,
   });
   await expect(page.locator("#intro")).toContainText(
-    "No se pudo cargar el puesto",
+    "No se pudo cargar el muelle",
   );
   await page.unroute(modelo);
   await continuar.evaluate((boton) => {
@@ -319,6 +325,10 @@ test("el atajo abre el carro y la entrada al Farolero espera al montaje", async 
     () =>
       window.__game.escena === "puesto" && window.__game.pantalla === "playing",
   );
+  expect(await page.evaluate(() => window.__game.tienda)).toEqual({
+    saldo: 25,
+    carro: null,
+  });
   await expect(
     page.getByRole("button", { name: "Entrar en la sala del Farolero" }),
   ).toBeVisible();

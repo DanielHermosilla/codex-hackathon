@@ -175,15 +175,17 @@ export function crearHudJefe({
         op(presFrase, escalon(P.t, F.retrasoFrase, F.fundidoTexto));
       }
 
-      // Frases sueltas (burla, muerte) como subtítulo.
+      // Al llegar Bodoque, la lápida muestra las últimas palabras y deja libre la ventanilla.
       const fr = c.frase;
-      show(sub, !!fr, fr ? Math.min(1, fr.t / 0.4) : 0);
+      const enLapida = c.lapida && def.monedas > 0;
+      show(sub, !!fr && !enLapida, fr ? Math.min(1, fr.t / 0.4) : 0);
       if (fr) set(sub, t(fr.clave));
 
       for (let i = 0; i < dropsEl.length; i++) {
         const d = c.drops[i],
           e = dropsEl[i];
-        if (!d) {
+        if (!d || (def.monedas ?? 0) > 0) {
+          // En las victorias pagadas, la recompensa se ve en las monedas 3D.
           e.style.display = "none";
           continue;
         }

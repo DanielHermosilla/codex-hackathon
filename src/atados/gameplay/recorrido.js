@@ -193,7 +193,7 @@ function crearMundo(cfg, solo, limite, pilares) {
  * @param {Recorrido} r @param {Mundo} anterior */
 export function abrirPasilloPuesto(r, anterior) {
   const salida = r.cfg.recorrido.salida;
-  // Paredes y carro limitan el paso. El furgón no es un pilar donde se pueda enredar la cadena.
+  // Las dos barandas del muelle delimitan el paso a todo lo ancho.
   const mundo = createWorld(r.cfg, {
     solo: r.opts.solo,
     ...salida.spawn,
@@ -201,7 +201,7 @@ export function abrirPasilloPuesto(r, anterior) {
     limite(pos, margen) {
       const x = Math.max(
         -salida.ancho / 2 + margen,
-        Math.min(salida.bordePuesto - margen, pos.x),
+        Math.min(salida.ancho / 2 - margen, pos.x),
       );
       const z = Math.max(
         salida.zFin + margen,

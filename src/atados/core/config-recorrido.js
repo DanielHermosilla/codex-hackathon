@@ -147,7 +147,6 @@ export const RECORRIDO = {
     anchoArco: 4.8, // m de paso, centrado en x = 0
     zFin: -33,
     ancho: 11,
-    bordePuesto: 1.8, // m en X: el furgón ocupa el lado derecho
     spawn: { sael: [-1.6, -20], odo: [1.2, -20] },
   },
 

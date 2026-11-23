@@ -12,8 +12,9 @@ export const CONFIG = {
 
   tienda: {
     precios: { italiano: 25, mote: 25, sopaipilla: 23 }, // monedas por producto, compartidas por la pareja
-    carroPractica: { x: 10.5, z: -7.5 }, // m: hueco del muro del claro, a la derecha de la escalinata
-    carro: { x: 4, z: -26 }, // m: ventanilla en el lateral del pasillo posterior a Mirra
+    carroVictoria: { x: 0, z: 0 }, // m: al vencer al jefe, Bodoque estaciona en el centro de la arena.
+    llegadaCarro: 1.5, // s desde la victoria hasta que Bodoque estaciona y se abre la salida.
+    huellaCarro: { semiancho: 1.55, fondo: 0.7, frente: 1 }, // m del modelo antes de escalarlo: carrocería, ruedas y mesón
     vidaItaliano: 250, // puntos por jugador en la escala ×10 (antes 25)
     alcance: 3.8, // Metros desde el centro hasta donde se puede pedir por la ventanilla.
   },
@@ -163,7 +164,7 @@ export const CONFIG = {
       monedas: 25, // recompensa por vencer a Mirra, suficiente para elegir un producto
       textos: "mirra",
       arte: "mirra", // render/mirra-arte.js       // claves de i18n: jefe.mirra.*
-      vida: 12000, // ficha (de partida) ≈ 24 pasadas a tensión máxima; ×10 por D-202 (antes 1200)
+      vida: 7200, // PV: 60 % de los 12 000 anteriores; unas 15 pasadas a tensión máxima.
       radio: 1.8, // m: ~4× el jugador, fijo (D-085, D-154)
       altura: 3.2,
       velocidad: 3.0, // m/s al acercarse. PROVISIONAL
@@ -175,12 +176,23 @@ export const CONFIG = {
           explosion: 520,
           luz: 320,
           acido: 180,
+          gota: 300, // PV que pierde cada personaje alcanzado fuera del refugio.
           pisoton: 300,
           braseros: 260,
         }, // puntos en la escala ×10 de D-202
         inicio: 4,
         intervalo: 8,
-        secuencia: ["acido", "luz", "pisoton", "braseros"],
+        // La gota y el ácido alternan al inicio de cada vuelta de cuatro ritos.
+        secuencia: [
+          "acido",
+          "luz",
+          "pisoton",
+          "braseros",
+          "gota",
+          "luz",
+          "pisoton",
+          "braseros",
+        ],
       },
       acido: {
         punteria: 4.5, // segundos durante los que la mira sigue al jugador marcado
@@ -364,7 +376,7 @@ export const CONFIG = {
     },
     // El Farolero dirige tres pruebas por vuelta. El ensayo enseña la misma secuencia que el duelo.
     farolero: {
-      monedas: 1, // recompensa por vencer al Farolero
+      monedas: 25, // pesos compartidos por vencer al Farolero
       textos: "farolero",
       arte: "farolero",
       vida: 6000, // seis aciertos; escala de puntos D-202
@@ -1532,8 +1544,7 @@ export const CONFIG = {
 
   // Página: tiempos del flujo menú → caída → recorrido → Mirra (main.js). Solo presentación.
   ui: {
-    finJefe: 5.5, // segundos para leer la lápida del Farolero antes del resultado
-    // El viaje del carro al Farolero cierra la demo. Tiempos de la toma, en segundos simulados.
+    // El viaje del muelle al Farolero cierra la demo. Tiempos de la toma, en segundos simulados.
     epilogo: {
       apertura: 0.8, // el fundido deja ver el umbral
       finMarcha: 5.7, // la pareja se planta frente al Farolero
@@ -1659,7 +1670,6 @@ export const CONFIG = {
     },
     // Furgón (render/puesto.js): tienda de completos al borde de la arena. Colores sin rojo (D-188).
     puesto: {
-      mirarA: [0, -23], // punto (x, z en m) al que mira el frente del carrito
       escala: 1.5,
       carro: 0x326950,
       borde: 0xf9eaca,

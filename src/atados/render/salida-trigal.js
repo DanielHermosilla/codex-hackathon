@@ -1,12 +1,10 @@
-// Embarcadero al salir del trigal (D-204 y D-212). El camino acaba junto al furgón
-// de Dani, sobre el agua. La simulación y el mesón comparten la posición en metros.
+// Embarcadero al salir del trigal. Los tablones llevan hasta el muelle de Ondar.
 import * as THREE from "three";
-import { crearPuesto } from "./puesto.js";
 
 /** @param {{scene: THREE.Scene, cfg: import('./tipos.js').Cfg, keep: import('./tipos.js').Keep}} args */
 export function crearSalidaTrigal({ scene, cfg, keep }) {
   const tramo = cfg.recorrido.salida;
-  const medio = tramo.ancho / 2; // la plataforma sostiene también la explanada del furgón
+  const medio = tramo.ancho / 2; // metros desde el centro hasta la baranda
   const largo = tramo.zInicio - tramo.zFin;
   const centro = (tramo.zInicio + tramo.zFin) / 2;
   const pal = cfg.paleta.zonas.muelle.base; // agua fría y madera iluminada al atardecer
@@ -142,7 +140,7 @@ export function crearSalidaTrigal({ scene, cfg, keep }) {
     color: pal.sueloAlt,
   });
 
-  // Cajones de suministros y sus listones, al costado reservado al furgón.
+  // Cajones de suministros y sus listones en la esquina del fondo.
   for (const [x, z, alto] of [
     [medio - 1.0, tramo.zFin + 1.7, 0.95],
     [medio - 2.4, tramo.zFin + 1.9, 0.72],
@@ -170,7 +168,7 @@ export function crearSalidaTrigal({ scene, cfg, keep }) {
     }
   }
 
-  // Orillas bajas de piedra y un cabo distante. Su silueta enmarca al puesto sin tapar al jugador.
+  // Orillas bajas de piedra y un cabo distante, a ambos lados del muelle.
   for (let i = 0; i < 30; i++) {
     const lado = i % 2 === 0 ? -1 : 1;
     const fila = Math.floor(i / 2);
@@ -235,12 +233,8 @@ export function crearSalidaTrigal({ scene, cfg, keep }) {
   agua.position.z = centro;
   raiz.add(agua);
 
-  // El vendedor forma parte del furgón y comparte su posición con la interacción.
-  const furgon = crearPuesto({ scene, cfg, keep, posicion: cfg.tienda.carro });
   return {
-    sync: furgon.sync,
     dispose() {
-      furgon.dispose();
       scene.remove(raiz); // keep libera los materiales, instancias y geometrías al cerrar la sala
     },
   };

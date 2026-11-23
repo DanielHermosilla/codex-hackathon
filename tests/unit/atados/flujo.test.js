@@ -217,13 +217,21 @@ describe("revisión del flujo", () => {
     expect(p.estado).toBe("victoria");
   });
 
-  it("el atajo al carro comparte el destino y la salud con el arco y solo funciona una vez", () => {
-    const { p, correr, vistos } = nueva({ caida: false });
+  it("el arco y su atajo esperan la llegada del carro antes de salir sin comprar", () => {
+    const { p, f, correr, vistos } = nueva({ caida: false });
     p.saltarAlJefe();
     expect(p.entrarPuesto()).toBe(false);
     p.world.players[0].hp = 380;
+    p.colocarJugadores([-1, -18.5], [1, -18.5]); // incluso si ya caminaban hacia el arco al vencer
+    for (const entrada of f.st.inputs) entrada.mz = -1;
     ponerVidaJefe(p.combate, 0);
-    correr(DT);
+    correr(CONFIG.tienda.llegadaCarro - DT);
+    expect(p.estado).toBe("victoria");
+    expect(p.salidaVictoriaLista).toBe(false);
+    expect(p.entrarPuesto()).toBe(false);
+    for (const entrada of f.st.inputs) entrada.mz = 0; // pueden quedarse en la arena todo lo que quieran
+    correr(3 * DT);
+    expect(p.salidaVictoriaLista).toBe(true);
     expect(p.entrarPuesto()).toBe(true);
     expect(p.world.players[0].hp).toBe(380);
     expect(p.entrarPuesto()).toBe(false);
@@ -246,7 +254,62 @@ describe("revisión del flujo", () => {
     expect(vistos.filter((e) => e.estado === "fin-demo")).toHaveLength(1);
   });
 
-  it("se compra en el puesto con la recompensa de cada victoria", () => {
+  it("el carro estacionado deja acercarse al mesón y rodearlo", () => {
+    const { p, f, correr } = nueva({ caida: false });
+    p.saltarAlJefe();
+    ponerVidaJefe(p.combate, 0);
+    p.colocarJugadores([-0.6, 3], [0.6, 3]);
+    correr(CONFIG.tienda.llegadaCarro + DT);
+
+    // Avanzar medio segundo hacia el mesón acerca a la pareja, pero no permite atravesar el carro.
+    for (const entrada of f.st.inputs) entrada.mz = -1;
+    correr(0.5);
+    for (const jugador of p.world.players) {
+      expect(jugador.z).toBeGreaterThanOrEqual(1.9);
+      expect(jugador.z).toBeLessThan(3);
+    }
+    expect(
+      juntoAlCarro(
+        p.world.players,
+        CONFIG.tienda.carroVictoria,
+        CONFIG.tienda.alcance,
+      ),
+    ).toBe(true);
+
+    // Un rodeo por el lateral vuelve a dar paso hacia el arco sin enganchar la cadena.
+    for (const entrada of f.st.inputs) {
+      entrada.mx = 1;
+      entrada.mz = 0;
+    }
+    correr(0.8);
+    for (const entrada of f.st.inputs) {
+      entrada.mx = 0;
+      entrada.mz = -1;
+    }
+    correr(1);
+    for (const jugador of p.world.players) expect(jugador.z).toBeLessThan(-1.5);
+  });
+
+  it("Bodoque despeja a un jugador anclado sin estirar la cadena al estacionar", () => {
+    const { p, f, correr } = nueva({ caida: false, jefe: "farolero" });
+    p.saltarAlJefe();
+    ponerVidaJefe(p.combate, 0);
+    p.colocarJugadores([0, 0], [0, 6.8]);
+    for (const entrada of f.st.inputs) entrada.anchor = true;
+    correr(CONFIG.tienda.llegadaCarro - DT);
+    expect(p.world.players[0].z).toBe(0); // sigue en el centro mientras el carro viene en camino
+    correr(3 * DT);
+    expect(p.world.players[0].z).toBeGreaterThanOrEqual(1.9);
+    expect(p.world.players[1].z).toBe(6.8);
+    expect(p.world.chain.z[0]).toBe(p.world.players[0].z);
+    expect(p.world.chain.z[p.world.chain.n]).toBe(6.8);
+    expect(p.world.players[0].anchored).toBe(true);
+
+    p.reintentarJefe();
+    expect(p.world.limite).toBe(null); // el nuevo mundo solo tiene el borde circular de la arena
+  });
+
+  it("las compras de la arena y los pesos se conservan al salir al muelle", () => {
     const tienda = crearTienda(CONFIG);
     const fuenteEntrada = fuente();
     const p = crearPartida(tienda.cfg, { sample: fuenteEntrada.sample });
@@ -288,22 +351,29 @@ describe("revisión del flujo", () => {
       for (let i = 0; i < 60 && p.estado === "victoria"; i++) p.update(DT);
       expect(p.estado).toBe("puesto");
     };
+    // El carro atiende en la arena antes de que la pareja decida salir por el arco.
+    for (const entrada of fuenteEntrada.st.inputs) entrada.mz = 0;
+    for (let i = 0; i < Math.ceil(CONFIG.tienda.llegadaCarro / DT); i++)
+      p.update(DT);
+    p.colocarJugadores([-1, 1.5], [1, 1.5]);
+    expect(
+      juntoAlCarro(
+        p.world.players,
+        CONFIG.tienda.carroVictoria,
+        CONFIG.tienda.alcance,
+      ),
+    ).toBe(true);
+    expect(tienda.comprar("italiano", p.world.players)).toBe(true);
+    expect(p.world.players[1].hp).toBe(630);
     cruzar();
-    expect(cobrarVictorias()).toBe(0); // continuar dos veces no repite la victoria
+    expect(cobrarVictorias()).toBe(0); // cruzar después de pagar no repite el premio
     expect(p.recorrido.estado.fase).toBe("puesto");
     expect(p.combate).toBe(null);
     expect(p.recorrido.estado.enemigos).toEqual([]);
-    expect(p.world.players[1].hp).toBe(380);
-    p.eventos.length = 0;
-    const cerca = () =>
-      juntoAlCarro(p.world.players, CONFIG.tienda.carro, CONFIG.tienda.alcance);
-    expect(cerca()).toBe(false);
-    for (const entrada of fuenteEntrada.st.inputs) entrada.mz = -1;
-    for (let i = 0; i < 55; i++) p.update(DT); // ambos andan hasta la ventanilla desde el punto de llegada
-    expect(cerca()).toBe(true);
-    expect(tienda.comprar("italiano", p.world.players)).toBe(true);
     expect(p.world.players[1].hp).toBe(630);
-    for (let i = 0; i < 190; i++) p.update(DT); // hasta el extremo del muelle, pasado el furgón
+    p.eventos.length = 0;
+    for (const entrada of fuenteEntrada.st.inputs) entrada.mz = -1;
+    for (let i = 0; i < 190; i++) p.update(DT); // hasta el extremo del muelle
     expect(p.estado).toBe("destino");
     expect(p.combate).toBe(null);
     expect(p.eventos.filter((e) => e.estado === "destino")).toHaveLength(1);
@@ -322,8 +392,11 @@ describe("revisión del flujo", () => {
     p.update(DT);
     expect(cobrarVictorias()).toBe(1); // esta victoria corresponde al nuevo combate
     expect(tienda.saldo).toBe(25);
-    cruzar();
+    p.colocarJugadores([-1, 1.5], [1, 1.5]);
+    for (let i = 0; i < Math.ceil(CONFIG.tienda.llegadaCarro / DT); i++)
+      p.update(DT);
     expect(tienda.comprar("mote", p.world.players)).toBe(true);
+    cruzar();
     expect(tienda.saldo).toBe(0);
   });
 

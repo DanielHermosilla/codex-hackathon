@@ -42,6 +42,7 @@ import {
   reiniciarPasillo,
 } from "../gameplay/recorrido.js";
 import { colocarParaPrueba, heredarJugadores } from "../gameplay/combate.js";
+import { estacionarCarro } from "../gameplay/tienda.js";
 
 /** @typedef {typeof import('./config.js').CONFIG} Config */
 /** @typedef {import('./juego.js').Muestreo} Muestreo */
@@ -224,9 +225,14 @@ export function crearPartida(cfg, opciones) {
     entrarPuesto(); // caminar y pulsar el atajo completan la misma transición una sola vez
   }
 
-  /** Pasa de la lápida de Mirra al carro y conserva la salud de la pareja. */
+  // El arco y el botón dejan ver la caída de monedas y la llegada del carro incluso si se vence junto a la salida.
+  function salidaVictoriaLista() {
+    return estado === "victoria" && tEstado >= cfg.tienda.llegadaCarro - EPS;
+  }
+
+  /** Pasa de la arena de Mirra al muelle y conserva la salud de la pareja. */
   function entrarPuesto() {
-    if (estado !== "victoria" || !juegoJefe || jefe === "farolero")
+    if (!salidaVictoriaLista() || !juegoJefe || jefe === "farolero")
       return false;
     abrirPasilloPuesto(juegoRecorrido.recorrido, juegoJefe.world);
     juegoJefe = null; // el puesto conserva los PV, la cadena se coloca a la entrada del muelle
@@ -272,8 +278,17 @@ export function crearPartida(cfg, opciones) {
     tEstado += dt;
     drenarActivo();
     // Comprobamos la salida antes de revisar la victoria para no cruzar en el mismo paso en que cae Mirra.
-    if (estado === "victoria") cruzarSalida(ins);
-    else if (estado === "puesto") {
+    if (estado === "victoria" && juegoJefe) {
+      // Solo el paso en que se detiene el carro activa su colisión y despeja el mesón.
+      const llegada = cfg.tienda.llegadaCarro - EPS;
+      if (
+        tEstado >= llegada &&
+        tEstado - dt < llegada &&
+        juegoJefe.combate.jefe.def.monedas > 0
+      )
+        estacionarCarro(juegoJefe.world);
+      cruzarSalida(ins);
+    } else if (estado === "puesto") {
       const meta = cfg.recorrido.salida.zFin + 1; // m: último tablón antes del borde físico
       const jugadores = juegoRecorrido.world.players;
       if (
@@ -369,14 +384,18 @@ export function crearPartida(cfg, opciones) {
     eventos,
     reintentarJefe,
     entrarPuesto,
-    /** Desde el final de la demo se puede volver a visitar el carro con la misma salud y saldo. */
+    /** Al estacionar Bodoque, la pareja puede comprar o marcharse por la salida de la arena. */
+    get salidaVictoriaLista() {
+      return salidaVictoriaLista();
+    },
+    /** Desde el final de la demo se puede volver al muelle con la misma salud y saldo. */
     volverAlPuesto() {
       if (estado !== "destino") return;
       const { sael, odo } = cfg.recorrido.salida.spawn;
       colocarEnRecorrido(juegoRecorrido.recorrido, sael, odo);
       cambiar("puesto");
     },
-    /** La sala debe estar montada antes de iniciar el epílogo desde el carro. */
+    /** La sala debe estar montada antes de iniciar el epílogo desde el muelle. */
     entrarFarolero() {
       if (estado !== "puesto") return false;
       cambiar("epilogo");

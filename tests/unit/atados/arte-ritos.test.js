@@ -4,7 +4,11 @@ import assert from "node:assert/strict";
 import * as THREE from "three";
 import { CONFIG } from "../../../src/atados/core/config.js";
 import { crearArenaMirra } from "../../../src/atados/gameplay/arena-mirra.js";
-import { BRASEROS, crearRitos } from "../../../src/atados/gameplay/ritos.js";
+import {
+  BRASEROS,
+  GOTA,
+  crearRitos,
+} from "../../../src/atados/gameplay/ritos.js";
 import { crearArenaMirraVisual } from "../../../src/atados/render/arena-mirra.js";
 import { crearBrillos } from "../../../src/atados/render/brillos.js";
 import { crearVistaRitos } from "../../../src/atados/render/ritos.js";
@@ -129,4 +133,31 @@ it("el destello aparece en el encuentro registrado aunque el tiro no se haya dib
   sync(rito, 0.225, true, jefe);
   sync(rito, 0.1, true, jefe);
   assert.equal(visibles(scene).length, 0); // El mismo resultado no vuelve a encender el destello.
+});
+
+it("la gota desciende sobre el círculo que marca el radio real del refugio", () => {
+  const scene = new THREE.Scene();
+  const jefe = { x: 2, z: -5 };
+  const sync = crearVistaRitos(scene, keep, crearBrillos(keep));
+  const rito = crearRitos();
+  Object.assign(rito, { tipo: "gota", x: 2, z: 4, tiempo: GOTA.aviso });
+  sync(rito, 1 / 60, false, jefe);
+  const mallas = visibles(scene);
+  const borde = mallas.find((m) => m.geometry.type === "RingGeometry");
+  const gota = mallas.find((m) => m.geometry.type === "LatheGeometry");
+  const centro = borde.getWorldPosition(new THREE.Vector3());
+  assert.deepEqual([centro.x, centro.z], [rito.x, rito.z]);
+  assert.equal(borde.geometry.parameters.outerRadius, GOTA.radio);
+  const inicio = gota.getWorldPosition(new THREE.Vector3());
+  rito.tiempo = GOTA.aviso / 2;
+  sync(rito, 1 / 60, false, jefe);
+  const mitad = gota.getWorldPosition(new THREE.Vector3());
+  assert.deepEqual([inicio.x, inicio.z, mitad.x, mitad.z], [2, 4, 2, 4]);
+  assert.ok(inicio.y > mitad.y && mitad.y > 0);
+  Object.assign(rito, { tipo: "", tiempo: 0 });
+  sync(rito, 1 / 60, false, jefe);
+  assert.ok(!visibles(scene).includes(gota));
+  assert.ok(!visibles(scene).includes(borde));
+  sync(null, 1 / 60, false, jefe);
+  assert.equal(visibles(scene).length, 0);
 });

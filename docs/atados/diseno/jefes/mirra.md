@@ -2,7 +2,7 @@
 
 Para iterar la puesta en escena de cada ataque y reproducir sus capturas, consulta la [ficha visual de Mirra](ataques-visuales-mirra.md).
 
-**Orden en la demo:** primera de dos de acuerdo con D-203. Desde el carro de completos la pareja puede abrir la sala del Farolero o continuar hasta el muelle de Ondar · **Duración objetivo:** 2–3 min [D-141] · **Qué enseña/prueba de la cadena:** la cuchilla tensa básica (uno ancla, el otro rodea), el corte contra una carga y el enredo en pilares. Lo enseña, no lo obliga [D-012, D-019, D-048, D-054, D-148] · **Decisiones:** D-012, D-018, D-025, D-043, D-047, D-048, D-054, D-055, D-057, D-058, D-078, D-084, D-085, D-086, D-088, D-091, D-092, D-093, D-098, D-106, D-128, D-141, D-147, D-148, D-150, D-152–D-156, D-160, D-163–D-165, D-169–D-172, D-174, D-176, D-180, D-183, D-184
+**Orden en la demo:** primera de dos de acuerdo con D-203. Tras la parada de Bodoque en la arena, la pareja puede ir al muelle y elegir entre enfrentar al Farolero o continuar hacia Ondar · **Duración objetivo:** 2–3 min [D-141] · **Qué enseña/prueba de la cadena:** la cuchilla tensa básica (uno ancla, el otro rodea), el corte contra una carga y el enredo en pilares. Lo enseña, no lo obliga [D-012, D-019, D-048, D-054, D-148] · **Decisiones:** D-012, D-018, D-025, D-043, D-047, D-048, D-054, D-055, D-057, D-058, D-078, D-084, D-085, D-086, D-088, D-091, D-092, D-093, D-098, D-106, D-128, D-141, D-147, D-148, D-150, D-152–D-156, D-160, D-163–D-165, D-169–D-172, D-174, D-176, D-180, D-183, D-184
 
 > Convenciones de las fichas:
 > - **(de partida)** = número propuesto para afinar en playtest. No es decisión. La configuración de la demo está en `src/atados/core/config.js`.
@@ -73,7 +73,7 @@ Cada ataque da un rol a cada jugador [D-164]. "Objetivo" = a quien apunta; "otro
 - Tono serio con chispa de humor [D-002].
 
 ## Drop / recompensa
-- En la demo, vencer a Mirra entrega una recompensa para la carta del furgón en el pasillo de salida [D-212]. El prototipo actual entrega 25 monedas.
+- Al caer Mirra, la pareja gana 25 pesos. Bodoque llega al centro de la arena con su carro de completos. Se puede comprar ahí o salir por el arco norte con el saldo intacto.
 - Al morir, su esquirla se incrusta en la cadena: es narrativa, no un ítem [D-169].
 - Suelta un ítem para cada jugador, al azar de su pool [D-031, D-078]. Cada ítem lleva el color de su jugador y solo él lo recoge [D-170]. Pool de 3–4 ítems [D-170]. Todo nace del lore [D-030].
 - Pool (propuesta). Capa S1: virtud vs pecado del mismo dios; juntos hacen sinergia [D-096, D-128]:
@@ -101,7 +101,7 @@ Cada ataque da un rol a cada jugador [D-164]. "Objetivo" = a quien apunta; "otro
 - Semilla de referencia: `?seed=1` (propuesta). Cada fase arranca de estado reproducible: posición de Mirra, pilares y RNG.
 - Smoke: forzar cada ataque desde `window.__game`, capturar cada telegrafía en normal y difícil, forzar transición al 50 %, forzar muerte.
 - Criterios de "justo": 2–4 intentos en normal [D-109]; ningún daño sin aviso; ningún patrón sin salida para los dos con la cadena puesta; nunca dos ataques activos a la vez en fase 1.
-- Duración 2–3 min [D-141]. Vida (de partida): 12 000 (≈ 24 pasadas a tensión máxima de ~500) [D-202].
+- Duración objetivo 2–3 min [D-141]. Vida de partida: 7.200 PV (60 % de los 12.000 de [D-202], unas 15 pasadas a tensión máxima de ~500).
 - Vida de cada jugador (de partida): 1000 [D-020, D-202]. Se revive con vida llena [D-167].
 
 ## ❓ Huecos abiertos

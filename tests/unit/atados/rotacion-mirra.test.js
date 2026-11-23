@@ -12,7 +12,7 @@ import {
 import { killPlayer } from "../../../src/atados/gameplay/jugadores.js";
 import { emptyInput } from "../../../src/atados/gameplay/mundo.js";
 
-it("Mirra repite cuatro señales de arena, mantiene sus ataques y limpia la arena al reintentar", () => {
+it("Mirra alterna ácido y gota en la rotación de arena y limpia la arena al reintentar", () => {
   const cfg = structuredClone(CONFIG);
   cfg.player.maxHp = 100000;
   const c = crearCombate(cfg);
@@ -20,7 +20,7 @@ it("Mirra repite cuatro señales de arena, mantiene sus ataques y limpia la aren
   const entrada = [emptyInput(), emptyInput()];
   const avisos = [];
   let ataque = false;
-  for (let i = 0; i < 42 * 60; i++) {
+  for (let i = 0; i < 72 * 60; i++) {
     pasoCombate(c, entrada, 1 / 60);
     const arena = c.arenaMirra;
     if (
@@ -39,8 +39,18 @@ it("Mirra repite cuatro señales de arena, mantiene sus ataques y limpia la aren
     const aviso = avisoRitoActual(c);
     if (aviso && avisos.at(-1) !== aviso) avisos.push(aviso);
   }
-  // El quinto turno reinicia el ciclo con ácido.
-  assert.deepEqual(avisos, ["acido", "luz", "pisoton", "braseros", "acido"]);
+  // Gota abre la segunda vuelta. Ácido vuelve tras el segundo turno de braseros.
+  assert.deepEqual(avisos, [
+    "acido",
+    "luz",
+    "pisoton",
+    "braseros",
+    "gota",
+    "luz",
+    "pisoton",
+    "braseros",
+    "acido",
+  ]);
   assert.ok(ataque);
   const nuevo = reintentar(c);
   assert.equal(nuevo.turnoArena, 0);
@@ -86,7 +96,7 @@ it("el aviso de luz termina al destello y el de braseros al perder ambos tiros",
   saltarPresentacion(c);
   const quietos = [emptyInput(), emptyInput()];
   const paso = () => pasoCombate(c, quietos, CONFIG.sim.fixedDt);
-  c.turnoArena = 1; // primer ciclo: ácido, luz, pisotón, braseros
+  c.turnoArena = 1; // primera vuelta: ácido, luz, pisotón, braseros
   c.proximoRito = 0;
   paso();
   assert.equal(avisoRitoActual(c), "luz");

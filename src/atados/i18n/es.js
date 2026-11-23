@@ -1,7 +1,8 @@
 // Textos en español (D-102). Las frases de jefe son BORRADOR de la ficha: las aprueba Diego.
 export default {
   "mundo.caida": "Sael y Odo caen al valle, al pie del Templo Celestial.",
-  "salida.atajo": "Ir al carro de completos",
+  "salida.atajo": "Continuar al muelle",
+  "salida.terminar": "Terminar partida",
   "mirra.victoria": "Mirra ha sido derrotada",
   "menu.lore":
     "Sael y Odo apagaron la Brasa Eterna. Ahora, su única arma contra los dioses es la cadena que los une.",
@@ -83,6 +84,7 @@ export default {
   "brasero.color.2": "dorado",
   "brasero.escudo": "Escudo {color} · {tiempo} s",
   "indicacion.luz": "Luz divina · busca la sombra detrás de un obstáculo.",
+  "indicacion.gota": "Gota · quédense dentro del círculo hasta que caiga.",
   "indicacion.pisotonSolo": "Pisotón · entra al círculo marcado.",
   "indicacion.pisoton": "Pisotón · entren juntos al círculo marcado.",
   "indicacion.braseros":
@@ -174,7 +176,7 @@ export default {
   "ajustes.navegacion":
     "Usa WASD o las flechas para moverte por los menús. Confirma con Enter, Shift o Espacio. Mantén R un segundo para reintentar.",
   "ajustes.pausa":
-    "Tras vencer a Mirra, acércate al carro de completos y pulsa P para abrir la carta. Esc o Start pausa la partida.",
+    "Tras vencer a un jefe, acércate al carro de completos y pulsa P para abrir la carta. Esc o Start pausa la partida.",
   "ajustes.cerrar": "Cerrar ajustes",
   "ajustes.up": "Arriba",
   "ajustes.left": "Izquierda",
@@ -203,20 +205,21 @@ export default {
 
   "tienda.abrir": "Ver carta",
   "tienda.pausa": "Partida en pausa",
-  "tienda.titulo": "Carro de completos",
+  "tienda.titulo": "Carro de completos de Bodoque",
   "tienda.nota":
-    "Cada producto alcanza para Sael y Odo. Gana monedas al derrotar jefes.",
-  "tienda.moneda": "{cantidad} moneda",
-  "tienda.monedas": "{cantidad} monedas",
+    "Cada producto alcanza para Sael y Odo. Gana pesos al derrotar jefes.",
+  "tienda.moneda": "{cantidad} peso",
+  "tienda.monedas": "{cantidad} pesos",
   "salida.arco":
-    "{victoria}. {premio}. Sal por el arco norte con tu compañero ↑",
-  "salida.camino":
-    "El carro de completos está a la derecha. Sigue hasta el final del muelle para llegar a Ondar ↑",
+    "{victoria}. {premio}. Visita el carro en el centro o cruza el arco norte ↑",
+  "salida.final":
+    "{victoria}. {premio}. Visita el carro en el centro o termina la partida.",
+  "salida.camino": "Sigue hasta el final del muelle para llegar a Ondar ↑",
   "salida.muelle": "El muelle",
   "salida.destino": "Ondar el Ahogado",
   "salida.finDemo":
     "Llegaste al dominio de Ondar. Aquí termina esta versión del juego.",
-  "salida.volver": "Volver al carro de completos",
+  "salida.volver": "Volver al muelle",
   "salida.repetir": "Reintentar a Mirra",
   "tienda.recompensa": "Recompensa: +{cantidad}",
   "tienda.cerrar": "Volver al juego",
@@ -235,7 +238,7 @@ export default {
 
 // Cartel del puesto: diálogo de Sael y Odo junto a la radio.
 export const muralText = {
-  stall: "Carro de completos · El Trigal",
+  stall: "Carro de completos de Bodoque",
   radio: "Radio · 31 minutos",
   sael: "¿También te robaste el carro del completo italiano?",
   odo: "Yo quiero un puro completo. ¡Se me enganchó la cadena!",
