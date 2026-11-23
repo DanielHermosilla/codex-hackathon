@@ -693,7 +693,8 @@ describe("caídas, derrota y reintento (D-020, D-028, D-111, D-167, D-173)", () 
     const seq = (c) => {
       saltarPresentacion(c);
       const out = [];
-      for (let k = 0; k < 30; k++) {
+      // Espera cinco avisos de ataques básicos. La puntería y el resultado del ácido ocupan su propio turno.
+      for (let k = 0; k < 120 && out.length < 5; k++) {
         correr(c, 0.5, () => [inp({ mx: 0.3 }), inp({ mx: -0.3 })]);
         c.w.players.forEach((p) => {
           p.hp = CONFIG.player.maxHp;
@@ -707,7 +708,7 @@ describe("caídas, derrota y reintento (D-020, D-028, D-111, D-167, D-173)", () 
     const a = nuevo({ seed: 11 });
     const s1 = seq(a);
     const s2 = seq(reintentar(a));
-    expect(s1.length).toBeGreaterThan(2);
+    expect(s1.length).toBe(5);
     expect(s2).toEqual(s1);
   });
 
