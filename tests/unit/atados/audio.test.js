@@ -166,24 +166,28 @@ describe("música por capas (D-060)", () => {
 
 describe("pistas con licencia (carpetas en public/audio/musica)", () => {
   const rutas = {
-    "/public/audio/musica/mirra/mirra-tema.ogg": "u1",
-    "/public/audio/musica/mirra/mirra-tema.mp3": "u1mp3",
-    "/public/audio/musica/victoria/fanfarria.ogg": "u2",
-    "/public/audio/musica/pasillo-mirra/base.mp3": "u3",
-    "/public/audio/musica/pasillo-mirra/folk.ogg": "u4",
+    "/public/atados/audio/musica/mirra-fase1/tema.ogg": "u1",
+    "/public/atados/audio/musica/farolero/base.ogg": "pedal",
+    "/public/atados/audio/musica/mirra-fase1/tema.mp3": "u1mp3",
+    "/public/atados/audio/musica/victoria-dionisiaca/tema.mp3": "u2",
+    "/public/atados/audio/musica/recorrido-sagrado/tema.ogg": "u3",
   };
   const idx = indexarPistas(rutas);
   it("prefiere .ogg y agrupa por carpeta", () => {
-    expect(idx.mirra["mirra-tema"]).toBe("u1");
+    expect(idx["mirra-fase1"].tema).toBe("u1");
   });
   it("archivo con nombre de capa = stem; otro nombre = pista completa", () => {
+    expect(resolverZona(CONFIG, "farolero", idx)).toEqual({
+      capas: { base: "pedal" },
+      completa: null,
+    });
     expect(resolverZona(CONFIG, "trigal", idx)).toEqual({
       capas: {},
       completa: "u1",
     });
     expect(resolverZona(CONFIG, "pasillo", idx)).toEqual({
-      capas: { base: "u3", folk: "u4" },
-      completa: null,
+      capas: {},
+      completa: "u3",
     });
   });
   it("lo que falta cae al placeholder (null)", () => {

@@ -54,8 +54,9 @@ class Fuente extends Nodo {
     this.paro = null;
     this.onended = null;
   }
-  start(t = 0) {
+  start(t = 0, offset = 0) {
     this.empezo = t;
+    this.offset = offset; // segundos desde el inicio de la pista
     this.ctx.fuentes.add(this);
   }
   stop(t = 0) {

@@ -8,7 +8,7 @@
 /** @typedef {{ rompeCon?: string | null, soloPrimeraVez?: boolean, habilitado: boolean, duracionMs: number | null, buses: string[], nivel?: number, fadeOutMs?: number, fadeInMs?: number }} MomentoSilencio */
 /** @typedef {{ sinte: string, ganancia: number, estados: string[], patron?: number[], cada?: number, acordes?: number[][], porFase?: number[], faseMin?: number, faseMax?: number, intensidadMin?: number, intensidadAncho?: number, alta?: boolean }} CapaMusica */
 /** @typedef {{ ganancia: number, estados: Record<string, number>, porFase?: number[] }} CompletaMusica */
-/** @typedef {{ carpeta: string, completa?: CompletaMusica, bpm: number, raiz: number, escala: number[], capas: Record<string, CapaMusica> }} ZonaMusica */
+/** @typedef {{ carpeta: string, completa?: CompletaMusica, offsetS?: number, bpm: number, raiz: number, escala: number[], capas: Record<string, CapaMusica> }} ZonaMusica */
 /** @typedef {{ carpeta: string, sinte: string | null, ganancia: number, retrasoS?: number }} TemaMusica */
 /** @typedef {Record<string, any>} Accion Acción de audio: `tipo` más sus campos (ver `accionesDeEvento`). */
 /** @typedef {Record<string, any>} PlanSilencio Resultado de `planSilencio` (`omitido` null si el silencio se ejecuta). */
@@ -363,6 +363,14 @@ export function accionesDeEvento(cfg, e, jefeId, tele = teleNormal) {
           fase: 1,
         },
       ];
+    case "flujo:estado": {
+      const porEstado =
+        /** @type {Record<string, { zona?: string, estado?: string }>} */ (
+          A.musica.estadoPorFlujo
+        );
+      const M = porEstado?.[e.estado];
+      return M ? [{ tipo: "musica", ...M }] : [];
+    }
     case "silencio":
       return [{ tipo: "silencio", motivo: e.motivo }];
     case "silencio:fin":

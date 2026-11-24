@@ -563,10 +563,17 @@ export const CONFIG = {
       activa: true,
       placeholders: true,
       crossfadeS: 2.5, // entre zonas
-      capaS: 1.2, // al sumar o quitar una capa
+      capaS: 2, // al sumar o quitar una capa
       finS: 0.6, // capas fuera al terminar el combate
       adelantoS: 0.25, // técnico: ventana de programación de notas
-      zonaPorJefe: { mirra: "trigal", muneco: "pasillo", farolero: "farolero" }, // la práctica suena con el folk del pasillo
+      zonaPorJefe: { mirra: "trigal", muneco: "pasillo", farolero: "farolero" },
+      zonaPorFase: { trigal: { 2: "trigalFase2" } },
+      estadoPorFlujo: {
+        caida: { zona: "pasillo", estado: "caida" },
+        recorrido: { zona: "pasillo", estado: "pasillo" },
+        arco: { zona: "pasillo", estado: "nada" },
+        // presentacion_inicio elige la zona del jefe al cruzar el arco.
+      },
       intensidad: {
         porVidaJefe: 0.45,
         porAtaque: 0.25,
@@ -578,24 +585,31 @@ export const CONFIG = {
       },
       zonas: {
         pasillo: {
-          carpeta: "pasillo-mirra",
-          completa: { ganancia: 0.8, estados: { pasillo: 1 } },
+          carpeta: "recorrido-sagrado",
+          completa: {
+            ganancia: 0.8,
+            estados: { menu: 1, caida: 1, pasillo: 1 },
+          },
           bpm: 72,
           raiz: 146.83,
           escala: [0, 2, 3, 5, 7, 9, 10], // re dórico: folk antiguo
           capas: {
-            base: { sinte: "drone", ganancia: 0.42, estados: ["pasillo"] },
+            base: {
+              sinte: "drone",
+              ganancia: 0.42,
+              estados: ["menu", "caida", "pasillo"],
+            },
             folk: {
               sinte: "arpa",
               ganancia: 0.3,
-              estados: ["pasillo"],
+              estados: ["menu", "caida", "pasillo"],
               patron: [0, 4, 7, 4, 9, 7, 4, 2],
               cada: 1,
             },
           },
         },
         trigal: {
-          carpeta: "mirra",
+          carpeta: "mirra-fase1",
           completa: {
             ganancia: 0.8,
             estados: { presentacion: 0.55, pelea: 1 },
@@ -644,6 +658,24 @@ export const CONFIG = {
             },
           },
         },
+        trigalFase2: {
+          carpeta: "mirra-fase2",
+          offsetS: 45,
+          completa: {
+            ganancia: 0.8,
+            estados: { presentacion: 0.55, pelea: 1 },
+          },
+          bpm: 84,
+          raiz: 146.83,
+          escala: [0, 2, 3, 5, 7, 8, 10],
+          capas: {
+            respaldo: {
+              sinte: "tension",
+              ganancia: 0.3,
+              estados: ["presentacion", "pelea"],
+            },
+          },
+        },
         // Banda sonora sintetizada: pedal grave, latido y tensión desde la Penumbra.
         farolero: {
           carpeta: "farolero",
@@ -675,10 +707,10 @@ export const CONFIG = {
       // D-134/D-182: pistas dedicadas (primer archivo de su carpeta). Placeholder si falta.
       temas: {
         victoria: {
-          carpeta: "victoria",
+          carpeta: "victoria-dionisiaca",
           sinte: "fanfarria",
           ganancia: 0.6,
-          retrasoS: 0.7,
+          retrasoS: 2,
         },
         derrota: {
           carpeta: "derrota",

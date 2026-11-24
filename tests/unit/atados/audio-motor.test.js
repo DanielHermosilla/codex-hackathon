@@ -156,8 +156,9 @@ describe("música", () => {
     mu.ponerEstado({ zona: "trigal", estado: "pelea", fase: 1 });
     expect(mu.capas.fase2.objetivo).toBe(0);
     mu.ponerEstado({ fase: 2 });
-    expect(mu.capas.fase2.objetivo).toBeGreaterThan(0);
-    expect(mu.estado.saliendo).toBe(1);
+    expect(mu.estado.zona).toBe("trigalFase2");
+    expect(mu.capas.respaldo.objetivo).toBeGreaterThan(0);
+    expect(mu.estado.saliendo).toBe(2);
     for (let i = 0; i < 40; i++) {
       ctx().avanzar(0.1);
       mu.update();
@@ -170,7 +171,7 @@ describe("música", () => {
     await m.desbloquear();
     const buf = m.ctx.createBuffer(1, 8000 * 4, 8000);
     const okMu = crearMusica(m, CONFIG, {
-      indice: { mirra: { tema: "u" } },
+      indice: { "mirra-fase1": { tema: "u" } },
       cargar: async () => buf,
     });
     okMu.ponerEstado({ zona: "trigal", estado: "pelea" });
@@ -179,7 +180,7 @@ describe("música", () => {
     expect(okMu.capas._completa).toMatchObject({ fuente: "stem" });
     expect(okMu.capas._completa.objetivo).toBeGreaterThan(0);
     const malMu = crearMusica(m, CONFIG, {
-      indice: { mirra: { tema: "u" } },
+      indice: { "mirra-fase1": { tema: "u" } },
       cargar: async () => null,
     });
     malMu.ponerEstado({ zona: "trigal", estado: "pelea" });
@@ -188,12 +189,54 @@ describe("música", () => {
     expect(malMu.capas.pulso.fuente).toBe("placeholder");
     expect(malMu.capas.pulso.objetivo).toBeGreaterThan(0);
   });
+  it("usa el respaldo del recorrido y recupera la pista al volver al menú", async () => {
+    const { m } = nuevoMotor();
+    await m.desbloquear();
+    const buf = m.ctx.createBuffer(1, 8000, 8000);
+    let disponible = false;
+    const mu = crearMusica(m, CONFIG, {
+      indice: { "recorrido-sagrado": { tema: "recorrido" } },
+      cargar: async () => (disponible ? buf : null),
+    });
+    mu.ponerEstado({ zona: "pasillo", estado: "menu" });
+    await esperar();
+    for (const estado of ["menu", "caida", "pasillo"]) {
+      mu.ponerEstado({ estado });
+      expect(mu.capas.folk.fuente).toBe("placeholder");
+      expect(mu.capas.folk.objetivo).toBeGreaterThan(0);
+    }
+    mu.ponerEstado({ zona: "trigal", estado: "pelea" });
+    disponible = true;
+    mu.ponerEstado({ zona: "pasillo", estado: "menu" });
+    await esperar();
+    expect(mu.capas._completa.fuente).toBe("stem");
+    mu.dispose();
+  });
+  it("la segunda fase de Mirra empieza y repite desde el segundo 45", async () => {
+    const { m, ctx } = nuevoMotor();
+    await m.desbloquear();
+    const buf = m.ctx.createBuffer(1, 8000 * 60, 8000);
+    const mu = crearMusica(m, CONFIG, {
+      indice: { "mirra-fase2": { tema: "fase2" } },
+      cargar: async () => buf,
+    });
+    mu.ponerEstado({ zona: "trigal", estado: "pelea", fase: 2 });
+    await esperar();
+    const fuente = [...ctx().fuentes].find((f) => f.buffer === buf);
+    expect(fuente).toMatchObject({
+      loop: true,
+      loopStart: 45,
+      loopEnd: 60,
+      offset: 45,
+    });
+    mu.dispose();
+  });
   it("tema de respaldo tras una carga fallida tardía dura entero (regresión Codex)", async () => {
     const { m, ctx } = nuevoMotor();
     await m.desbloquear();
     let fallar;
     const mu = crearMusica(m, CONFIG, {
-      indice: { victoria: { f: "u" } },
+      indice: { "victoria-dionisiaca": { tema: "u" } },
       cargar: () =>
         new Promise((ok) => {
           fallar = () => ok(null);

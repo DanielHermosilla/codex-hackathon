@@ -143,8 +143,8 @@ export function conectarAudio({
         if (fasePendiente == null) break;
         logico.fase = fasePendiente;
         fasePendiente = null;
-        musica?.ponerEstado({ fase: logico.fase });
         if (a.golpe) sonar("faseGolpe");
+        musica?.ponerEstado({ fase: logico.fase });
         break;
       case "sfx": {
         const h = sonar(a.id, {
